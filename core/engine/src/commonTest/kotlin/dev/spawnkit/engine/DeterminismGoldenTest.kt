@@ -13,7 +13,8 @@ import kotlin.test.assertTrue
  * Cross-target determinism check (ADR-0004). The same scripted run of the Meadow level must end in exactly the same
  * state on JVM, JS, Wasm, mingwX64, linuxX64 and the iOS simulator.
  *
- * [GOLDEN_MEADOW_HASH] was recorded from a JVM run. If an intentional engine or template change alters it, re-record
+ * [GOLDEN_MEADOW_HASH] was recorded from a JVM run after the runtime review added controller state to the hash
+ * and corrected checkpoint, jump-buffer and stomp behavior. If an intentional engine or template change alters it, re-record
  * it from the JVM failure message and verify every target agrees. A mismatch on only some targets is a determinism bug
  * in the engine: fix the engine, never add per-platform golden values.
  */
@@ -30,6 +31,6 @@ class DeterminismGoldenTest {
     }
 
     private companion object {
-        const val GOLDEN_MEADOW_HASH: Long = -5121317281474289210L
+        const val GOLDEN_MEADOW_HASH: Long = 8743864922602391013L
     }
 }
