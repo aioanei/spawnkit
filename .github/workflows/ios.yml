@@ -6,6 +6,7 @@ on:
   pull_request:
     paths:
       - "core/**"
+      - "samples/**"
       - "render/**"
       - "player/**"
       - "app/shared/**"
