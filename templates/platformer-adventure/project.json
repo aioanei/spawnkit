@@ -234,7 +234,8 @@
               }
             },
             {
-              "kind": "player"
+              "kind": "player",
+              "deathCounter": "deaths"
             }
           ]
         },
@@ -461,7 +462,8 @@
               }
             },
             {
-              "kind": "player"
+              "kind": "player",
+              "deathCounter": "deaths"
             }
           ]
         },
@@ -679,7 +681,8 @@
               }
             },
             {
-              "kind": "player"
+              "kind": "player",
+              "deathCounter": "deaths"
             }
           ]
         },
