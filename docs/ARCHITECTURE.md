@@ -34,7 +34,9 @@ and roadmap live in the [design document](design/2026-11-19-spawnkit-design.md).
    Previous entity positions and interpolation live in the renderer; rendering never changes simulation state.
    The camera follows the interpolated player position, clamps to scene bounds and centers smaller scenes.
    Arrow keys/A/D move, Space/W/Up jump, S/Down and E/Enter map to down/action; Android and iOS show hold buttons
-   by default. Losing focus clears held input. Pausing resets the clock and input; session replacement starts fresh.
+   by default. Internal focus changes, host window focus loss, and lifecycle pause/stop/destroy clear held input.
+   The lifecycle path is necessary on Wasm, where Compose's window-focus value is constant. Pausing resets the
+   clock and input; session replacement starts fresh.
    The HUD follows `GameSettings.hud` order and uses bundled OFL-licensed Lilita One, including on Wasm.
 4. **Shells**: `player/*` (exported games) and `app/*` (creator) are thin platform entry points over shared UI.
 5. **Services** (`server`): publish and serve game bundles; validate them with `core/validation` before accepting.
@@ -50,7 +52,11 @@ JS, Wasm, mingwX64, linuxX64 and the iOS simulator. See [ADR-0004](adr/0004-dete
 | Area | State |
 |---|---|
 | Build, CI, conventions | done (M0) |
-| Document model, platformer engine, determinism clock and golden test | implemented; PR stack awaiting owner review (M1) |
-| Renderer: viewport, camera, keyboard/touch, interpolation, HUD | implemented (M1) |
+| Document model, platformer engine, determinism clock and golden test | merged (M1, PRs #14–#17) |
+| Renderer: viewport, camera, keyboard/touch, interpolation, HUD | implemented; browser smoke check and visual evidence in [PR #18](https://github.com/aioanei/spawnkit/pull/18) (M1) |
 | Exported-game shells and browser deployment | next (M1) |
 | Editor, validation, AI Studio, publishing | planned (M2–M5) |
+
+The targeted [renderer browser smoke check](../tools/render-smoke/README.md) runs an isolated headless Chrome
+against the real Wasm preview. It checks keyboard/coin/jump behavior, actual tab focus loss, simultaneous touch
+points and cancellation. Captures and the last verified report are in [media](media/README.md).

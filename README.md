@@ -14,6 +14,10 @@ The current M1 work includes the versioned Game Document, the three-level Platfo
 the deterministic runtime, and a shared Compose `GameView` with keyboard/touch input and a HUD.
 The exported-game shells and browser deployment are the next tasks; the creator app still opens its initial shell.
 
+See [PROGRESS.md](PROGRESS.md) for the latest checkpoint and [PLANS.md](PLANS.md) for the approved plan location.
+The renderer's [browser smoke check](tools/render-smoke/README.md) and [Wasm captures](docs/media/README.md)
+provide reproducible evidence of the current runtime and UI.
+
 ## Build
 
 Requirements: JDK 21, Android SDK (for Android targets). iOS builds require macOS with Xcode.

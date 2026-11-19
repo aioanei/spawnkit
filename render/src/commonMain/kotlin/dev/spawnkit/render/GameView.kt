@@ -16,6 +16,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,9 +25,13 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import dev.spawnkit.engine.FixedStepClock
 import dev.spawnkit.engine.GameEvent
 import dev.spawnkit.engine.GameSession
@@ -54,12 +59,31 @@ public fun GameView(
     val painter = remember(session) { WorldPainter() }
     val positions = remember(session) { RenderPositions() }
     val focus = remember { FocusRequester() }
+    val windowInfo = LocalWindowInfo.current
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
     val currentOnEvents by rememberUpdatedState(onEvents)
     val currentPaused by rememberUpdatedState(paused)
     var frameTime by remember { mutableLongStateOf(0L) }
     var alpha by remember { mutableDoubleStateOf(1.0) }
 
     DisposableEffect(input) { onDispose { input.clear() } }
+    DisposableEffect(input, lifecycle) {
+        // Compose/Wasm reports window focus as always true; browser blur/visibility
+        // changes arrive through its lifecycle instead.
+        val observer =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_PAUSE || event == Lifecycle.Event.ON_STOP || event == Lifecycle.Event.ON_DESTROY) {
+                    input.clear()
+                }
+            }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
+    LaunchedEffect(input, windowInfo) {
+        snapshotFlow { windowInfo.isWindowFocused }.collect { focused ->
+            if (!focused) input.clear()
+        }
+    }
     LaunchedEffect(session, input) {
         val clock = FixedStepClock()
         while (true) {
@@ -92,7 +116,7 @@ public fun GameView(
             .semantics { contentDescription = "Game: ${session.project.meta.name}" }
             .focusRequester(focus)
             .onFocusChanged { if (!it.isFocused) input.clear() }
-            .onPreviewKeyEvent { !paused && input.onKeyEvent(it) }
+            .onPreviewKeyEvent { !paused && windowInfo.isWindowFocused && input.onKeyEvent(it) }
             .focusable(enabled = !paused)
             .pointerInput(focus, paused) {
                 awaitEachGesture {

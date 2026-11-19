@@ -1,0 +1,46 @@
+{
+  "url": "http://127.0.0.1:8081/",
+  "checks": [
+    "Wasm starts and loads bundled Lilita One",
+    "keyboard movement, coin collection and release",
+    "keyboard jump",
+    "focus loss clears held input and canvas tap restores focus",
+    "simultaneous touch movement/jump and cancellation",
+    "tall and ultra-wide viewport captures"
+  ],
+  "screenshots": [
+    "wasm-gameview-wide.png",
+    "wasm-gameview-collected.png",
+    "wasm-gameview-tall.png",
+    "wasm-gameview-ultrawide.png"
+  ],
+  "errors": [],
+  "browser": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/157.0.8103.79",
+    "revision": "@6dc9bc3bdaea5c35ed6d41fceab2f7a3a2227c4f",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
+    "jsVersion": "15.7.112.43"
+  },
+  "initialFocus": {
+    "result": {
+      "type": "boolean",
+      "value": true
+    }
+  },
+  "blurredFocus": {
+    "result": {
+      "type": "boolean",
+      "value": false
+    }
+  },
+  "finalState": {
+    "tick": 250,
+    "x": 7.666666666666678,
+    "y": 9.1,
+    "grounded": true,
+    "coins": 3,
+    "deaths": 0
+  },
+  "passed": true
+}
