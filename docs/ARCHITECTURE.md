@@ -1,7 +1,19 @@
 # SpawnKit Architecture
 
 This document describes the system as built. Decisions and their reasons live in [ADRs](adr/); the product vision
-and roadmap live in the [design document](design/2026-11-19-spawnkit-design.md).
+and roadmap live in the [original design document](design/2026-11-19-spawnkit-design.md).
+
+## Architecture revision under review
+
+On 2026-11-20 the owner requested a general-purpose, extensible engine and integrated editor, with executable
+capabilities central and persistence an implementation detail. Implementation is paused pending review of the
+[new design](design/2026-11-20-general-purpose-engine.md), [revised sequence](plans/2026-11-20-engine-foundation-revision.md)
+and [ADR-0006](adr/0006-general-purpose-engine-and-editor.md). These are proposals, not implemented features.
+
+The diagram/layers below describe the retained platformer baseline. Its mandatory player, closed component set,
+fixed gameplay systems and document compiler are not the target general engine contract. See the proposal's audit
+and migration gates for what is retained, extracted or replaced. Unfinished player shells are preserved at `b2bf830`
+on `feat/6-player-shells`; they are absent from this main-based documentation branch.
 
 ## Big picture
 
@@ -53,9 +65,10 @@ JS, Wasm, mingwX64, linuxX64 and the iOS simulator. See [ADR-0004](adr/0004-dete
 |---|---|
 | Build, CI, conventions | done (M0) |
 | Document model, platformer engine, determinism clock and golden test | merged (M1, PRs #14–#17) |
-| Renderer: viewport, camera, keyboard/touch, interpolation, HUD | implemented; browser smoke check and visual evidence in [PR #18](https://github.com/aioanei/spawnkit/pull/18) (M1) |
-| Exported-game shells and browser deployment | next (M1) |
-| Editor, validation, AI Studio, publishing | planned (M2–M5) |
+| Renderer: viewport, camera, keyboard/touch, interpolation, HUD | merged [PR #18](https://github.com/aioanei/spawnkit/pull/18); browser smoke and visual evidence retained |
+| Exported-game shells | unfinished checkpoint `b2bf830`, paused for architecture review |
+| General engine/editor/programming/extension foundation | proposed; no migration implemented |
+| Browser deployment, editor, validation, AI Studio, publishing | preserved roadmap, dependency order under review |
 
 The targeted [renderer browser smoke check](../tools/render-smoke/README.md) runs an isolated headless Chrome
 against the real Wasm preview. It checks keyboard/coin/jump behavior, actual tab focus loss, simultaneous touch

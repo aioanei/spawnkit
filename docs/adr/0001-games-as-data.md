@@ -1,6 +1,8 @@
 # ADR-0001: Games are data, interpreted by one shared runtime
 
-- Status: accepted (2026-11-19)
+- Status: historical; accepted 2026-11-19, central premise superseded by the owner's 2026-11-20 direction change.
+- The implementation remains a preserved baseline. See [proposed ADR-0006](0006-general-purpose-engine-and-editor.md)
+  for the replacement decision under review; do not treat the restrictions below as future engine requirements.
 
 ## Context
 

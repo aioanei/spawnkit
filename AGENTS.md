@@ -4,32 +4,42 @@ Instructions for coding agents (Codex, Claude Code, Junie, Copilot, …) and hum
 
 ## Product in one paragraph
 
-SpawnKit is an AI-powered, no-code 2D game creation studio built with Kotlin Multiplatform. A game is a versioned
-**Game Document** (`GameProject`, JSON). One deterministic Kotlin runtime compiles that document into a `RuntimeWorld`
-and plays it in the editor preview, in the browser arcade, and in exported Android/iOS/desktop/web games. JetBrains
-Koog agents create levels, characters and whole games by emitting small specs that deterministic code turns into the
-same typed editing commands a human uses, then **validate their output with the real engine** before the user accepts
-a diff. Full design: [docs/design/2026-11-19-spawnkit-design.md](docs/design/2026-11-19-spawnkit-design.md).
-Current implementation plan: [docs/plans/](docs/plans/).
+SpawnKit is a general-purpose, extensible 2D game engine built with Kotlin Multiplatform, with an integrated
+Compose Multiplatform no-code editor, Koog agents, Ktor services, publishing, monetization and a marketplace.
+Creators and agents use real engine/editor capabilities to build and validate games; developers can add reusable
+components, behaviors and tools without modifying engine source. Persistence formats are implementation details.
+The existing document-driven platformer is a migration baseline and demonstration, not the general engine contract.
+Current architecture proposal: [general-purpose revision](docs/design/2026-11-20-general-purpose-engine.md).
+Plan/status: [PLANS.md](PLANS.md), [PROGRESS.md](PROGRESS.md).
+
+## Architecture review hold
+
+The owner requested this direction change on 2026-11-20 and required plan revision before implementation.
+**Implementation is paused pending review of the proposed architecture and revised plan.** Do not resume the old
+Tasks 11–12 sequence or treat the proposed pattern/library choices as accepted. Preserve completed work and the
+unfinished player checkpoint `b2bf830` on `feat/6-player-shells`. JSON remains allowed for storage/transport;
+do not make its schema or a closed list of gameplay mechanics the central engine API.
 
 ## Module map
 
 | Module | Kind | Purpose |
 |---|---|---|
 | `build-logic/` | included build | convention plugins `spawnkit.kmp.core`, `spawnkit.kmp.compose`, `spawnkit.quality` |
-| `core/model` | KMP, all targets | Game Document schema, IDs, serialization, migrations |
-| `core/templates` | KMP, all targets | template documents embedded as generated sources |
-| `core/engine` | KMP, all targets | world compiler, fixed-step deterministic simulation, rules VM |
+| `core/model` | KMP, all targets | existing v1 document schema, IDs, serialization and migrations; legacy import boundary in the proposal |
+| `core/templates` | KMP, all targets | existing embedded template fixtures; preserve during migration |
+| `core/engine` | KMP, all targets | current tested platformer runtime; proposed evolution to a general world/component/scheduler API |
 | `core/validation` | KMP, all targets | integrity checks, reachability solver, playtest, economy check |
-| `core/editing` | KMP, all targets | typed commands, undo/redo, changesets |
+| `core/editing` | KMP, all targets | planned real workspace operations, undo/redo, transactions and changesets |
 | `core/api` | KMP, all targets | client/server DTOs |
 | `render` | KMP + Compose | `GameView`: Canvas renderer, camera, input, HUD |
-| `ai` | KMP | Koog agents and tools, media providers, record/replay executors |
+| `ai` | KMP | planned Koog engine/editor capability tools, media providers, record/replay executors |
 | `app/shared` + `app/*App` | KMP + Compose | creator app (editor, AI Studio, arcade) and platform entry points |
 | `player/shared` + `player/*App` | KMP + Compose | exported-game shells (single game / arcade gallery) |
 | `server` | Ktor (JVM) | publishing, arcade hosting, validation |
 
-Modules that do not exist yet are created by the milestone that needs them; do not add empty placeholder modules.
+This table distinguishes existing responsibilities where affected; it is not a claim that planned modules exist.
+Future proposed boundaries are in the revision. Modules that do not exist yet are created by the milestone that
+needs them; do not add empty placeholder modules.
 
 "All targets" = `jvm`, `android`, `iosArm64`, `iosSimulatorArm64`, `js`, `wasmJs`, `mingwX64`, `linuxX64`.
 Compose modules omit `mingwX64` and `linuxX64`.
@@ -54,13 +64,17 @@ unavailable on most machines. Use the aggregates above.
 
 - Root package `dev.spawnkit`; Kotlin official code style enforced by Spotless + ktlint (`.editorconfig`).
 - `core/*` modules use `explicitApi()` and `allWarningsAsErrors`; every public declaration has KDoc.
-- Simulation code (`core/engine`) is deterministic: fixed 60 Hz ticks, only `+ - * /`, `sqrt`, `floor`, `abs`,
+- Existing simulation code (`core/engine`) is deterministic: fixed 60 Hz ticks, only `+ - * /`, `sqrt`, `floor`, `abs`,
   `min`, `max` on `Double`; no `pow`, trigonometry, `exp`, `ln`, wall-clock time, randomness without the seeded RNG,
   or platform calls. A cross-target golden hash test enforces this.
-- Units: 1 world unit = 1 tile; y axis points down; entity position is the top-left corner of its AABB.
-- Serialization: every polymorphic subtype has an explicit `@SerialName`; never name a property `type`; class
-  discriminator is `kind`; bump `CURRENT_SCHEMA_VERSION` and add a `JsonElement` migration for breaking changes.
-- The AI never writes document JSON directly: specs → typed commands → validation → user-approved changeset.
+- Existing platformer units: 1 world unit = 1 tile; y axis points down; entity position is the top-left corner of
+  its AABB. General engine units/transform facilities are part of the revision under review.
+- Serialization (existing document codecs): every polymorphic subtype has an explicit `@SerialName`; never name
+  a property `type`; class discriminator is `kind`; bump `CURRENT_SCHEMA_VERSION` and add a `JsonElement` migration
+  for breaking changes.
+- UI, agents and plugins use actual typed editor operations and real-engine inspection/validation. Specs may be
+  tool inputs, but do not limit agents to generating document JSON or predefined game configurations.
+  Stage AI edits and commit only a user-accepted changeset against the expected workspace revision.
 - Tests use `kotlin.test` in `commonTest` unless a platform API is under test. No live LLM/image API calls in tests;
   use the replaying executor and recorded fixtures.
 
@@ -77,8 +91,9 @@ unavailable on most machines. Use the aggregates above.
 
 ## Workflow
 
-1. Pick work: the lowest open milestone on GitHub, `priority:high` issues first. Each task has an issue with an
-   objective, requirements and acceptance criteria.
+1. While the architecture review hold is active, complete documentation/research only. After review, pick work
+   from the revised dependency order and the lowest open milestone on GitHub, `priority:high` issues first.
+   Each task has an issue with an objective, requirements and acceptance criteria.
 2. Branch from `main`: `feat|fix|chore|docs|test/<issue-number>-<slug>`.
 3. Test first where practical; keep commits small, using Conventional Commits (`feat(engine): …`).
 4. Before pushing: `./gradlew spotlessApply`, then **separately** `./gradlew allJvmAndWebTests` (plus `localNativeTests`
