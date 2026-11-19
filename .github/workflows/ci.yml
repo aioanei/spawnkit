@@ -47,6 +47,9 @@ jobs:
           :app:androidApp:assembleDebug
           :app:desktopApp:compileKotlin
           :app:webApp:compileKotlinWasmJs
+          :render:compileAndroidMain
+          :render:compileKotlinJs
+          :render:compileKotlinWasmJs
 
       - name: Upload test reports
         if: failure()

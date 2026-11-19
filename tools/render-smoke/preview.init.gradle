@@ -1,0 +1,9 @@
+// Test-only launcher: leaves the creator's shipped App.kt unchanged.
+gradle.projectsEvaluated {
+    def shared = gradle.rootProject.findProject(':app:shared')
+    if (shared == null) return
+    shared.kotlin.sourceSets.commonMain.kotlin.exclude('**/App.kt')
+    shared.kotlin.sourceSets.commonMain.kotlin.srcDir(new File(gradle.rootProject.rootDir, 'tools/render-smoke/preview-src'))
+    shared.dependencies.add('commonMainImplementation', shared.project(':render'))
+    shared.dependencies.add('commonMainImplementation', shared.project(':core:templates'))
+}
