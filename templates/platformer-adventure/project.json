@@ -126,6 +126,9 @@
     {
       "id": "checkpoint",
       "name": "Checkpoint",
+      "tags": [
+        "checkpoint"
+      ],
       "components": [
         {
           "kind": "visual",
@@ -151,6 +154,9 @@
     {
       "id": "goal",
       "name": "Goal",
+      "tags": [
+        "goal"
+      ],
       "components": [
         {
           "kind": "visual",
@@ -606,7 +612,7 @@
           "id": "caves-checkpoint-1",
           "name": "Checkpoint",
           "position": {
-            "x": 27.0,
+            "x": 38.0,
             "y": 11.0
           },
           "prefab": "checkpoint"

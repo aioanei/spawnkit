@@ -26,7 +26,13 @@ internal const val STOMP_BOUNCE: Double = 0.6
 /** Vertical speed multiplier applied once when the jump button is released while rising. */
 internal const val JUMP_CUT: Double = 0.5
 
-/** How far ahead of its feet a patrolling enemy probes for ground. */
+/** Minimum distance ahead of its feet at which a patrolling enemy probes for ground. */
 internal const val LEDGE_PROBE: Double = 0.05
+
+/** Speeds must stay below one tile per tick so bodies cannot tunnel through tiles (tiles per second). */
+public const val MAX_SPEED: Double = 60.0
+
+/** Ticks after a respawn during which enemies cannot hurt the player (1 second). */
+internal const val RESPAWN_GRACE_TICKS: Int = 60
 
 internal fun floorInt(value: Double): Int = floor(value).toInt()
