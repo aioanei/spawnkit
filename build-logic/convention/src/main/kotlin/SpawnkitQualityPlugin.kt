@@ -18,12 +18,12 @@ class SpawnkitQualityPlugin : Plugin<Project> {
             extensions.configure<SpotlessExtension> {
                 kotlin {
                     target("**/*.kt")
-                    targetExclude("**/build/**")
+                    targetExclude("**/build/**", "**/bin/**")
                     ktlint(ktlintVersion)
                 }
                 kotlinGradle {
                     target("**/*.kts")
-                    targetExclude("**/build/**")
+                    targetExclude("**/build/**", "**/bin/**")
                     ktlint(ktlintVersion)
                 }
             }
