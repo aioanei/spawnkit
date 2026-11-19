@@ -43,7 +43,7 @@ class EmbeddedTemplatesTest {
     fun everyTileCharacterIsInTileset() {
         platformer.scenes.forEach { scene ->
             scene.layers.flatMap { it.rows }.joinToString("").forEach { ch ->
-                assertTrue(ch in EmptyTileChars || ch.toString() in platformer.tileset, "'$ch' in ${scene.name}")
+                assertTrue(ch in EmptyTileChars || ch in platformer.tileset, "'$ch' in ${scene.name}")
             }
         }
     }

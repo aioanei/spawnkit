@@ -24,27 +24,27 @@
   },
   "tileset": {
     "#": {
-      "kind": "solid",
+      "behavior": "solid",
       "color": "#FF6B4F3A"
     },
     "G": {
-      "kind": "solid",
+      "behavior": "solid",
       "color": "#FF4CAF50"
     },
     "S": {
-      "kind": "solid",
+      "behavior": "solid",
       "color": "#FF7D8597"
     },
     "=": {
-      "kind": "oneWay",
+      "behavior": "oneWay",
       "color": "#FFC08552"
     },
     "^": {
-      "kind": "hazard",
+      "behavior": "hazard",
       "color": "#FFE63946"
     },
     "~": {
-      "kind": "decor",
+      "behavior": "decor",
       "color": "#FF2D6A4F"
     }
   },
@@ -77,7 +77,7 @@
             "height": 0.6
           },
           "color": "#FFFFD43B",
-          "shape": "Circle"
+          "shape": "circle"
         },
         {
           "kind": "body",
@@ -107,7 +107,7 @@
             "height": 0.7
           },
           "color": "#FF9B5DE5",
-          "shape": "RoundedRect"
+          "shape": "roundedRect"
         },
         {
           "kind": "body",
@@ -134,7 +134,7 @@
             "height": 1.0
           },
           "color": "#FFF15BB5",
-          "shape": "Rect"
+          "shape": "rect"
         },
         {
           "kind": "body",
@@ -159,7 +159,7 @@
             "height": 2.0
           },
           "color": "#FFFEE440",
-          "shape": "Rect"
+          "shape": "rect"
         },
         {
           "kind": "body",
@@ -224,7 +224,7 @@
                 "height": 0.9
               },
               "color": "#FF22D3EE",
-              "shape": "RoundedRect"
+              "shape": "roundedRect"
             },
             {
               "kind": "body",
@@ -451,7 +451,7 @@
                 "height": 0.9
               },
               "color": "#FF22D3EE",
-              "shape": "RoundedRect"
+              "shape": "roundedRect"
             },
             {
               "kind": "body",
@@ -669,7 +669,7 @@
                 "height": 0.9
               },
               "color": "#FF22D3EE",
-              "shape": "RoundedRect"
+              "shape": "roundedRect"
             },
             {
               "kind": "body",
