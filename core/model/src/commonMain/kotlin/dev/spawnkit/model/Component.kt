@@ -35,6 +35,7 @@ public data class Body(
  * @property jumpVelocity initial upward speed of a jump in tiles per second.
  * @property coyoteTicks ticks after leaving the ground during which a jump is still allowed.
  * @property jumpBufferTicks ticks a jump press is remembered before landing.
+ * @property deathCounter optional variable incremented every time the player dies.
  */
 @Serializable
 @SerialName("player")
@@ -43,6 +44,7 @@ public data class PlayerController(
     val jumpVelocity: Double = 17.0,
     val coyoteTicks: Int = 6,
     val jumpBufferTicks: Int = 6,
+    val deathCounter: VariableId? = null,
 ) : Component
 
 /** Collected on contact with the player: adds [amount] to [variable] and removes the entity. */
