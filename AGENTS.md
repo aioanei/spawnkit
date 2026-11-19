@@ -15,9 +15,10 @@ Plan/status: [PLANS.md](PLANS.md), [PROGRESS.md](PROGRESS.md).
 ## Current direction and implementation checkpoint
 
 The owner confirmed engine ownership and guided creation for non-programmers, removed time pressure as an
-architectural constraint, then requested implementation of the documentation revision. This checkpoint updates
-the plan only; runtime/editor migration is not implemented. Complete R0 reconciliation, then start R1 in the
-revised dependency order. Do not resume the old Tasks 11–12 sequence or treat unselected libraries as approved.
+architectural constraint, then authorized merging plan PR #20 and starting implementation. R0 reconciliation is
+complete. Current work is R1a / issue #21: provisional headless lifecycle/scheduling APIs in `core/runtime` and a
+separately compiled consumer in `samples/runtimeProbe`. R1 comparisons/state capture/program proofs and the
+visual editor remain unfinished. Do not resume old Tasks 11–12 or treat unselected libraries as approved.
 Preserve completed work and player checkpoint `b2bf830` on `feat/6-player-shells`. JSON remains allowed for
 storage/transport; its schema and a closed list of gameplay mechanics cannot define engine capability.
 
@@ -39,7 +40,9 @@ storage/transport; its schema and a closed list of gameplay mechanics cannot def
 | `build-logic/` | included build | convention plugins `spawnkit.kmp.core`, `spawnkit.kmp.compose`, `spawnkit.quality` |
 | `core/model` | KMP, all targets | existing v1 document schema, IDs, serialization and migrations; legacy import boundary in the target design |
 | `core/templates` | KMP, all targets | existing embedded template fixtures; preserve during migration |
-| `core/engine` | KMP, all targets | current tested platformer runtime; planned evolution to a general world/component/scheduler API |
+| `core/engine` | KMP, all targets | preserved tested platformer runtime and compatibility regression baseline |
+| `core/runtime` | KMP, all targets | R1a headless world/component/scheduler evidence implementation; provisional APIs, no legacy model dependency |
+| `samples/runtimeProbe` | KMP, all targets | separately compiled public-API consumer and cross-target extension evidence |
 | `core/validation` | KMP, all targets | integrity checks, reachability solver, playtest, economy check |
 | `core/editing` | KMP, all targets | planned real workspace operations, undo/redo, transactions and changesets |
 | `core/api` | KMP, all targets | client/server DTOs |
@@ -104,7 +107,7 @@ unavailable on most machines. Use the aggregates above.
 ## Workflow
 
 1. Continue from the documented checkpoint in the revised R0–R9 dependency order and the lowest open milestone
-   on GitHub, `priority:high` issues first. Complete R0 reconciliation before starting R1.
+   on GitHub, `priority:high` issues first. Continue unfinished R1 evidence work before moving to R2.
    Each task has an issue with an objective, requirements and acceptance criteria.
 2. Branch from `main`: `feat|fix|chore|docs|test/<issue-number>-<slug>`.
 3. Test first where practical; keep commits small, using Conventional Commits (`feat(engine): …`).

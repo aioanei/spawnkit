@@ -1,6 +1,6 @@
 # SpawnKit — revised engine foundation and delivery plan
 
-Status: **accepted direction and creation requirements; documentation revision implemented**, 2026-11-20. The owner confirmed engine ownership, guided visual creation and milestone-based delivery, then requested implementation of this documentation plan. Runtime/editor work below remains unfinished.
+Status: **accepted requirements; R0 complete, R1 evidence in progress**, 2026-11-20. The owner confirmed engine ownership, guided visual creation and milestone-based delivery, then authorized merging plan PR #20 and continuing implementation. The initial R1a lifecycle/scheduling increment does not complete R1 or the visual editor.
 
 Design: [general-purpose engine revision](../design/2026-11-20-general-purpose-engine.md). Decision record: [ADR-0006](../adr/0006-general-purpose-engine-and-editor.md).
 
@@ -8,13 +8,13 @@ This revises the approved plan in response to the owner's explicit architecture 
 
 ## 1. Starting checkpoint and constraints
 
-- Mainline: `5353e2a`, including merged PR #18. Its Linux and iOS PR/post-merge checks passed.
+- Plan's starting mainline: `5353e2a`, including merged PR #18 and its passing Linux/iOS checks. Implementation later branched from `eae2d3f`, the owner-authorized merge of plan PR #20.
 - Existing runtime/model/template/renderer code is the platformer compatibility baseline. Its test evidence remains valid for that baseline.
 - Paused Task 11 / issue #6: local branch `feat/6-player-shells`, checkpoint `b2bf830`. Six JVM player-state tests and `spotlessApply` passed. The full gate was interrupted and platform acceptance remains unfinished. Preserve this work; adapt it at R6 instead of discarding it or treating it as a generic engine API.
 - Documentation branch: `docs/19-own-engine-no-code-plan`, based on main, containing documentation changes only; tracked by [issue #19](https://github.com/aioanei/spawnkit/issues/19).
 - Kotlin Multiplatform, Compose Multiplatform, Koog and Ktor remain mandatory. Retain current pinned build/toolchain versions unless a separately justified compatibility change is necessary.
 - Keep all current core targets: JVM, Android, JS, Wasm, iOS arm64/simulator, mingwX64 and linuxX64; Compose UI omits native desktop targets. Preserve headless engine execution.
-- This task implements the approved documentation revision, not the engine/editor itself. Once R0 reconciliation is complete, continue at R1 under the established issue/PR workflow. No specific library or backend is approved without that gate's evidence.
+- R0 reconciliation is complete. Continue R1 evidence under the established issue/PR workflow; the R1a code remains provisional. No specific library or production backend is approved without the complete gate's evidence.
 - Engine ownership and creation without programming knowledge are equal requirements. Guided visual creation is the default, with optional examples and AI assistance. The contest deadline is not an architectural or product-scope constraint.
 
 ## 2. Accepted architectural and creation requirements
@@ -40,12 +40,16 @@ Each R-step becomes a focused issue or small issue group with objective, require
 
 - [x] Record the owner's engine ownership, no-programming creation and milestone-based delivery requirements, including the selected guided visual workflow and authorization to implement this documentation revision.
 - [x] Accept ADR-0006's architectural/creation boundaries and reconcile current design, plan and agent guidance without rewriting historical rationale. Backend selection remains R1 work.
-- [ ] Reconcile existing GitHub issues/milestones: keep #6 and #7 open, mark their implementation as dependent on the new foundation, and link replacement/child issues. Do not silently close work as delivered.
-- [ ] Preserve checkpoint branches, legacy template fixtures and test evidence. Confirm a clean baseline before migration.
+- [x] Reconcile existing GitHub issues/milestones: #6–#13 now record R0–R9 dependencies and retain their original objectives; #6/#7 remain open. #21 tracks R1a. M1–M6 obsolete delivery dates were removed; the contest showcase date remains external to architecture decisions.
+- [x] Preserve checkpoint branches, legacy template fixtures and test evidence. PR #20 was merged with explicit owner authorization; implementation branched from clean main at `eae2d3f`. Player checkpoint `b2bf830` remains separate.
 
 Exit: the team has one current implementation direction; no agent can accidentally resume the superseded Tasks 11–12 sequence.
 
 ### R1 — prove runtime, program and hosting boundaries
+
+First increment: [issue #21](https://github.com/aioanei/spawnkit/issues/21), [headless runtime evidence](../runtime-foundation.md).
+It introduces provisional lifecycle/scheduling APIs and an independently compiled consumer; the whole R1 gate
+remains open until storage, state-capture and program comparisons are demonstrated.
 
 Use bounded, disposable spikes on an approved feature branch. Produce a decision note with actual commands/results; do not create an alternative production runtime alongside the selected one.
 
