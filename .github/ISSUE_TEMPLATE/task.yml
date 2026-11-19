@@ -1,0 +1,27 @@
+name: Task
+description: A unit of planned work with clear acceptance criteria
+labels: ["type:feat"]
+body:
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: What outcome should this task produce, and why?
+    validations:
+      required: true
+  - type: textarea
+    id: requirements
+    attributes:
+      label: Technical requirements
+      description: Modules, APIs, constraints, references to the design or plan.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Verifiable checks (tests, commands, observable behavior).
+      placeholder: |
+        - [ ] ...
+    validations:
+      required: true
