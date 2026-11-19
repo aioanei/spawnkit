@@ -1,5 +1,39 @@
 # SpawnKit progress
 
+## Current checkpoint — engine ownership and guided creation plan revision (2026-11-20)
+
+- The owner confirmed that SpawnKit is our own engine, removed time pressure as an architectural constraint, requested creation without programming knowledge and selected guided visual creation. The later “Please implement the plan” authorizes the documentation revision specified in the reviewed plan.
+- Updated the existing design, R0–R9 implementation sequence and ADR-0006; synchronized plan indexes, agent instructions, README, implemented-architecture status and historical-document supersession notes. This task adds no engine/editor/runtime implementation or dependencies.
+- Accepted boundaries: SpawnKit owns its runtime, gameplay APIs, behavior execution, editor capabilities and SDK. Focused supporting libraries remain eligible; adopting a complete third-party engine as the foundation is excluded. R1 still selects implementations from actual compatibility evidence.
+- Default creation path: functional blank project or optional example → drag objects → configure friendly behaviors → assemble visual When / If / Do rules → Play/inspect/Stop/undo → guided export/publishing. AI is optional; ordinary creation/local play needs no code, JSON editing, technical IDs, model credentials or cloud/payment setup.
+- Added extension-generated visual controls from authoring descriptors, progressive disclosure, optional onboarding, contextual help, previews, accessibility, autosave/recovery and actionable object/behavior errors. All authoring paths share the same executable model.
+- Added the novice release gate: at least four of five first-time non-programmers independently complete creation/modification, correction of a seeded mistake, undo, save/reopen and launch, with built-in guidance but no instructor or AI assistance. Repeat exercises across different game mechanics and an extension behavior. This is planned evidence, not a completed user study.
+- Removed the active contest-driven deadline/cut-lines and one-day evaluation limit. Capability, correctness and usability gates determine readiness; the contest remains a showcase opportunity. All approved product features and mandatory KMP/Compose/Koog/Ktor technologies remain.
+- Preserved unfinished player shells at `b2bf830` on `feat/6-player-shells`; no migration or restart occurred. R0 acceptance/document reconciliation is recorded; remote issue/milestone reconciliation and the clean implementation baseline check remain outstanding before R1.
+- Verified the GitHub destination against `origin`: `aioanei/spawnkit` is public and the connected owner has admin access. This evidence and the explicit issue/PR workflow instruction resolved the earlier automatic approval-review rejection; [documentation issue #19](https://github.com/aioanei/spawnkit/issues/19) was created from the reviewed requirements. Branch renamed to `docs/19-own-engine-no-code-plan`.
+- Checkpoint `ed83767` implements the no-code/ownership revision. [PR #20](https://github.com/aioanei/spawnkit/pull/20) contains this documentation work and the preceding architecture research, closes #19 when merged, and preserves #6/#7 as unfinished work. Its checks are the source of current remote CI status; no merge is performed by this documentation task.
+- Local checks passed for the full branch diff against main: 15 Markdown files, 52 relative links/anchors resolved, zero failures; `git diff --check` passed. Separate `spotlessApply` passed (52 s), then `spotlessCheck allJvmAndWebTests` passed (`BUILD SUCCESSFUL`, 37 s; 247 actionable tasks, cached/up-to-date results reused where valid). No `core/*` source changed, so the Windows native gate was not required for this documentation task.
+
+## Historical checkpoint — architecture proposal before owner refinements (2026-11-20)
+
+- The owner requested a general-purpose, extensible KMP 2D engine with an integrated visual editor, custom gameplay and developer extensions. Persistence must not define the engine's capabilities. Implementation is paused until the revised plan is reviewed.
+- Reviewed main at `5353e2a`, merged PR #18, no open PRs, open issues and remote checks. PR #18 and post-merge Linux/iOS checks passed (runs `44626157006`, `44626157027`). No unfinished renderer changes remained.
+- Began the formerly approved Task 11 / issue #6, then preserved all work when the architecture changed: local checkpoint `b2bf830`, branch `feat/6-player-shells`. Do not discard or merge it as a generic engine contract. It contains shared adventure navigation, four player shells, build/CI wiring and tests.
+- Before the pause, six `PlayerStateTest` JVM tests and `spotlessApply` passed. The larger test/platform build run was interrupted with no final success result; it is not counted as passed. Desktop/browser/Android player acceptance and iOS linking remain unfinished.
+- Android validation: original API-36 AVD refused startup with low C: space. A separate validation AVD under `D:/SpawnKit-validation/avd/` booted, then stopped; no player acceptance was performed. Existing user AVD data was preserved.
+- Proposal branch `docs/6-engine-architecture` starts from main and contains documentation only. [Design and research](docs/design/2026-11-20-general-purpose-engine.md), [revised sequence](docs/plans/2026-11-20-engine-foundation-revision.md) and [ADR-0006](docs/adr/0006-general-purpose-engine-and-editor.md) are proposed, not accepted.
+- Research compared scene/object composition, pure ECS, a scene/component authoring model over a scheduled runtime, and existing-engine integration. Recommendation includes real editor capabilities, portable programmable behaviors, a compiled KMP extension SDK and explicit generality/extension proof gates. No new library, runtime or persistence implementation was added.
+- All approved product features and mandatory KMP/Compose/Koog/Ktor technologies remain. Old daily estimates need re-estimation after the foundation spike; no replacement deadline or implicit feature cancellation was invented.
+- Automatic approval review rejected creating the architecture-review GitHub issue because it would transmit project architecture/repository metadata externally without sufficiently explicit payload/destination authorization. No issue, push or PR was created for this revision. Prepare the review artifacts locally, then ask the owner to authorize publication to `aioanei/spawnkit`.
+- Proposal verification: 15 changed/new Markdown files checked, 52 relative links/anchors resolved, zero failures; `git diff --check` passed. Two labelled AI technical reviews informed the state-capture, effect-failure/replay and bounded-evaluation contracts. No runtime source, build configuration or dependency changed on this branch.
+- Prepared publication text is available locally in ignored `build/architecture-issue.md` and `build/architecture-review-pr.md`; neither has been transmitted.
+- Next action: owner review of the concrete proposal and remote-publication authorization. Do not resume implementation, old Tasks 11–12, or GitHub backlog restructuring automatically.
+
+## Preserved player-shell checkpoint — Task 11 / issue #6
+
+- At the start of that work, the tree was clean on main; existing local reports contained 400 test executions with no failed/error suites. These describe the earlier baseline, not the unfinished player build.
+- Preserve `b2bf830` for selective reuse after architecture approval; revised R6 explains the adaptation boundary.
+
 ## Latest checkpoint — renderer browser validation
 
 - Resumed the existing Task 10 / issue #5 implementation and PR #18; no replacement plan or game/runtime implementation was generated.

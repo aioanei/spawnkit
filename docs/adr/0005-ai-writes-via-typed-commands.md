@@ -2,6 +2,10 @@
 
 - Status: accepted (2026-11-19)
 
+Revision note (2026-11-20): typed editing, user acceptance, real-engine validation and honest replay remain. The new
+direction permits agents to discover/invoke actual editor capabilities and author custom programs. Small specs remain
+an optional frontend, not an exclusive JSON/configuration generation contract. See [ADR-0006](0006-general-purpose-engine-and-editor.md).
+
 ## Context
 
 LLM output can be malformed, inconsistent or unplayable. Letting a model write raw JSON or JSON Patch against the

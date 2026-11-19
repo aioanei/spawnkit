@@ -2,6 +2,10 @@
 
 - Status: accepted (2026-11-19)
 
+Revision note (2026-11-20): IDs/assets and existing fixture conventions remain valid. Tile-based units and bundle layout
+describe the legacy slice; general engine units and package persistence follow the revised requirements in
+[ADR-0006](0006-general-purpose-engine-and-editor.md). They are not grounds for restricting custom gameplay.
+
 ## Context
 
 The editor, runtime, renderer, validators and AI agents must agree on how things are identified, positioned and

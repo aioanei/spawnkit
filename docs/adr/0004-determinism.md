@@ -2,6 +2,10 @@
 
 - Status: accepted (2026-11-19)
 
+Revision note (2026-11-20): existing guarantees/tests remain binding. The target general engine extends the tested
+deterministic profile to scheduling, programs and registered package state; arbitrary third-party native code is not
+automatically deterministic. See [ADR-0006](0006-general-purpose-engine-and-editor.md); no existing check is weakened.
+
 ## Context
 
 Validation (reachability, playtest bot, economy checks), AI repair loops, replays and multiplayer-style features

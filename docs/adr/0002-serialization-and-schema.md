@@ -2,6 +2,9 @@
 
 - Status: accepted (2026-11-19)
 
+Scope after the 2026-11-20 revision request: this remains the legacy v1 document codec contract. It does not define
+future executable engine types or require all gameplay to fit this schema. See [ADR-0006](0006-general-purpose-engine-and-editor.md).
+
 ## Context
 
 Game Documents are saved by creators, published to the arcade, bundled into exported games, produced by AI agents,

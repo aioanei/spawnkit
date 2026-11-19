@@ -1,5 +1,12 @@
 # SpawnKit — Product & Architecture Design (approved 2026-11-19)
 
+> Historical approved design. On 2026-11-20 the owner superseded its document-centric architectural premise
+> with a SpawnKit-owned general-purpose engine/editor and guided creation for non-programmers. Follow the
+> [architecture revision](2026-11-20-general-purpose-engine.md) and [revised implementation plan](../plans/2026-11-20-engine-foundation-revision.md).
+> Product features and mandatory technologies remain; old architecture claims and daily estimates are not current
+> implementation instructions; the contest deadline is no longer an architectural constraint. Local gate commands
+> in AGENTS.md take precedence over the historical `allTests` example below.
+
 **Confirmed decisions (user, 2026-11-19):** eligible solo student entrant → contest-first scoping · product **SpawnKit**, GitHub repo `aioanei/spawnkit`, **public** · license **Apache-2.0** · AI providers **Anthropic (agents) + OpenAI (images)**, keys funded by user (est. $30–60 for dev + demo).
 
 ## 1. Context

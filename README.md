@@ -2,17 +2,24 @@
 
 **A Kotlin Multiplatform app that builds Kotlin Multiplatform games — where AI agents don't just generate content, they playtest it.**
 
-SpawnKit is a no-code 2D game creation studio. One deterministic Kotlin game runtime powers the in-editor preview,
-the browser arcade and standalone exported games for Android, iOS, desktop and the web. AI agents built with
-[JetBrains Koog](https://github.com/JetBrains/koog) design levels, characters and complete games through the same
-editing commands a human uses, and prove their output with the real engine before you accept it.
+SpawnKit is building a general-purpose, extensible Kotlin Multiplatform 2D engine with an integrated no-code visual
+editor. The product combines reusable engine capabilities, custom gameplay, [JetBrains Koog](https://github.com/JetBrains/koog)
+agents, publishing, monetization and a marketplace. Compose Multiplatform provides the editor and presentation;
+Ktor provides server services. SpawnKit owns its engine and extension APIs. Guided visual creation will let users
+build games without programming knowledge; AI assistance is optional. These are product goals; the current
+implemented slice is described below.
 
-> Status: under active development for the Kotlin Multiplatform Contest (KotlinConf 2027 edition).
+> Status: under active development. Capability and usability milestones guide delivery; the Kotlin Multiplatform
+> Contest is a showcase opportunity rather than an architectural constraint.
 > This README will grow a "try it in 2 minutes" section as features land.
 
 The current M1 work includes the versioned Game Document, the three-level Platformer Adventure template,
 the deterministic runtime, and a shared Compose `GameView` with keyboard/touch input and a HUD.
-The exported-game shells and browser deployment are the next tasks; the creator app still opens its initial shell.
+The creator app still opens its initial shell. Player-shell work is checkpointed separately; browser deployment
+is unfinished. The [general-purpose architecture revision](docs/design/2026-11-20-general-purpose-engine.md) and
+[revised plan](docs/plans/2026-11-20-engine-foundation-revision.md) record the accepted engine ownership and guided
+creation requirements; their runtime/editor implementation is future work. Existing platformer mechanics are a
+demo baseline, not the target engine's universal gameplay contract.
 
 See [PROGRESS.md](PROGRESS.md) for the latest checkpoint and [PLANS.md](PLANS.md) for the approved plan location.
 The renderer's [browser smoke check](tools/render-smoke/README.md) and [Wasm captures](docs/media/README.md)
