@@ -1,9 +1,9 @@
 # M0–M1 Bootstrap & Engine Core Implementation Plan
 
 > Historical plan: completed work is preserved. The owner requested a fundamental engine/editor architecture
-> revision on 2026-11-20. Remaining Tasks 11–12 are paused. Review the [new design](../design/2026-11-20-general-purpose-engine.md)
-> and [replacement sequence proposal](2026-11-20-engine-foundation-revision.md); do not execute this plan's remaining
-> steps or old skill instructions before architecture review. See [PROGRESS.md](../../PROGRESS.md) for checkpoint `b2bf830`.
+> revision on 2026-11-20. Remaining Tasks 11–12 are superseded by the R0–R9 dependency order. Follow the
+> [new design](../design/2026-11-20-general-purpose-engine.md) and [replacement sequence](2026-11-20-engine-foundation-revision.md);
+> do not execute this plan's remaining steps or old skill instructions. See [PROGRESS.md](../../PROGRESS.md) for checkpoint `b2bf830`.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 

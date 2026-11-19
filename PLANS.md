@@ -1,16 +1,18 @@
-# Project plan and architecture review
+# Current project plan
 
-The owner requested a fundamental architecture revision on 2026-11-20: a general-purpose, extensible 2D engine
-and integrated editor, with persistence secondary to executable capabilities.
+The owner requested a fundamental architecture revision on 2026-11-20, confirmed that SpawnKit owns its engine,
+selected guided visual creation for non-programmers, removed time pressure as an architectural constraint and
+requested implementation of the documentation revision. Persistence is secondary to executable capabilities.
 
-**Implementation is paused pending review.** The direction change is authorized; the specific architecture and
-replacement sequence are proposals. Do not resume old Tasks 11–12 or begin the proposed migration before review.
+**This checkpoint implements the plan/documentation revision only.** Engine/editor development remains unfinished.
+Complete R0 repository/GitHub reconciliation, then continue at R1. Do not resume the old Tasks 11–12 ordering or
+assume a library/backend has been selected. All product features and mandatory technologies remain.
 
-- Review proposal: [General-purpose engine design](docs/design/2026-11-20-general-purpose-engine.md).
+- Engine ownership, guided creation and usability requirements: [General-purpose engine design](docs/design/2026-11-20-general-purpose-engine.md).
 - Revised implementation sequence: [Engine foundation revision](docs/plans/2026-11-20-engine-foundation-revision.md).
 - Decision record: [ADR-0006](docs/adr/0006-general-purpose-engine-and-editor.md).
 - Historical approved plan: [M0–M1 Bootstrap & Engine Core](docs/plans/2026-11-19-m0-m1-bootstrap-and-engine.md).
-  Completed work remains valid; its remaining sequence is paused and proposed for replacement.
+  Completed work remains valid; its remaining sequence is superseded by R0–R9.
 
 - Preserved product requirements and historical architecture: [Original SpawnKit design](docs/design/2026-11-19-spawnkit-design.md).
 - Implemented architecture: [Architecture](docs/ARCHITECTURE.md).

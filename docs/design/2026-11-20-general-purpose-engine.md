@@ -1,12 +1,14 @@
 # SpawnKit — general-purpose engine architecture revision
 
-Status: **proposal for owner review**, 2026-11-20. The owner's change of direction is authoritative; the specific design below is recommended, not yet approved for implementation.
+Status: **accepted direction and creation requirements**, 2026-11-20. The owner confirmed engine ownership, removed time pressure as an architectural constraint, selected guided visual creation and requested implementation of the documentation revision. Dependency and backend choices still require R1 evidence. This document describes the target, not shipped functionality.
 
-This revision supersedes the document-first premise and affected future work in the [original design](2026-11-19-spawnkit-design.md). It preserves its product scope and mandatory technologies. The [revised implementation plan](../plans/2026-11-20-engine-foundation-revision.md) replaces the unfinished sequence only after review. Existing code remains working migration input.
+This revision supersedes the document-first premise and affected future work in the [original design](2026-11-19-spawnkit-design.md). It preserves its product scope and mandatory technologies. The [revised implementation plan](../plans/2026-11-20-engine-foundation-revision.md) replaces the unfinished sequence. Existing code remains working migration input.
 
 ## 1. Product and architectural objective
 
 SpawnKit is a general-purpose, extensible 2D game engine built with Kotlin Multiplatform, with an integrated Compose Multiplatform visual editor. Creators build games without code; developers can implement reusable components, behaviors and tools. Koog agents use real editor and engine capabilities to create, inspect, run, debug and validate games. Ktor powers publishing and hosted services. Monetization, export, arcade distribution and a marketplace remain part of the product.
+
+Engine ownership and accessible creation are equally important requirements. SpawnKit owns its runtime, gameplay APIs, behavior execution, editor capabilities and extension SDK. Focused supporting libraries are allowed; adopting another complete engine as SpawnKit's foundation is outside the accepted direction. A creator does not need programming knowledge, source code, serialized-file editing or technical identifiers to build a game. Developer code and advanced authoring remain optional ways to extend the same engine.
 
 The engine's capabilities are executable APIs and registered implementations. Scenes, entities, components, resources and programs exist as meaningful objects independently of their storage format. A project can be constructed, run and edited without first producing JSON or passing through a template document compiler.
 
@@ -39,16 +41,16 @@ The following recommendation is an engineering inference from the project's requ
 | Extensible scene tree / object components | Direct visual hierarchy, reusable scenes, approachable inspector and callbacks | Deep inheritance and implicit callback ordering can create coupling | Use scene composition and component APIs; avoid an inheritance tree of game genres |
 | Pure ECS as the public model | Open component types, queries and scheduled processing; efficient bulk updates | Does not supply visual authoring, programmable behavior, metadata, packages or persistence by itself | Keep ECS techniques available inside runtime storage; do not make creators author storage internals |
 | Scene/component authoring with scheduled runtime | Natural editor model plus explicit execution, replaceable storage and open types | Requires clear instance identity, lifecycle and authoring/runtime mapping | **Recommended**, with one capability/type contract and separate authoring and play instances |
-| Adopt a complete engine such as KorGE | Existing rendering, input and platform facilities | Compose embedding, headless operation, determinism and the full current target matrix need a real integration test | Credible alternative; previous blanket rejection is withdrawn. Evaluate integration before a large custom backend investment |
+| Adopt a complete engine such as KorGE | Existing rendering, input and platform facilities | Would place ownership of the engine foundation outside SpawnKit; integration/target suitability is also unproven | Researched alternative, excluded by the owner's engine-ownership requirement; individual supporting facilities may still be evaluated |
 | Keep the current closed document/compiler and add more mechanics | Smallest immediate change | New core cases still gate expressiveness | Rejected: does not satisfy the revised objective |
 
 Godot documents loosely coupled scene composition and distinguishes nodes' functionality from reusable resource data. Unity Entities separates identity, data and processing. These are useful precedents, rather than specifications to copy. [Godot scene organization](https://docs.godotengine.org/en/stable/tutorials/best_practices/scene_organization.html), [Godot resources](https://docs.godotengine.org/en/stable/tutorials/scripting/resources.html), [Unity ECS concepts](https://docs.unity3d.com/Packages/com.unity.entities@1.3/manual/concepts-intro.html).
 
 ### Library selection
 
-Recommend retaining the existing Compose presentation path and introducing a small component-runtime abstraction, with a bounded comparison of Fleks versus a simple custom store before choosing its implementation. Fleks is an MIT Kotlin multiplatform ECS candidate. KorGE is a Kotlin multiplatform engine candidate, not proven incompatible with Compose by this review. Neither repository proves SpawnKit's entire platform, determinism or embedding contract. [Fleks](https://github.com/Quillraven/Fleks), [KorGE](https://github.com/korlibs/korge).
+Retain the existing Compose presentation path and introduce SpawnKit's component-runtime API, comparing Fleks versus a simple custom store behind it before choosing the storage implementation. Fleks is an MIT Kotlin multiplatform ECS candidate. KorGE remains a researched engine alternative; any selected facility from it must remain a focused implementation dependency rather than replacing SpawnKit's engine/program/editor contracts. Neither repository proves SpawnKit's entire platform or determinism contract. [Fleks](https://github.com/Quillraven/Fleks), [KorGE](https://github.com/korlibs/korge).
 
-The comparison must measure target compilation, dynamic lifecycle, ordering, snapshots, headless replay, external type registration, dependencies/license, current toolchain compatibility and representative entity counts. A heavyweight ECS rewrite is not justified by a label or an assumed performance benefit. If KorGE demonstrably reduces work while satisfying the mandatory boundaries, select its relevant facilities; otherwise retain the current host and record the evidence. No dependency is adopted in this proposal.
+The comparison must measure target compilation, dynamic lifecycle, ordering, snapshots, headless replay, external type registration, dependencies/license, current toolchain compatibility and representative entity counts. A heavyweight ECS rewrite is not justified by a label or an assumed performance benefit. Select focused libraries for demonstrated technical suitability while retaining engine ownership; delivery speed or a contest deadline cannot justify changing these boundaries. No dependency is adopted by this document.
 
 ## 4. Recommended architecture
 
@@ -92,6 +94,8 @@ World units are abstract engine units; a tile grid selects its cell size. Preser
 
 Runtime components and behaviors are not a sealed union in `core/model`. An extension registers a stable namespaced type ID, factory, lifecycle hooks and descriptors for properties, functions and events. Descriptors declare value types, constraints, documentation, version, availability, effects and deterministic compatibility. Serialization codecs, property inspectors, graph nodes and validators attach to this type contract rather than defining it.
 
+Authoring descriptors also provide friendly display names, explanations, categories, sensible defaults, units, constraints, object/resource reference pickers, examples, contextual help and visibility levels. These drive usable property controls and behavior forms automatically, including for extension-defined capabilities. Custom inspectors may improve that baseline but are not required for every package. Raw type IDs, expression syntax and serializer fields are not the beginner interface. Editor wording can present entities/components as Objects, Properties, Behaviors and Game rules without changing engine semantics.
+
 Use explicit common Kotlin descriptors initially; generate repetitive bindings later only when justified. Do not depend on JVM reflection or serializer metadata to discover all executable capabilities. Bevy's type registry is a useful precedent for associating metadata and optional operations; it is not a proposed Rust dependency. [Bevy reflection/type registration](https://docs.rs/bevy_reflect/latest/bevy_reflect/), [Kotlin reflection](https://kotlinlang.org/docs/reflection.html).
 
 Keep engine operations, editor operations and platform services distinct. A property getter or collider query can be exposed to all three relevant consumers; installing packages or publishing a game is a host operation with separate effects. Shared registration does not mean an in-game script can invoke every editor or network tool.
@@ -131,6 +135,31 @@ Editor operations create/delete/reparent entities, attach components/behaviors, 
 Koog tools adapt these real typed operations. Agents discover installed capabilities, inspect objects, construct behavior, run a staged workspace in the real engine, inspect results/traces and propose a transaction. Human acceptance commits against the expected workspace revision; rejection discards the staged changes. UI and AI must have equivalent effects and validation. A compact level/character specification may remain a convenient tool argument, but it is only one frontend to this capability surface. JSON transport of tool arguments does not define game semantics. [Koog class-based tools](https://docs.koog.ai/tools/class-based-tools/).
 
 Preserve Level Designer, Character Forge and Game Architect, procedural creation, repair loops, media generation, cost/budget controls, cancel, history and labelled replay. Extend agents to create new behavior/functions and use installed extensions, rather than limiting them to predefined template mechanics. Generated Kotlin/native code, if offered later, follows a separate reviewed build workflow; it is not silently executed as a normal agent tool.
+
+### 6.1 Guided visual creation
+
+Guided visual creation is the default. AI is an optional helper throughout; a functional blank project and visual authoring tools do not require templates, model credentials or AI-generated starting content.
+
+| Step | Creator action | Required behavior |
+|---|---|---|
+| Start | Create a blank project or choose an optional example | Blank projects have a usable scene and clear next actions; onboarding can be skipped or resumed |
+| Build | Drag objects into the scene; arrange and customize them | Direct manipulation, visible selection, drag-and-drop placement and immediate feedback |
+| Add behavior | Choose a capability and adjust its settings | Friendly behavior forms with useful defaults, examples and a live preview where applicable |
+| Create rules | Assemble When / If / Do statements | Object pickers, dropdowns and visual value controls; no required code, expression strings or technical IDs |
+| Test | Press Play, inspect the result and return to editing | Safe Play/Stop, visible behavior feedback and a clear route to the responsible object/rule |
+| Share | Select an export or publishing destination | Guided validation, progress, actionable failures and explanations of actual platform/account requirements |
+
+For example, a creator assembles: **When the character touches this object, increase Score by 1 and remove the object.** The UI offers each part as a selectable field and can create the Score counter through a visual action. No one needs to type that sentence as code or understand how it is stored.
+
+Ready-made movement, interaction and animation behaviors are editable assemblies built with public engine capabilities. They are conveniences, not the finite vocabulary of allowed mechanics. Guided steps scaffold the same functions and behavior programs used by event sheets, advanced graphs, agents and developer extensions. Users can compose unfamiliar logic through these tools; there is no separate beginner execution model or project format.
+
+### 6.2 Learnability, recovery and accessibility
+
+Provide contextual instructions, inline examples, sensible defaults, optional onboarding, immediate previews, undo/redo, autosave and recoverable failures. Errors identify the object or behavior, explain the problem in plain language and offer a corrective action; stack traces and internal IDs belong in optional diagnostics. Missing dependencies and failed AI edits must preserve the creator's work. AI proposals explain understandable changes and offer runnable previews before acceptance.
+
+Progressive disclosure reveals advanced graphs, reusable functions, types and technical settings without making them prerequisites for ordinary creation. Basic and advanced views edit the same project and retain each other's work. Keyboard navigation, visible focus, readable contrast and scalable text are acceptance requirements. Creator scope remains desktop/web first, with tablet/mobile editing following the retained roadmap; player touch support remains mandatory on mobile.
+
+Platform publishing may require external accounts, signing or platform consent; the guided flow must explain these requirements and preserve progress. Ordinary local game creation and play must work without AI credentials, payment setup or mandatory cloud services.
 
 ## 7. Determinism, testing and validation
 
@@ -193,10 +222,16 @@ The foundation is not complete until these are demonstrated:
 5. UI and agent operations produce equivalent results; undo restores authoring state; Play/Stop isolates runtime changes. Save/load is tested separately from those capabilities.
 6. The registered deterministic profile produces equivalent results across JVM, JS, Wasm and supported Native targets. Legacy regressions continue to pass during migration.
 
+### Usability release gate
+
+The engine/editor release also requires evidence from first-time non-programmers. At least four of five participants must independently create and modify a small playable game, correct a seeded rule/object mistake, undo a change, save/reopen and launch it. Built-in guidance is allowed; instructor intervention and AI assistance are excluded from this baseline. Record observed results and failures without presenting an internal walkthrough as a completed user study.
+
+Repeat creation exercises across two mechanically different games and an extension-provided behavior. Verify the export flow separately on supported targets. None of these creation exercises may require coding, JSON editing, technical IDs or API keys. Observe completion and recovery, rather than imposing a time-to-completion deadline. This usability gate supplements all engine/extension proofs; passing one does not replace the other.
+
 ## 11. Product commitments and delivery
 
 All original product features remain: no-code visual editing, templates and character evolution, Koog agent roles and real-engine verification, transparent art generation, honest replay, procedural generation, desktop/web/Android/iOS players, Pages arcade, Ktor publishing, per-game identity/builds, accounts/sync, analytics, cloud builds, monetization/ads/consent/IAP, creator-owned accounts, marketplace licensing/provenance/moderation/payments and managed publishing subject to platform review. Story/quest/inventory tools, animation tooling, agentic characters and later 3D remain on the longer-term roadmap.
 
-The existing contest deadline is retained as a planning constraint, not a claim that a commercial Unity/Godot-scale platform can be completed by 7 December. The former daily schedule depended on a narrower engine and is no longer a reliable estimate. Re-estimate after the first foundation gate. Prioritize a small demonstrably general engine, an editor-authored mechanic, real AI/tool interaction and runnable exports. The full commercial roadmap remains, with revised dates to be agreed after measured progress.
+The owner explicitly removed time pressure as an architectural constraint. Progress follows capability, correctness and usability gates, with estimates describing measured work. The former contest-driven daily schedule and cut-lines no longer determine engine scope or design. The contest remains a showcase opportunity for the version ready at submission; it does not justify weakening engine generality, extension ownership or beginner usability. The full commercial roadmap remains.
 
-No implementation under this architecture starts in this revision. Review the recommendation, tradeoffs and [replacement sequence](../plans/2026-11-20-engine-foundation-revision.md) first.
+This checkpoint implements the documentation revision only. Runtime/editor migration proceeds through the [replacement sequence](../plans/2026-11-20-engine-foundation-revision.md), starting with R1 evidence after the R0 repository/GitHub reconciliation. Do not restart the old Tasks 11–12 sequence or claim planned interfaces are already implemented.

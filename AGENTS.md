@@ -9,25 +9,37 @@ Compose Multiplatform no-code editor, Koog agents, Ktor services, publishing, mo
 Creators and agents use real engine/editor capabilities to build and validate games; developers can add reusable
 components, behaviors and tools without modifying engine source. Persistence formats are implementation details.
 The existing document-driven platformer is a migration baseline and demonstration, not the general engine contract.
-Current architecture proposal: [general-purpose revision](docs/design/2026-11-20-general-purpose-engine.md).
+Current architecture and creation requirements: [general-purpose revision](docs/design/2026-11-20-general-purpose-engine.md).
 Plan/status: [PLANS.md](PLANS.md), [PROGRESS.md](PROGRESS.md).
 
-## Architecture review hold
+## Current direction and implementation checkpoint
 
-The owner requested this direction change on 2026-11-20 and required plan revision before implementation.
-**Implementation is paused pending review of the proposed architecture and revised plan.** Do not resume the old
-Tasks 11–12 sequence or treat the proposed pattern/library choices as accepted. Preserve completed work and the
-unfinished player checkpoint `b2bf830` on `feat/6-player-shells`. JSON remains allowed for storage/transport;
-do not make its schema or a closed list of gameplay mechanics the central engine API.
+The owner confirmed engine ownership and guided creation for non-programmers, removed time pressure as an
+architectural constraint, then requested implementation of the documentation revision. This checkpoint updates
+the plan only; runtime/editor migration is not implemented. Complete R0 reconciliation, then start R1 in the
+revised dependency order. Do not resume the old Tasks 11–12 sequence or treat unselected libraries as approved.
+Preserve completed work and player checkpoint `b2bf830` on `feat/6-player-shells`. JSON remains allowed for
+storage/transport; its schema and a closed list of gameplay mechanics cannot define engine capability.
+
+- SpawnKit owns the runtime, gameplay APIs, behavior execution, editor capabilities and extension SDK. Focused
+  libraries are allowed; another complete engine cannot become the foundation.
+- Guided visual creation is the default: blank projects or optional examples, drag-and-drop objects, friendly
+  behaviors and visual When / If / Do rules. AI, coding and technical IDs are not prerequisites.
+- Basic/advanced tools, agents and extensions share one executable model. Metadata must generate usable property
+  controls/behavior forms for installed capabilities; custom inspectors are optional enhancements.
+- Contextual help, previews, undo/redo, autosave/recovery, explainable errors, keyboard access and scalable text
+  are acceptance requirements. Keep advanced graphs/types/settings progressively disclosed.
+- Technical and novice-usability gates determine readiness. Contest deadlines and delivery speed do not justify
+  restricting engine expressiveness, ownership or usability. See the revised plan for the four-of-five novice gate.
 
 ## Module map
 
 | Module | Kind | Purpose |
 |---|---|---|
 | `build-logic/` | included build | convention plugins `spawnkit.kmp.core`, `spawnkit.kmp.compose`, `spawnkit.quality` |
-| `core/model` | KMP, all targets | existing v1 document schema, IDs, serialization and migrations; legacy import boundary in the proposal |
+| `core/model` | KMP, all targets | existing v1 document schema, IDs, serialization and migrations; legacy import boundary in the target design |
 | `core/templates` | KMP, all targets | existing embedded template fixtures; preserve during migration |
-| `core/engine` | KMP, all targets | current tested platformer runtime; proposed evolution to a general world/component/scheduler API |
+| `core/engine` | KMP, all targets | current tested platformer runtime; planned evolution to a general world/component/scheduler API |
 | `core/validation` | KMP, all targets | integrity checks, reachability solver, playtest, economy check |
 | `core/editing` | KMP, all targets | planned real workspace operations, undo/redo, transactions and changesets |
 | `core/api` | KMP, all targets | client/server DTOs |
@@ -38,7 +50,7 @@ do not make its schema or a closed list of gameplay mechanics the central engine
 | `server` | Ktor (JVM) | publishing, arcade hosting, validation |
 
 This table distinguishes existing responsibilities where affected; it is not a claim that planned modules exist.
-Future proposed boundaries are in the revision. Modules that do not exist yet are created by the milestone that
+Future boundaries are in the revision. Modules that do not exist yet are created by the milestone that
 needs them; do not add empty placeholder modules.
 
 "All targets" = `jvm`, `android`, `iosArm64`, `iosSimulatorArm64`, `js`, `wasmJs`, `mingwX64`, `linuxX64`.
@@ -68,7 +80,7 @@ unavailable on most machines. Use the aggregates above.
   `min`, `max` on `Double`; no `pow`, trigonometry, `exp`, `ln`, wall-clock time, randomness without the seeded RNG,
   or platform calls. A cross-target golden hash test enforces this.
 - Existing platformer units: 1 world unit = 1 tile; y axis points down; entity position is the top-left corner of
-  its AABB. General engine units/transform facilities are part of the revision under review.
+  its AABB. General engine units/transform facilities follow the revised plan when implemented.
 - Serialization (existing document codecs): every polymorphic subtype has an explicit `@SerialName`; never name
   a property `type`; class discriminator is `kind`; bump `CURRENT_SCHEMA_VERSION` and add a `JsonElement` migration
   for breaking changes.
@@ -91,8 +103,8 @@ unavailable on most machines. Use the aggregates above.
 
 ## Workflow
 
-1. While the architecture review hold is active, complete documentation/research only. After review, pick work
-   from the revised dependency order and the lowest open milestone on GitHub, `priority:high` issues first.
+1. Continue from the documented checkpoint in the revised R0–R9 dependency order and the lowest open milestone
+   on GitHub, `priority:high` issues first. Complete R0 reconciliation before starting R1.
    Each task has an issue with an objective, requirements and acceptance criteria.
 2. Branch from `main`: `feat|fix|chore|docs|test/<issue-number>-<slug>`.
 3. Test first where practical; keep commits small, using Conventional Commits (`feat(engine): …`).
