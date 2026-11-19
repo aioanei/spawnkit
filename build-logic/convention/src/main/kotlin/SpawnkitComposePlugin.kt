@@ -1,5 +1,7 @@
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.plugins.ExtensionAware
 import org.gradle.kotlin.dsl.configure
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
@@ -13,6 +15,10 @@ class SpawnkitComposePlugin : Plugin<Project> {
             pluginManager.apply("org.jetbrains.kotlin.plugin.compose")
             extensions.configure<KotlinMultiplatformExtension> {
                 configureSpawnkitTargets(this, nativeDesktop = false, nodeTests = false)
+                // Compose resources (fonts, images) must be packaged into the Android library.
+                (this as ExtensionAware).extensions.configure<KotlinMultiplatformAndroidLibraryTarget>("android") {
+                    androidResources { enable = true }
+                }
                 sourceSets.getByName("commonMain").dependencies {
                     listOf(
                         "compose-runtime",
