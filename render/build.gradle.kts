@@ -7,5 +7,8 @@ kotlin {
         commonMain.dependencies {
             api(project(":core:engine"))
         }
+        commonTest.dependencies {
+            implementation(project(":core:templates"))
+        }
     }
 }

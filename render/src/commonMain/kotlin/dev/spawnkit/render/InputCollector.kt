@@ -10,21 +10,25 @@ import dev.spawnkit.engine.InputFrame
 
 /** Collects keyboard and on-screen button state into the [InputFrame] read by each simulation tick. */
 internal class InputCollector {
-    private var keyBits = 0
+    private val heldKeys = mutableSetOf<Key>()
     private var touchBits = 0
 
-    fun frame(): InputFrame = InputFrame(keyBits or touchBits)
+    fun frame(): InputFrame = heldKeys.fold(InputFrame(touchBits)) { frame, key -> frame + checkNotNull(actionFor(key)) }
 
     /** Handles a key event; returns `true` if the key is a game control. */
-    fun onKeyEvent(event: KeyEvent): Boolean {
-        val action = actionFor(event.key) ?: return false
-        val mask = InputFrame.of(action).bits
-        keyBits =
-            when (event.type) {
-                KeyEventType.KeyDown -> keyBits or mask
-                KeyEventType.KeyUp -> keyBits and mask.inv()
-                else -> return false
-            }
+    fun onKeyEvent(event: KeyEvent): Boolean =
+        when (event.type) {
+            KeyEventType.KeyDown -> setKey(event.key, true)
+            KeyEventType.KeyUp -> setKey(event.key, false)
+            else -> false
+        }
+
+    fun setKey(
+        key: Key,
+        down: Boolean,
+    ): Boolean {
+        if (actionFor(key) == null) return false
+        if (down) heldKeys.add(key) else heldKeys.remove(key)
         return true
     }
 
@@ -38,7 +42,12 @@ internal class InputCollector {
 
     /** Releases all keys, e.g. when the game loses focus, so no key stays stuck. */
     fun clearKeys() {
-        keyBits = 0
+        heldKeys.clear()
+    }
+
+    fun clear() {
+        clearKeys()
+        touchBits = 0
     }
 
     private fun actionFor(key: Key): InputAction? =

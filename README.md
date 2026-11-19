@@ -10,6 +10,10 @@ editing commands a human uses, and prove their output with the real engine befor
 > Status: under active development for the Kotlin Multiplatform Contest (KotlinConf 2027 edition).
 > This README will grow a "try it in 2 minutes" section as features land.
 
+The current M1 work includes the versioned Game Document, the three-level Platformer Adventure template,
+the deterministic runtime, and a shared Compose `GameView` with keyboard/touch input and a HUD.
+The exported-game shells and browser deployment are the next tasks; the creator app still opens its initial shell.
+
 ## Build
 
 Requirements: JDK 21, Android SDK (for Android targets). iOS builds require macOS with Xcode.

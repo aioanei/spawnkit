@@ -3,11 +3,15 @@ package dev.spawnkit.render
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -19,7 +23,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -47,30 +50,40 @@ public fun GameView(
     showTouchControls: Boolean = defaultShowTouchControls(),
     onEvents: (List<GameEvent>) -> Unit = {},
 ) {
-    val input = remember { InputCollector() }
-    val painter = remember { WorldPainter() }
+    val input = remember(session, paused) { InputCollector() }
+    val painter = remember(session) { WorldPainter() }
+    val positions = remember(session) { RenderPositions() }
     val focus = remember { FocusRequester() }
     val currentOnEvents by rememberUpdatedState(onEvents)
     val currentPaused by rememberUpdatedState(paused)
     var frameTime by remember { mutableLongStateOf(0L) }
+    var alpha by remember { mutableDoubleStateOf(1.0) }
 
-    LaunchedEffect(session) {
+    DisposableEffect(input) { onDispose { input.clear() } }
+    LaunchedEffect(session, input) {
         val clock = FixedStepClock()
         while (true) {
             withFrameNanos { now ->
                 if (currentPaused) {
                     clock.reset()
+                    positions.capture(session.world)
+                    alpha = 1.0
                 } else {
-                    repeat(clock.advance(now)) {
+                    for (step in 0 until clock.advance(now)) {
+                        val world = session.world
+                        positions.capture(world)
                         val events = session.step(input.frame())
+                        if (GameEvent.PlayerDied in events) positions.capture(world)
                         if (events.isNotEmpty()) currentOnEvents(events)
+                        if (session.world !== world) break
                     }
+                    alpha = clock.alpha
                 }
                 frameTime = now
             }
         }
     }
-    LaunchedEffect(Unit) { focus.requestFocus() }
+    LaunchedEffect(input) { if (!paused) focus.requestFocus() }
 
     val fontFamily = FontFamily(Font(Res.font.lilita_one))
     Box(
@@ -78,24 +91,22 @@ public fun GameView(
             .background(LetterboxColor)
             .semantics { contentDescription = "Game: ${session.project.meta.name}" }
             .focusRequester(focus)
-            .onFocusChanged { if (!it.isFocused) input.clearKeys() }
-            .focusable()
-            .onPreviewKeyEvent(input::onKeyEvent)
-            .pointerInput(Unit) {
-                awaitPointerEventScope {
-                    while (true) {
-                        awaitPointerEvent(PointerEventPass.Initial)
-                        focus.requestFocus()
-                    }
+            .onFocusChanged { if (!it.isFocused) input.clear() }
+            .onPreviewKeyEvent { !paused && input.onKeyEvent(it) }
+            .focusable(enabled = !paused)
+            .pointerInput(focus, paused) {
+                awaitEachGesture {
+                    awaitFirstDown(requireUnconsumed = false)
+                    if (!paused) focus.requestFocus()
                 }
             },
     ) {
         Canvas(Modifier.fillMaxSize()) {
-            check(frameTime >= 0L) // Reading the frame state re-draws the canvas every frame.
-            painter.draw(this, session.world)
+            // Reading the frame state invalidates drawing even on frames with no simulation tick.
+            frameTime.let { painter.draw(this, session.world, positions, alpha) }
         }
         Hud(session.world, frameTime, fontFamily, Modifier.align(Alignment.TopStart))
-        if (showTouchControls) TouchControls(input)
+        if (showTouchControls && !paused) TouchControls(input)
     }
 }
 

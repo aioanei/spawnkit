@@ -41,6 +41,8 @@ internal class WorldPainter {
     fun draw(
         scope: DrawScope,
         world: RuntimeWorld,
+        positions: RenderPositions,
+        alpha: Double,
     ): Unit =
         with(scope) {
             prepare(world)
@@ -51,8 +53,8 @@ internal class WorldPainter {
             val p = world.playerIndex
             val camera =
                 cameraOrigin(
-                    targetX = world.x(p) + world.bodyWidth(p) / 2,
-                    targetY = world.y(p) + world.bodyHeight(p) / 2,
+                    targetX = positions.x(world, p, alpha) + world.bodyWidth(p) / 2,
+                    targetY = positions.y(world, p, alpha) + world.bodyHeight(p) / 2,
                     viewW = settings.viewportTiles.width,
                     viewH = settings.viewportTiles.height,
                     sceneW =
@@ -72,7 +74,7 @@ internal class WorldPainter {
                 )
                 val frame = Frame(t, camera)
                 drawTiles(world, frame)
-                drawEntities(world, frame)
+                drawEntities(world, frame, positions, alpha)
             }
         }
 
@@ -213,6 +215,8 @@ internal class WorldPainter {
     private fun DrawScope.drawEntities(
         world: RuntimeWorld,
         f: Frame,
+        positions: RenderPositions,
+        alpha: Double,
     ) {
         val s = f.t.scale
         val p = world.playerIndex
@@ -226,11 +230,11 @@ internal class WorldPainter {
             val visual = world.visual(i) ?: continue
             val tags = entityTags.getOrElse(i) { emptySet() }
             val bob = if ("pickup" in tags) (sin(world.tick / 9.0 + i) * 0.06).toFloat() * s else 0f
-            val left = f.sx(world.x(i))
-            val top = f.sy(world.y(i)) + bob
+            val left = f.sx(positions.x(world, i, alpha))
+            val top = f.sy(positions.y(world, i, alpha)) + bob
             val w = (visual.size.width * s).toFloat()
             val h = (visual.size.height * s).toFloat()
-            val color = visual.color.toColor()
+            val color = visual.color.toColor().let { if (i == p && world.playerInGracePeriod) it.copy(alpha = 0.55f) else it }
             when {
                 "goal" in tags -> drawFlag(color, left, top, w, h, big = true)
                 "checkpoint" in tags -> drawFlag(color, left, top, w, h, big = false)
@@ -238,7 +242,7 @@ internal class WorldPainter {
             }
             when {
                 i == p -> drawEyes(left, top, w, h, playerFacing)
-                "enemy" in tags -> drawEyes(left, top, w, h, if (world.vx(i) < 0.0) -1f else 1f)
+                "enemy" in tags -> drawEyes(left, top, w, h, world.direction(i).toFloat())
                 "pickup" in tags -> drawCircle(Color.White.copy(alpha = 0.7f), w * 0.14f, Offset(left + w * 0.34f, top + h * 0.32f))
             }
         }

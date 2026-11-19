@@ -54,12 +54,15 @@ private fun HoldButton(
             .size(76.dp)
             .background(Color(0x55FFFFFF), CircleShape)
             .semantics { contentDescription = label }
-            .pointerInput(action) {
+            .pointerInput(input, action) {
                 awaitEachGesture {
                     awaitFirstDown().consume()
                     input.press(action)
-                    waitForUpOrCancellation()
-                    input.release(action)
+                    try {
+                        waitForUpOrCancellation()
+                    } finally {
+                        input.release(action)
+                    }
                 }
             },
     ) {

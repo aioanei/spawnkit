@@ -26,11 +26,16 @@ and roadmap live in the [design document](design/2026-11-19-spawnkit-design.md).
 
 1. **Document** (`core/model`): immutable, serializable authoring data. Stable string IDs; `schemaVersion` with
    `JsonElement` migrations. Nothing in the document is executable code.
-2. **Runtime** (`core/engine`): `WorldCompiler.compile(project, scene)` resolves IDs to array indices, merges prefab
-   components and parses expressions into a mutable `RuntimeWorld`. `GameSession.step(InputFrame)` advances one
+2. **Runtime** (`core/engine`): `WorldCompiler.compile(project, scene)` resolves IDs to array indices and merges prefab
+   components into a mutable `RuntimeWorld`. `GameSession.step(InputFrame)` advances one
    1/60 s tick and returns `GameEvent`s. Rendering never mutates simulation state.
 3. **Presentation** (`render`): `GameView` drives `FixedStepClock` from `withFrameNanos`, collects keyboard, mouse
    and touch input, and paints the world with Compose `Canvas` inside a letterboxed virtual viewport.
+   Previous entity positions and interpolation live in the renderer; rendering never changes simulation state.
+   The camera follows the interpolated player position, clamps to scene bounds and centers smaller scenes.
+   Arrow keys/A/D move, Space/W/Up jump, S/Down and E/Enter map to down/action; Android and iOS show hold buttons
+   by default. Losing focus clears held input. Pausing resets the clock and input; session replacement starts fresh.
+   The HUD follows `GameSettings.hud` order and uses bundled OFL-licensed Lilita One, including on Wasm.
 4. **Shells**: `player/*` (exported games) and `app/*` (creator) are thin platform entry points over shared UI.
 5. **Services** (`server`): publish and serve game bundles; validate them with `core/validation` before accepting.
 
@@ -45,5 +50,7 @@ JS, Wasm, mingwX64, linuxX64 and the iOS simulator. See [ADR-0004](adr/0004-dete
 | Area | State |
 |---|---|
 | Build, CI, conventions | done (M0) |
-| Document model, engine, renderer, players | in progress (M1) |
+| Document model, platformer engine, determinism clock and golden test | implemented; PR stack awaiting owner review (M1) |
+| Renderer: viewport, camera, keyboard/touch, interpolation, HUD | implemented (M1) |
+| Exported-game shells and browser deployment | next (M1) |
 | Editor, validation, AI Studio, publishing | planned (M2–M5) |

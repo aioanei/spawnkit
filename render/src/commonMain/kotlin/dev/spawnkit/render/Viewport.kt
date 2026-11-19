@@ -24,7 +24,9 @@ public fun computeViewport(
     virtualW: Float,
     virtualH: Float,
 ): ViewportTransform {
-    if (containerW <= 0f || containerH <= 0f || virtualW <= 0f || virtualH <= 0f) {
+    if (!containerW.isFinite() || !containerH.isFinite() || !virtualW.isFinite() || !virtualH.isFinite() ||
+        containerW <= 0f || containerH <= 0f || virtualW <= 0f || virtualH <= 0f
+    ) {
         return ViewportTransform(0f, 0f, 0f, 0f, 0f)
     }
     val scale = minOf(containerW / virtualW, containerH / virtualH)

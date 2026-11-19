@@ -37,4 +37,11 @@ class ViewportTest {
         val t = computeViewport(containerW = 0f, containerH = 500f, virtualW = 20f, virtualH = 11.25f)
         assertEquals(0f, t.scale)
     }
+
+    @Test
+    fun nonFiniteDimensionsYieldZeroScale() {
+        assertEquals(0f, computeViewport(Float.NaN, 900f, 20f, 11.25f).scale)
+        assertEquals(0f, computeViewport(1600f, Float.POSITIVE_INFINITY, 20f, 11.25f).scale)
+        assertEquals(0f, computeViewport(1600f, 900f, Float.POSITIVE_INFINITY, 11.25f).scale)
+    }
 }
