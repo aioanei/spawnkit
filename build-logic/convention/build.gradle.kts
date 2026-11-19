@@ -20,6 +20,10 @@ gradlePlugin {
             id = "spawnkit.kmp.compose"
             implementationClass = "SpawnkitComposePlugin"
         }
+        register("spawnkitTemplates") {
+            id = "spawnkit.templates"
+            implementationClass = "SpawnkitTemplatesPlugin"
+        }
         register("spawnkitQuality") {
             id = "spawnkit.quality"
             implementationClass = "SpawnkitQualityPlugin"
