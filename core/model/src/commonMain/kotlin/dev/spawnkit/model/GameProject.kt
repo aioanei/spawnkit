@@ -8,7 +8,8 @@ public const val CURRENT_SCHEMA_VERSION: Int = 1
 /**
  * A complete game: the single source of truth edited by the creator app and AI agents and played by the runtime.
  *
- * @property tileset legend mapping single-character strings to tile definitions; `.` and space are always empty.
+ * @property tileset legend mapping tile characters to tile definitions (JSON keys are one-character strings);
+ * `.` and space are always empty.
  * @property scenes levels in play order.
  */
 @Serializable
@@ -17,7 +18,7 @@ public data class GameProject(
     val id: ProjectId,
     val meta: ProjectMeta,
     val settings: GameSettings,
-    val tileset: Map<String, TileDef> = emptyMap(),
+    val tileset: Map<Char, TileDef> = emptyMap(),
     val variables: List<VariableDef> = emptyList(),
     val prefabs: List<Prefab> = emptyList(),
     val scenes: List<Scene>,

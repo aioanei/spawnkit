@@ -1,6 +1,7 @@
 package dev.spawnkit.model
 
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -15,6 +16,11 @@ public data class Vec2(
     val x: Double,
     val y: Double,
 ) {
+    init {
+        require(x.isFinite() && y.isFinite()) { "Vec2 components must be finite: ($x, $y)" }
+    }
+
+    /** Common vectors. */
     public companion object {
         /** The origin. */
         public val Zero: Vec2 = Vec2(0.0, 0.0)
@@ -26,7 +32,11 @@ public data class Vec2(
 public data class Size2(
     val width: Double,
     val height: Double,
-)
+) {
+    init {
+        require(width.isFinite() && height.isFinite()) { "Size2 components must be finite: ($width, $height)" }
+    }
+}
 
 /** A size in whole tiles. */
 @Serializable
@@ -39,12 +49,15 @@ public data class GridSize(
 @Serializable
 public enum class Shape {
     /** Axis-aligned rectangle. */
+    @SerialName("rect")
     Rect,
 
     /** Rectangle with rounded corners. */
+    @SerialName("roundedRect")
     RoundedRect,
 
     /** Ellipse inscribed in the visual's bounds. */
+    @SerialName("circle")
     Circle,
 }
 
@@ -64,6 +77,7 @@ public data class ColorRgba(
     /** Formats the color as `#AARRGGBB`. */
     public fun toHex(): String = "#" + argb.toString(HEX_RADIX).uppercase().padStart(ARGB_DIGITS, '0')
 
+    /** Parsing helpers. */
     public companion object {
         private const val HEX_RADIX = 16
         private const val ARGB_DIGITS = 8
@@ -74,6 +88,7 @@ public data class ColorRgba(
         public fun parseOrNull(text: String): ColorRgba? {
             if (!text.startsWith('#')) return null
             val digits = text.substring(1)
+            if (digits.isEmpty() || !digits.all { it in '0'..'9' || it in 'a'..'f' || it in 'A'..'F' }) return null
             val value = digits.toLongOrNull(HEX_RADIX) ?: return null
             return when (digits.length) {
                 ARGB_DIGITS -> ColorRgba(value)

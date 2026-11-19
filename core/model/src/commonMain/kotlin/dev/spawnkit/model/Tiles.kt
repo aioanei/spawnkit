@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 
 /** How a tile behaves in the simulation. */
 @Serializable
-public enum class TileKind {
+public enum class TileBehavior {
     /** Nothing; entities pass through. */
     @SerialName("empty")
     Empty,
@@ -30,13 +30,13 @@ public enum class TileKind {
 /**
  * Legend entry for one tile character.
  *
- * @property kind physical behavior.
+ * @property behavior physical behavior.
  * @property color fill color when no [asset] is set (or while it loads).
  * @property asset optional image drawn for this tile.
  */
 @Serializable
 public data class TileDef(
-    val kind: TileKind,
+    val behavior: TileBehavior,
     val color: ColorRgba,
     val asset: AssetId? = null,
 )

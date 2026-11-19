@@ -9,9 +9,9 @@ internal fun sampleProject(): GameProject {
         settings = GameSettings(startScene = SceneId("level-1"), hud = listOf(coins)),
         tileset =
             mapOf(
-                "#" to TileDef(TileKind.Solid, ColorRgba(0xFF5B6EE1)),
-                "=" to TileDef(TileKind.OneWay, ColorRgba(0xFF8F9BEF)),
-                "^" to TileDef(TileKind.Hazard, ColorRgba(0xFFE15B5B)),
+                '#' to TileDef(TileBehavior.Solid, ColorRgba(0xFF5B6EE1)),
+                '=' to TileDef(TileBehavior.OneWay, ColorRgba(0xFF8F9BEF)),
+                '^' to TileDef(TileBehavior.Hazard, ColorRgba(0xFFE15B5B)),
             ),
         variables = listOf(VariableDef(coins, name = "Coins")),
         prefabs =
