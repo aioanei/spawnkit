@@ -1,6 +1,7 @@
 rootProject.name = "SpawnKit"
 
 pluginManagement {
+    includeBuild("build-logic")
     repositories {
         google {
             mavenContent {
