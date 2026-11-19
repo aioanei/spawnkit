@@ -1,9 +1,9 @@
 package dev.spawnkit.engine
 
 /**
- * Axis-separated movement of an entity's collision box against the tile grid. Callers must keep |delta| below one
- * tile per step (guaranteed by [dev.spawnkit.model.PhysicsSettings.maxFallSpeed] < 60 and sane move speeds), so only
- * the leading edge needs to be tested and bodies cannot tunnel through tiles.
+ * Axis-separated movement of an entity's collision box against the tile grid. [WorldCompiler] rejects speeds of
+ * [MAX_SPEED] tiles per second or more, so |delta| stays below one tile per step: only the leading edge needs to be
+ * tested and bodies cannot tunnel through tiles. Loops avoid allocation because validators run this millions of times.
  */
 internal object TilePhysics {
     /** Moves entity [i] horizontally by [dx]; returns `true` if a solid tile stopped it. */
@@ -20,13 +20,13 @@ internal object TilePhysics {
         var blocked = false
         if (dx > 0.0) {
             val column = floorInt(left + width - EPSILON)
-            if ((rowFrom..rowTo).any { world.grid.isSolid(column, it) }) {
+            if (anySolidInColumn(world, column, rowFrom, rowTo)) {
                 left = column - width
                 blocked = true
             }
         } else if (dx < 0.0) {
             val column = floorInt(left + EPSILON)
-            if ((rowFrom..rowTo).any { world.grid.isSolid(column, it) }) {
+            if (anySolidInColumn(world, column, rowFrom, rowTo)) {
                 left = column + 1.0
                 blocked = true
             }
@@ -54,24 +54,38 @@ internal object TilePhysics {
         var landed = false
         if (dy > 0.0) {
             val row = floorInt(top + height - EPSILON)
-            val supported =
-                (columnFrom..columnTo).any { column ->
-                    world.grid.isSolid(column, row) ||
-                        (world.grid.supportsFromAbove(column, row) && previousBottom <= row + EPSILON)
+            val wasAbove = previousBottom <= row + EPSILON
+            for (column in columnFrom..columnTo) {
+                if (world.grid.isSolid(column, row) || (wasAbove && world.grid.supportsFromAbove(column, row))) {
+                    landed = true
+                    break
                 }
-            if (supported) {
-                top = row - height
-                landed = true
             }
+            if (landed) top = row - height
         } else if (dy < 0.0) {
             val row = floorInt(top + EPSILON)
-            if ((columnFrom..columnTo).any { world.grid.isSolid(it, row) }) {
-                top = row + 1.0
-                s.vy[i] = 0.0
+            for (column in columnFrom..columnTo) {
+                if (world.grid.isSolid(column, row)) {
+                    top = row + 1.0
+                    s.vy[i] = 0.0
+                    break
+                }
             }
         }
         s.y[i] = top - s.bodyOffsetY[i]
         if (landed) s.vy[i] = 0.0
         s.grounded[i] = landed
+    }
+
+    private fun anySolidInColumn(
+        world: RuntimeWorld,
+        column: Int,
+        rowFrom: Int,
+        rowTo: Int,
+    ): Boolean {
+        for (row in rowFrom..rowTo) {
+            if (world.grid.isSolid(column, row)) return true
+        }
+        return false
     }
 }

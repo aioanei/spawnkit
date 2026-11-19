@@ -15,6 +15,8 @@ internal object InteractionSystem {
             killPlayer(world, events)
             return
         }
+        // Decided once per tick so that landing on several enemies at once stomps all of them.
+        val descending = s.bottom(i) > p.previousBottom
         for (j in 0 until s.count) {
             if (j == i || !s.alive[j] || s.roles[j] == 0 || !s.overlaps(i, j)) continue
             when {
@@ -28,14 +30,12 @@ internal object InteractionSystem {
                 }
 
                 s.has(j, Roles.PATROL) -> {
-                    val stomp = s.vy[i] > 0.0 && p.previousBottom <= s.top(j) + STOMP_TOLERANCE
-                    if (!stomp) {
+                    if (descending && p.previousBottom <= s.top(j) + STOMP_TOLERANCE) {
+                        stomp(world, j, events)
+                    } else if (p.graceTicks == 0) {
                         killPlayer(world, events)
                         return
                     }
-                    s.alive[j] = false
-                    s.vy[i] = -p.controller.jumpVelocity * STOMP_BOUNCE
-                    events += GameEvent.EnemyDefeated(s.ids[j])
                 }
 
                 s.has(j, Roles.CHECKPOINT) -> {
@@ -76,10 +76,22 @@ internal object InteractionSystem {
         val s = world.entities
         s.alive[j] = false
         val variable = s.collectVariable[j]
-        if (variable >= 0) {
-            world.variables[variable] += s.collectAmount[j]
-            events += GameEvent.Collected(s.ids[j], world.project.variables[variable].id, s.collectAmount[j])
-        }
+        world.variables[variable] += s.collectAmount[j]
+        events += GameEvent.Collected(s.ids[j], world.project.variables[variable].id, s.collectAmount[j])
+    }
+
+    private fun stomp(
+        world: RuntimeWorld,
+        j: Int,
+        events: MutableList<GameEvent>,
+    ) {
+        val s = world.entities
+        val p = world.player
+        s.alive[j] = false
+        s.vy[p.index] = -p.controller.jumpVelocity * STOMP_BOUNCE
+        // A bounce always has the same height, independent of when the jump button was released.
+        p.jumpCut = true
+        events += GameEvent.EnemyDefeated(s.ids[j])
     }
 
     private fun activateCheckpoint(
@@ -91,8 +103,10 @@ internal object InteractionSystem {
         val p = world.player
         if (s.checkpointActivated[j]) return
         s.checkpointActivated[j] = true
-        p.respawnX = s.x[j]
-        p.respawnY = s.bottom(j) - s.bodyHeight[p.index] - s.bodyOffsetY[p.index]
+        val i = p.index
+        // Respawn centered on the checkpoint, standing on the checkpoint's base.
+        p.respawnX = s.left(j) + s.bodyWidth[j] / 2.0 - s.bodyWidth[i] / 2.0 - s.bodyOffsetX[i]
+        p.respawnY = s.bottom(j) - s.bodyHeight[i] - s.bodyOffsetY[i]
         events += GameEvent.CheckpointReached(s.ids[j])
     }
 
@@ -114,5 +128,6 @@ internal object InteractionSystem {
         p.jumpedSinceGround = false
         p.jumpCut = false
         p.ticksSinceGrounded = p.controller.coyoteTicks + 1
+        p.graceTicks = RESPAWN_GRACE_TICKS
     }
 }

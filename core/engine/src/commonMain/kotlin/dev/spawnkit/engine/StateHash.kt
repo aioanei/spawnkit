@@ -7,9 +7,9 @@ private const val BITS_PER_BYTE = 8
 private const val BYTES_PER_LONG = 8
 
 /**
- * FNV-1a 64-bit hash of all dynamic simulation state (tick, entity positions, velocities and flags, variables,
- * completion). Doubles are hashed by their raw IEEE-754 bits, so equal hashes on different targets prove
- * bit-identical simulation (ADR-0004).
+ * FNV-1a 64-bit hash of all dynamic simulation state: tick, entity positions, velocities and flags, variables,
+ * completion and the player controller state. Doubles are hashed by their raw IEEE-754 bits, so equal hashes on
+ * different targets prove bit-identical simulation (ADR-0004).
  */
 public fun RuntimeWorld.stateHash(): Long {
     var hash = FNV_OFFSET_BASIS
@@ -38,7 +38,15 @@ public fun RuntimeWorld.stateHash(): Long {
         mix(s.checkpointActivated[i])
     }
     variables.forEach { mix(it) }
-    mix(player.respawnX)
-    mix(player.respawnY)
+    val p = player
+    mix(p.respawnX)
+    mix(p.respawnY)
+    mix(p.ticksSinceGrounded.toLong())
+    mix(p.jumpBuffer.toLong())
+    mix(p.jumpWasDown)
+    mix(p.jumpedSinceGround)
+    mix(p.jumpCut)
+    mix(p.previousBottom)
+    mix(p.graceTicks.toLong())
     return hash
 }

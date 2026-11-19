@@ -14,6 +14,7 @@ import dev.spawnkit.model.PlayerController
 import dev.spawnkit.model.Scene
 import dev.spawnkit.model.SceneId
 import dev.spawnkit.model.TileBehavior
+import dev.spawnkit.model.VariableId
 import dev.spawnkit.model.Visual
 import dev.spawnkit.model.prefab
 import dev.spawnkit.model.scene
@@ -48,9 +49,10 @@ public object WorldCompiler {
         if (playerIndices.size != 1) {
             errors += "Scene '${scene.name}' needs exactly one entity with a PlayerController, found ${playerIndices.size}"
         }
+        val variableIndex = project.variables.mapIndexed { index, def -> def.id to index }.toMap()
+        checkReferencesAndSpeeds(project, scene, components, variableIndex, errors)
         if (errors.isNotEmpty()) return CompileResult.Failed(errors)
 
-        val variableIndex = project.variables.mapIndexed { index, def -> def.id to index }.toMap()
         val store = buildStore(scene.entities, components, variableIndex)
         val playerIndex = playerIndices.single()
         val controller = components[playerIndex][PlayerController::class] as PlayerController
@@ -80,16 +82,56 @@ public object WorldCompiler {
                 row.forEachIndexed { x, ch ->
                     if (ch !in EmptyTileChars && x < width && y < height) {
                         val def = project.tileset[ch]
+                        val index = y * width + x
                         if (def == null) {
                             errors += "Layer '${layer.id.value}' uses tile '$ch' at ($x, $y), which is not in the tileset"
-                        } else if (def.behavior != TileBehavior.Empty) {
-                            cells[y * width + x] = def.behavior
+                        } else if (priority(def.behavior) > priority(cells[index])) {
+                            cells[index] = def.behavior
                         }
                     }
                 }
             }
         }
         return TileGrid(width, height, cells)
+    }
+
+    /** When layers overlap, the more restrictive behavior wins, so decoration layers can never punch holes in ground. */
+    private fun priority(behavior: TileBehavior): Int =
+        when (behavior) {
+            TileBehavior.Solid -> 4
+            TileBehavior.Hazard -> 3
+            TileBehavior.OneWay -> 2
+            TileBehavior.Decor -> 1
+            TileBehavior.Empty -> 0
+        }
+
+    private fun checkReferencesAndSpeeds(
+        project: GameProject,
+        scene: Scene,
+        components: List<Map<KClass<out Component>, Component>>,
+        variableIndex: Map<VariableId, Int>,
+        errors: MutableList<String>,
+    ) {
+        fun checkSpeed(
+            name: String,
+            value: Double,
+        ) {
+            if (!(value >= 0.0 && value < MAX_SPEED)) errors += "$name must be between 0 and $MAX_SPEED tiles/s, was $value"
+        }
+        checkSpeed("PhysicsSettings.maxFallSpeed", project.settings.physics.maxFallSpeed)
+        scene.entities.forEachIndexed { index, entity ->
+            val label = "Entity '${entity.id.value}'"
+            (components[index][Collectible::class] as Collectible?)?.let {
+                if (it.variable !in variableIndex) errors += "$label collects undefined variable '${it.variable.value}'"
+            }
+            (components[index][PlayerController::class] as PlayerController?)?.let {
+                checkSpeed("$label moveSpeed", it.moveSpeed)
+                checkSpeed("$label jumpVelocity", it.jumpVelocity)
+                val counter = it.deathCounter
+                if (counter != null && counter !in variableIndex) errors += "$label counts deaths in undefined variable '${counter.value}'"
+            }
+            (components[index][Patrol::class] as Patrol?)?.let { checkSpeed("$label patrol speed", it.speed) }
+        }
     }
 
     /** Prefab components first, then the instance's own components replacing those of the same kind. */
@@ -114,7 +156,7 @@ public object WorldCompiler {
     private fun buildStore(
         entities: List<EntityInstance>,
         components: List<Map<KClass<out Component>, Component>>,
-        variableIndex: Map<dev.spawnkit.model.VariableId, Int>,
+        variableIndex: Map<VariableId, Int>,
     ): EntityStore {
         val count = entities.size
         val visuals = Array(count) { components[it][Visual::class] as Visual? }

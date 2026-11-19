@@ -28,13 +28,14 @@ internal val DEATHS = VariableId("deaths")
 internal const val PLAYER_W = 0.8
 internal const val PLAYER_H = 0.9
 
-/** Builds a one-scene project from ASCII rows (`#` solid, `=` one-way, `^` hazard). */
+/** Builds a one-scene project from ASCII rows (`#` solid, `=` one-way, `^` hazard, `~` decor). */
 internal fun testProject(
     rows: List<String>,
     player: Vec2,
     entities: List<EntityInstance> = emptyList(),
     prefabs: List<Prefab> = emptyList(),
     controller: PlayerController = PlayerController(deathCounter = DEATHS),
+    extraLayers: List<List<String>> = emptyList(),
 ): GameProject {
     val hero =
         EntityInstance(
@@ -52,6 +53,7 @@ internal fun testProject(
                 '#' to TileDef(TileBehavior.Solid, ColorRgba(0xFF000000)),
                 '=' to TileDef(TileBehavior.OneWay, ColorRgba(0xFF000000)),
                 '^' to TileDef(TileBehavior.Hazard, ColorRgba(0xFF000000)),
+                '~' to TileDef(TileBehavior.Decor, ColorRgba(0xFF000000)),
             ),
         variables = listOf(VariableDef(COINS, "Coins"), VariableDef(DEATHS, "Deaths")),
         prefabs = prefabs,
@@ -62,7 +64,9 @@ internal fun testProject(
                     name = "S",
                     size = GridSize(rows.first().length, rows.size),
                     background = ColorRgba(0xFF000000),
-                    layers = listOf(TileLayer(LayerId("l"), "L", rows)),
+                    layers =
+                        listOf(TileLayer(LayerId("l"), "L", rows)) +
+                            extraLayers.mapIndexed { index, layer -> TileLayer(LayerId("extra-$index"), "Extra", layer) },
                     entities = listOf(hero) + entities,
                 ),
             ),

@@ -1,5 +1,6 @@
 package dev.spawnkit.engine
 
+import dev.spawnkit.model.PlayerController
 import dev.spawnkit.model.Vec2
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -61,19 +62,40 @@ class PlatformerPhysicsTest {
     }
 
     @Test
-    fun coyoteJumpAllowedWithinSixTicks() {
-        assertTrue(jumpsAfterLeavingLedge(ticksAfterLeaving = 4))
-        assertFalse(jumpsAfterLeavingLedge(ticksAfterLeaving = 12))
+    fun coyoteJumpAllowedForSixTicksAfterTheFirstAirborneTick() {
+        // The press happens on airborne tick (extra + 2): ticks 2..7 are allowed with coyoteTicks = 6.
+        assertTrue(jumpsAfterLeavingLedge(ticksAfterLeaving = 5))
+        assertFalse(jumpsAfterLeavingLedge(ticksAfterLeaving = 6))
     }
 
     @Test
-    fun jumpPressedJustBeforeLandingIsBuffered() {
-        val session = GameSession(testProject(FLAT_GROUND, Vec2(2.0, 1.0)))
-        // Fall until just above the ground, press jump while still airborne, then keep holding.
-        while (FLAT_GROUND_TOP - session.world.playerBottom > 0.15) session.step(InputFrame.NONE)
+    fun jumpBufferCoversExactlyJumpBufferTicks() {
+        // The first tick on which a jump is possible is the tick after landing (grounded is set by the landing move).
+        val probe = GameSession(testProject(FLAT_GROUND, Vec2(2.0, 0.0)))
+        var landingTick = 0
+        while (!probe.world.isGrounded(probe.world.playerIndex)) {
+            probe.step(InputFrame.NONE)
+            landingTick++
+        }
+        val firstJumpableTick = landingTick + 1
+        assertTrue(jumpsWhenPressedAt(firstJumpableTick - 6))
+        assertFalse(jumpsWhenPressedAt(firstJumpableTick - 7))
+    }
+
+    @Test
+    fun zeroJumpBufferStillJumpsOnPress() {
+        val session = GameSession(testProject(FLAT_GROUND, Vec2(2.0, 3.1), controller = PlayerController(jumpBufferTicks = 0)))
+        session.run(5)
         session.step(jump())
-        repeat(6) { session.step(jump()) }
-        assertTrue(session.world.vy(session.world.playerIndex) < 0.0, "buffered jump should have triggered")
+        assertTrue(session.world.vy(session.world.playerIndex) < 0.0)
+    }
+
+    @Test
+    fun landsOnOneWayPlatformWhileMovingSideways() {
+        val rows = listOf("..........", "..........", "..........", "..========", "..........", "##########")
+        val session = GameSession(testProject(rows, Vec2(1.5, 0.0)))
+        session.run(90, right())
+        assertEquals(3.0, session.world.playerBottom, 1e-9)
     }
 
     @Test
@@ -132,6 +154,21 @@ class PlatformerPhysicsTest {
         assertEquals(2.0, world.x(world.playerIndex), 1e-9)
         assertEquals(0.0, world.y(world.playerIndex), 1e-9)
         assertEquals(1.0, world.variable(DEATHS))
+    }
+
+    private fun jumpsWhenPressedAt(pressTick: Int): Boolean {
+        val session = GameSession(testProject(FLAT_GROUND, Vec2(2.0, 0.0)))
+        var tick = 0
+        while (tick < pressTick - 1) {
+            session.step(InputFrame.NONE)
+            tick++
+        }
+        var jumped = false
+        repeat(20) {
+            session.step(jump())
+            if (session.world.vy(session.world.playerIndex) < 0.0) jumped = true
+        }
+        return jumped
     }
 
     private fun jumpsAfterLeavingLedge(ticksAfterLeaving: Int): Boolean {

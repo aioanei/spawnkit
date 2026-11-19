@@ -61,8 +61,58 @@ class InteractionTest {
         assertTrue(events.any { it is GameEvent.CheckpointReached })
         assertTrue(GameEvent.PlayerDied in events)
         val world = session.world
-        assertEquals(5.0, world.x(world.playerIndex), 1e-9)
+        // Centered on the 0.4-wide flag at x = 5.0: 5.2 - 0.8 / 2.
+        assertEquals(4.8, world.x(world.playerIndex), 1e-9)
         assertEquals(4.0, world.playerBottom, 1e-9)
+    }
+
+    @Test
+    fun landingOnTwoEnemiesAtOnceStompsBoth() {
+        val left = entity("a", 2.0, 3.3, Body(Size2(0.9, 0.7)), Patrol(speed = 0.0))
+        val right = entity("b", 2.9, 3.3, Body(Size2(0.9, 0.7)), Patrol(speed = 0.0))
+        val session = GameSession(testProject(FLAT_GROUND, Vec2(2.5, 0.0), listOf(left, right)))
+        val events = mutableListOf<GameEvent>()
+        var guard = 0
+        while (events.none { it is GameEvent.EnemyDefeated } && guard++ < 120) events += session.step(InputFrame.NONE)
+        assertEquals(2, events.count { it is GameEvent.EnemyDefeated }, events.toString())
+        assertFalse(GameEvent.PlayerDied in events)
+    }
+
+    @Test
+    fun stompBounceHeightDoesNotDependOnJumpRelease() {
+        fun bounceApex(releaseJumpBeforeLanding: Boolean): Double {
+            val slime = entity("slime", 2.0, 3.3, Body(Size2(0.9, 0.7)), Patrol(speed = 0.0))
+            val session = GameSession(testProject(FLAT_GROUND, Vec2(2.0, 3.1 - 4.0), listOf(slime)))
+            session.step(InputFrame.NONE)
+            var bounced = false
+            var minY = Double.MAX_VALUE
+            repeat(120) {
+                val input = if (releaseJumpBeforeLanding) InputFrame.NONE else jump()
+                if (session.step(input).any { it is GameEvent.EnemyDefeated }) bounced = true
+                if (bounced) minY = minOf(minY, session.world.y(session.world.playerIndex))
+            }
+            assertTrue(bounced)
+            return minY
+        }
+        assertEquals(bounceApex(releaseJumpBeforeLanding = true), bounceApex(releaseJumpBeforeLanding = false), 1e-9)
+    }
+
+    @Test
+    fun respawnGivesAGracePeriodAgainstEnemies() {
+        // The checkpoint sits in a slime's patrol path; after respawning there the player must not die immediately.
+        val rows = List(4) { ".".repeat(20) } + List(2) { "##########.........." }
+        val flag = entity("flag", 4.0, 3.0, Body(Size2(0.4, 1.0)), Checkpoint)
+        val slime = entity("slime", 6.0, 3.3, Body(Size2(0.9, 0.7)), Patrol(speed = 2.5))
+        val session = GameSession(testProject(rows, Vec2(3.0, 3.1), listOf(flag, slime)))
+        session.run(3)
+        // Fall into the pit on the right by walking past the slime while it is immune-free: wait for the first death.
+        val events = mutableListOf<GameEvent>()
+        var guard = 0
+        while (GameEvent.PlayerDied !in events && guard++ < 600) events += session.step(InputFrame.NONE)
+        assertTrue(GameEvent.PlayerDied in events, "the slime kills the idle player once")
+        assertTrue(session.world.playerInGracePeriod)
+        val afterRespawn = session.run(59)
+        assertFalse(GameEvent.PlayerDied in afterRespawn, "no death during the grace period")
     }
 
     @Test

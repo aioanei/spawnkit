@@ -25,6 +25,7 @@ internal class PlayerState(
     var jumpedSinceGround: Boolean = false
     var jumpCut: Boolean = false
     var previousBottom: Double = 0.0
+    var graceTicks: Int = 0
 }
 
 /**
@@ -84,6 +85,12 @@ public class RuntimeWorld internal constructor(
 
     /** Whether entity [i] still exists (collected coins and defeated enemies do not). */
     public fun isAlive(i: Int): Boolean = entities.alive[i]
+
+    /** Walking direction of patrolling entity [i]: 1.0 (right) or -1.0 (left). */
+    public fun direction(i: Int): Double = entities.patrolDirection[i]
+
+    /** Whether the player is temporarily immune to enemies after respawning. */
+    public val playerInGracePeriod: Boolean get() = player.graceTicks > 0
 
     /** Whether entity [i] stood on the ground after the last step. */
     public fun isGrounded(i: Int): Boolean = entities.grounded[i]
