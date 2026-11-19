@@ -81,7 +81,9 @@ unavailable on most machines. Use the aggregates above.
    objective, requirements and acceptance criteria.
 2. Branch from `main`: `feat|fix|chore|docs|test/<issue-number>-<slug>`.
 3. Test first where practical; keep commits small, using Conventional Commits (`feat(engine): …`).
-4. Before pushing: `./gradlew spotlessApply allJvmAndWebTests` (plus `localNativeTests` on Windows when `core/*` changed).
+4. Before pushing: `./gradlew spotlessApply`, then **separately** `./gradlew allJvmAndWebTests` (plus `localNativeTests`
+   on Windows when `core/*` changed). Running Spotless in the same invocation as tests can race on report folders.
+   When scripting gates, use `set -o pipefail` so a failing Gradle run is not hidden by `| grep`/`| head`.
 5. Open a focused PR using the template; link the issue (`Closes #N`); include test output and screenshots for UI.
 6. CI job `build` must be green. The `ios` job is advisory but must not be left red.
 7. The repository owner authorizes merges.
