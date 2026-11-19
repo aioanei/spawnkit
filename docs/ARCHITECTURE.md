@@ -8,13 +8,24 @@ and roadmap live in the [original design document](design/2026-11-19-spawnkit-de
 On 2026-11-20 the owner confirmed a SpawnKit-owned general-purpose engine, guided visual creation for people
 without programming knowledge, optional AI and milestone-based delivery without contest-driven constraints.
 The [new design](design/2026-11-20-general-purpose-engine.md), [revised sequence](plans/2026-11-20-engine-foundation-revision.md)
-and [ADR-0006](adr/0006-general-purpose-engine-and-editor.md) record the accepted requirements. This checkpoint
-updates documentation; it does not implement that engine/editor. R1 still selects focused dependencies using evidence.
+and [ADR-0006](adr/0006-general-purpose-engine-and-editor.md) record the accepted requirements. The R1a code below
+implements an initial headless boundary; the full engine/editor is unfinished. R1 still selects focused dependencies using evidence.
 
 The diagram/layers below describe the retained platformer baseline. Its mandatory player, closed component set,
 fixed gameplay systems and document compiler are not the target general engine contract. See the revision's audit
 and migration gates for what is retained, extracted or replaced. Unfinished player shells are preserved at `b2bf830`
-on `feat/6-player-shells`; they are absent from this main-based documentation branch.
+on `feat/6-player-shells`; they remain separate from this implementation branch.
+
+## First general runtime increment (R1a)
+
+`core/runtime` now supplies provisional, headless world/component registration and lifecycle APIs, with a stable
+phased system schedule and deferred structural edits. It has no dependency on the document model or platformer
+engine. A separately compiled `samples/runtimeProbe` registers custom state and runs it through the public API.
+The legacy compiler, physics, renderer and golden remain unchanged. See [runtime foundation](runtime-foundation.md)
+for execution/failure contracts and an example that does not load JSON or require a player.
+
+This is R1 evidence, not a completed backend selection, snapshot/replay profile, portable behavior executor or
+visual editor. Those remain explicit acceptance gates in the revised plan.
 
 ## Big picture
 
@@ -67,8 +78,9 @@ JS, Wasm, mingwX64, linuxX64 and the iOS simulator. See [ADR-0004](adr/0004-dete
 | Build, CI, conventions | done (M0) |
 | Document model, platformer engine, determinism clock and golden test | merged (M1, PRs #14–#17) |
 | Renderer: viewport, camera, keyboard/touch, interpolation, HUD | merged [PR #18](https://github.com/aioanei/spawnkit/pull/18); browser smoke and visual evidence retained |
-| Exported-game shells | unfinished checkpoint `b2bf830`, paused for architecture review |
-| General engine/editor/programming/extension foundation | accepted direction; no migration implemented |
+| Exported-game shells | unfinished checkpoint `b2bf830`, preserved for R6 adaptation |
+| General runtime world/component/scheduler | first R1a evidence implementation; separate public-API consumer |
+| Engine/editor/programming/extension foundation | broader R1 comparisons and R2–R9 work remain unfinished |
 | Guided creation, accessibility and novice-usability release gate | required by revised plan; not implemented or user-tested |
 | Browser deployment, editor, validation, AI Studio, publishing | preserved roadmap, revised R0–R9 dependency order |
 

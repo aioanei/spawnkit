@@ -43,4 +43,4 @@ Storage backend, program implementation and focused dependency adoption need the
 - **ADR-0004:** existing determinism tests/profile remain binding. Broader scheduling, programs and package conformance extend this discipline; no weakening of current tests.
 - **ADR-0005:** shared editing, user acceptance and honest replay remain. Flat specs become one optional authoring frontend; agents can invoke general editor capabilities and author programs.
 
-Acceptance records the owner's reviewed requirements and implementation request, not completion of engine/editor migration. This task changes documentation only; the next engineering gate is R1 after R0 reconciliation and the established issue/PR workflow.
+Acceptance records the owner's reviewed requirements and implementation request, not completion of engine/editor migration. Track actual R0–R9 implementation and evidence in [PROGRESS.md](../../PROGRESS.md); the established issue/PR workflow still applies.

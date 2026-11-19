@@ -4,9 +4,10 @@ The owner requested a fundamental architecture revision on 2026-11-20, confirmed
 selected guided visual creation for non-programmers, removed time pressure as an architectural constraint and
 requested implementation of the documentation revision. Persistence is secondary to executable capabilities.
 
-**This checkpoint implements the plan/documentation revision only.** Engine/editor development remains unfinished.
-Complete R0 repository/GitHub reconciliation, then continue at R1. Do not resume the old Tasks 11–12 ordering or
-assume a library/backend has been selected. All product features and mandatory technologies remain.
+Plan PR #20 is merged with owner authorization and R0 repository/GitHub reconciliation is complete. Current work
+is R1a / issue #21: [headless runtime foundation](docs/runtime-foundation.md). Broader R1 backend/state/program
+proofs and the visual editor remain unfinished. Do not resume old Tasks 11–12 or assume a production backend
+has been selected. All product features and mandatory technologies remain.
 
 - Engine ownership, guided creation and usability requirements: [General-purpose engine design](docs/design/2026-11-20-general-purpose-engine.md).
 - Revised implementation sequence: [Engine foundation revision](docs/plans/2026-11-20-engine-foundation-revision.md).

@@ -1,6 +1,17 @@
 # SpawnKit progress
 
-## Current checkpoint — engine ownership and guided creation plan revision (2026-11-20)
+## Current checkpoint — R1a headless runtime implementation (2026-11-20)
+
+- The owner explicitly authorized merging PR #20 and continuing implementation. PR #20 merged at `eae2d3f`; branched from clean main as `feat/21-runtime-foundation`. [Issue #21](https://github.com/aioanei/spawnkit/issues/21) tracks this first R1 evidence increment.
+- R0 reconciled: issues #6–#13 preserve their original bodies and now record revised dependencies; #6/#7 remain open. Obsolete M1–M6 due dates were removed; the external contest showcase date was retained. Player shells remain at `b2bf830` on their separate branch.
+- Added `core/runtime`, independent of model/legacy engine/Compose, and a separately compiled `samples/runtimeProbe`. Empty worlds execute without JSON/player assumptions; open typed components, generation-checked world handles, stable queries, phased/dependency-ordered systems and per-tick deferred structural changes are implemented.
+- Native failure handling is explicit: fail-stop world, pending queue discarded, prior native writes/commits retained for inspection. This is trusted Kotlin execution, not the future sandboxed/atomic portable-program layer. Friendly name/help/category metadata exists; no editor UI or complete metadata system is claimed.
+- Tests were written first and failed for the missing API, then passed after implementation. Checkpoint `27ffb8e` contains the runtime, separate consumer and 16 common tests. Final `spotlessApply` passed (38 s), followed separately by `spotlessCheck allJvmAndWebTests localNativeTests` (`BUILD SUCCESSFUL`, 53 s; 343 tasks). All 16 new tests pass on JVM, Android host, Node JS, Node Wasm and mingwX64: 80 test executions with zero failures/errors. Linux execution and iOS simulator results remain CI evidence; Linux tests are skipped on Windows.
+- Full branch documentation links/anchors and `git diff --check` passed. No production dependency was added. Primary Fleks 2.16 sources were inspected, including disabled iOS declarations and Wasm-only web conventions; actual adapter/artifact compatibility and benchmark selection remain open, not inferred from those declarations.
+- Checkpoints: `27ffb8e` implements the runtime/consumer/tests; `38566fd` records execution contracts and R0 reconciliation. [PR #22](https://github.com/aioanei/spawnkit/pull/22) contains this increment; its checks are the source of Linux/iOS CI status. It has not been merged. Continue remaining R1 evidence after this focused increment, not the old player-shell task.
+- Existing platformer/runtime/model/renderer source remains unchanged. R1 storage/backend comparison, state capture/restore/hash and program/interpreter proofs remain unfinished; this increment does not select a production storage backend or complete R1.
+
+## Previous checkpoint — engine ownership and guided creation plan revision (2026-11-20)
 
 - The owner confirmed that SpawnKit is our own engine, removed time pressure as an architectural constraint, requested creation without programming knowledge and selected guided visual creation. The later “Please implement the plan” authorizes the documentation revision specified in the reviewed plan.
 - Updated the existing design, R0–R9 implementation sequence and ADR-0006; synchronized plan indexes, agent instructions, README, implemented-architecture status and historical-document supersession notes. This task adds no engine/editor/runtime implementation or dependencies.
