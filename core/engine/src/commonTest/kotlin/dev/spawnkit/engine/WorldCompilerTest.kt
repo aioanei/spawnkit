@@ -5,12 +5,14 @@ import dev.spawnkit.model.Collectible
 import dev.spawnkit.model.DecodeResult
 import dev.spawnkit.model.EntityId
 import dev.spawnkit.model.EntityInstance
+import dev.spawnkit.model.PlayerController
 import dev.spawnkit.model.Prefab
 import dev.spawnkit.model.PrefabId
 import dev.spawnkit.model.SceneId
 import dev.spawnkit.model.Size2
 import dev.spawnkit.model.SpawnJson
 import dev.spawnkit.model.TileBehavior
+import dev.spawnkit.model.VariableId
 import dev.spawnkit.model.Vec2
 import dev.spawnkit.templates.EmbeddedTemplates
 import kotlin.test.Test
@@ -83,5 +85,38 @@ class WorldCompilerTest {
         val failed =
             assertIs<CompileResult.Failed>(WorldCompiler.compile(testProject(FLAT_GROUND, Vec2(2.0, 3.1), listOf(orphan)), SceneId("s")))
         assertTrue(failed.errors.any { "missing" in it }, failed.errors.toString())
+    }
+
+    @Test
+    fun decorLayerNeverPunchesHolesInGround() {
+        val decor = List(4) { ".".repeat(40) } + listOf("~".repeat(40), ".".repeat(40))
+        val world =
+            assertIs<CompileResult.Ok>(
+                WorldCompiler.compile(testProject(FLAT_GROUND, Vec2(2.0, 3.1), extraLayers = listOf(decor)), SceneId("s")),
+            ).world
+        assertEquals(TileBehavior.Solid, world.tileBehavior(5, 4))
+    }
+
+    @Test
+    fun undefinedVariableReferencesAreCompileErrors() {
+        val coin =
+            EntityInstance(
+                EntityId("c"),
+                "Coin",
+                Vec2(3.0, 3.0),
+                components = listOf(Body(Size2(0.6, 0.6)), Collectible(VariableId("gems"))),
+            )
+        val project =
+            testProject(FLAT_GROUND, Vec2(2.0, 3.1), listOf(coin), controller = PlayerController(deathCounter = VariableId("lives")))
+        val failed = assertIs<CompileResult.Failed>(WorldCompiler.compile(project, SceneId("s")))
+        assertTrue(failed.errors.any { "gems" in it }, failed.errors.toString())
+        assertTrue(failed.errors.any { "lives" in it }, failed.errors.toString())
+    }
+
+    @Test
+    fun tunnelingSpeedsAreCompileErrors() {
+        val fast = testProject(FLAT_GROUND, Vec2(2.0, 3.1), controller = PlayerController(jumpVelocity = 70.0))
+        val failed = assertIs<CompileResult.Failed>(WorldCompiler.compile(fast, SceneId("s")))
+        assertTrue(failed.errors.any { "jumpVelocity" in it }, failed.errors.toString())
     }
 }
