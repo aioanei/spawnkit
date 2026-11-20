@@ -189,7 +189,8 @@ public class PropertyDescriptor<T : Any, V : Any> internal constructor(
     /** Reads this property from a component value. */
     public fun get(component: T): V = read(component)
 
-    internal fun with(
+    /** Returns [component] updated with [value] using the descriptor's pure writer; it does not validate [value]. */
+    public fun with(
         component: T,
         value: V,
     ): T = write(component, value)

@@ -17,8 +17,8 @@ Plan/status: [PLANS.md](PLANS.md), [PROGRESS.md](PROGRESS.md).
 The owner confirmed engine ownership and guided creation for non-programmers, removed time pressure as an
 architectural constraint, then authorized merging plan PR #20 and starting implementation. R0 reconciliation is
 complete. R1a / issue #21 and R1b / issue #23 are merged. R1c / issue #26 (storage decision) and R1d / issue #28 ([portable program executor](docs/runtime-programs.md)) are
-merged, so R1 is complete. R2a ([descriptors](docs/runtime-descriptors.md)) is merged. Current work is R2b / issue #32:
-[hierarchy, resources and seeded random](docs/runtime-hierarchy.md).
+merged, so R1 is complete. R2a ([descriptors](docs/runtime-descriptors.md)) and R2b ([hierarchy, resources and random](docs/runtime-hierarchy.md)) are
+merged. Current work is R2c / issue #34: program properties derived from descriptors ([programs](docs/runtime-programs.md)).
 The architecture reassessment is open for owner review in PR #25 and is not merged autonomously. The visual
 editor remains unfinished. Do not resume old Tasks 11–12 or treat unselected libraries as approved.
 Preserve completed work and player checkpoint `b2bf830` on `feat/6-player-shells`. JSON remains allowed for

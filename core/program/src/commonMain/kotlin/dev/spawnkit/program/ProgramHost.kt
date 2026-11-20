@@ -1,8 +1,11 @@
 package dev.spawnkit.program
 
 import dev.spawnkit.runtime.AuthoringInfo
+import dev.spawnkit.runtime.ComponentDescriptor
 import dev.spawnkit.runtime.ComponentType
 import dev.spawnkit.runtime.EntityHandle
+import dev.spawnkit.runtime.PropertyDescriptor
+import dev.spawnkit.runtime.ValueKind
 import dev.spawnkit.runtime.World
 
 /** A host function failed in a declared way; the calling segment faults and rolls back. */
@@ -40,7 +43,11 @@ public class PropertyBinding<T : Any> internal constructor(
     public val authoring: AuthoringInfo,
     private val reader: (T) -> ProgramValue,
     private val writer: (T, ProgramValue) -> T,
+    private val validator: (ProgramValue) -> String? = { null },
 ) {
+    /** Plain-language problem with writing [value], or `null` when it is acceptable. */
+    internal fun problem(value: ProgramValue): String? = validator(value)
+
     internal fun read(
         world: World,
         entity: EntityHandle,
@@ -158,6 +165,40 @@ public class ProgramHostBuilder(
             properties += PropertyBinding(name, component, type, authoring, read, write)
         }
 
+    /**
+     * Binds every supported property of a component [descriptor] as a program property named `prefix + id`, with
+     * the descriptor's friendly metadata. Whole numbers, decimals, yes/no, text and choices are supported; object
+     * references are skipped. Program writes are checked against the descriptor's value kind when they execute, so
+     * rules obey the same constraints as inspector edits.
+     */
+    public fun <T : Any> properties(
+        descriptor: ComponentDescriptor<T>,
+        prefix: String = "",
+    ): ProgramHostBuilder =
+        apply {
+            for (property in descriptor.properties) bindDescriptorProperty(descriptor.component, property, prefix)
+        }
+
+    private fun <T : Any, V : Any> bindDescriptorProperty(
+        component: ComponentType<T>,
+        property: PropertyDescriptor<T, V>,
+        prefix: String,
+    ) {
+        val mapping = descriptorMapping(property.kind) ?: return
+        val name = prefix + property.id
+        requireName(name, properties.map { it.name })
+        properties +=
+            PropertyBinding(
+                name,
+                component,
+                mapping.type,
+                property.authoring,
+                { mapping.toProgram(property.get(it)) },
+                { current, value -> property.with(current, mapping.fromProgram(value)) },
+                { value -> property.kind.problem(mapping.fromProgram(value), null) },
+            )
+    }
+
     /** Registers a host function. [implementation] must be deterministic and bounded; throw [ProgramHostException] to fail. */
     public fun function(
         name: String,
@@ -204,3 +245,20 @@ public class ProgramHostBuilder(
         require(name !in existing) { "Duplicate registration '$name'" }
     }
 }
+
+/** Conversion between a descriptor value kind and a program type. */
+private class KindMapping<V : Any>(
+    val type: ProgramType,
+    val toProgram: (V) -> ProgramValue,
+    val fromProgram: (ProgramValue) -> V,
+)
+
+@Suppress("UNCHECKED_CAST") // Each branch pairs a kind with converters for that kind's own value type.
+private fun <V : Any> descriptorMapping(kind: ValueKind<V>): KindMapping<V>? =
+    when (kind) {
+        is ValueKind.WholeNumber -> KindMapping<Long>(IntegerType, { IntegerValue(it) }, { (it as IntegerValue).value })
+        is ValueKind.Decimal -> KindMapping<Double>(DecimalType, { DecimalValue(it) }, { (it as DecimalValue).value })
+        ValueKind.YesNo -> KindMapping<Boolean>(BoolType, { BoolValue(it) }, { (it as BoolValue).value })
+        is ValueKind.Text, is ValueKind.Choice -> KindMapping<String>(TextType, { TextValue(it) }, { (it as TextValue).value })
+        is ValueKind.ObjectReference -> null
+    } as KindMapping<V>?

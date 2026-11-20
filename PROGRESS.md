@@ -1,6 +1,19 @@
 # SpawnKit progress
 
-## Current checkpoint — R2b hierarchy, resources and seeded random (2026-11-20, autonomous overnight session)
+## Current checkpoint — R2c descriptor-derived program bindings (2026-11-20, autonomous overnight session)
+
+- **R2b is done.** PR #33 merged as `e2ac0f9`. The review found nothing blocking; hierarchy position validation now
+  runs before any change.
+- **Branch and issue.** Branch `feat/34-descriptor-bindings`;
+  [issue #34](https://github.com/aioanei/spawnkit/issues/34).
+- **Added.** `ProgramHostBuilder.properties(descriptor, prefix)` maps whole number, decimal, yes/no, text and choice
+  properties to typed program properties. Writes are validated when they execute, with the new
+  `FaultKind.InvalidValue` and rollback. `PropertyDescriptor.with` is now public.
+- **Next step.** Gates, PR, review, merge. Then continue R2 with:
+  - input actions/axes/pointers as runtime resources, with a deterministic per-tick input frame;
+  - scene-instance identity (authoring IDs mapped to runtime handles).
+
+## Previous checkpoint — R2b hierarchy, resources and seeded random (2026-11-20, autonomous overnight session)
 
 - **R2a is done.** PR #31 merged as `c4cde07`. The independent review found nothing blocking; edit gating, factory
   validation and cross-target decimal input were fixed before merge.

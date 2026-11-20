@@ -92,6 +92,23 @@ reach arbitrary engine APIs.
   deterministic fuel `cost`. It throws `ProgramHostException` to fail.
 - `event(name, payload)` and `effect(name, payload)` declare messages.
 
+### Properties from component descriptors (R2c)
+
+`ProgramHostBuilder.properties(descriptor, prefix)` binds every supported property of a component descriptor
+([R2a](runtime-descriptors.md)) as a program property named `prefix + id`, reusing its friendly metadata:
+
+| Descriptor kind | Program type |
+|---|---|
+| Whole number | `IntegerType` |
+| Decimal | `DecimalType` |
+| Yes/no | `BoolType` |
+| Text, choice | `TextType` |
+
+Object references are skipped until nullable reference semantics are designed. Each property-write statement checks
+the descriptor's value kind as it runs. An out-of-range number, unknown choice or over-long text faults the segment
+with `FaultKind.InvalidValue` at the write's node and rolls back the whole segment. One declaration therefore drives
+the generated inspector, visual rules and agents, with identical constraints. Evidence: `ProgramDescriptorBindingTest`.
+
 ## Execution semantics
 
 `ProgramFeature` installs the `program:behavior` component and the `program:execute` system. Each tick, entities are
