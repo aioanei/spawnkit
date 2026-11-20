@@ -48,8 +48,23 @@ edits.
 [R2d input](runtime-input.md) adds registered actions and axes, host-submitted per-tick input frames, edges, and
 checkpointed, replayable input.
 
-This is R1 evidence, not the complete R4 language or a visual editor. Those remain
-explicit acceptance gates in the revised plan.
+## General presentation, builder and persistence (C1–C5)
+
+`core/graphics` provides general transforms, shapes, sprites, text, cameras and render lists. `render/RuntimeCanvas`
+draws those lists in the builder and generic players. `core/gameplay` installs tag/number/contact/input facilities
+and the standard rule blocks; it compiles friendly blocks to the same portable handlers used by advanced tools.
+
+`core/editing` owns immutable project/scene/object/component/rule data, typed operations and undo/redo. `app/shared`
+supplies the compact and expanded Compose builder: viewport, hierarchy, generated inspector, Rules panel and isolated
+Play. C1–C4 are merged; [builder](builder.md), [editing](editing.md) and [gameplay](gameplay.md) document the slice.
+
+C5 adds a separately versioned [project-file codec and recovery journal](project-persistence.md) in `core/editing`.
+Platform adapters in `app/shared` supply local storage and Android/desktop file pickers. The builder decodes before
+replacing a workspace, preserves missing-capability data, blocks unsupported execution, and autosaves authoring state.
+World handles, platform permission handles and play state are not stored in portable project files.
+
+This is still a subset of R4–R5. Per-resource storage, dependency locks, broader extension proof, complete language
+authoring and the novice usability studies remain acceptance gates in the revised plan.
 
 ## Big picture
 
@@ -105,9 +120,11 @@ JS, Wasm, mingwX64, linuxX64 and the iOS simulator. See [ADR-0004](adr/0004-dete
 | Exported-game shells | unfinished checkpoint `b2bf830`, preserved for R6 adaptation |
 | General runtime world/component/scheduler | R1a–R1c evidence: lifecycle, checkpoints/replay, selected sparse-set store; separate public-API consumer |
 | Portable program executor | R1d proof slice in `core/program`; checkpointed waits, atomic segments, cross-target golden |
-| Capability descriptors and generic inspector model | R2a in `core/runtime`; headless, no Compose UI yet |
+| Capability descriptors and inspector | R2a in `core/runtime`; generated Compose controls in the Android/desktop builder |
+| Responsive builder and visual rules | C1–C4 merged: general presentation, typed operations, phone/desktop editor and executable blocks |
+| Project files and recovery | C5: versioned workspace codec, atomic journal, Android/desktop pickers and explicit recovery |
 | Engine/editor/programming/extension foundation | broader R1 comparisons and R2–R9 work remain unfinished |
-| Guided creation, accessibility and novice-usability release gate | required by revised plan; not implemented or user-tested |
+| Guided creation, accessibility and novice-usability release gate | builder slice exists; complete novice study and remaining accessibility gates are not claimed |
 | Browser deployment, editor, validation, AI Studio, publishing | preserved roadmap, revised R0–R9 dependency order |
 
 The targeted [renderer browser smoke check](../tools/render-smoke/README.md) runs an isolated headless Chrome

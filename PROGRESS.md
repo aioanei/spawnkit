@@ -1,6 +1,23 @@
 # SpawnKit progress
 
-## Current checkpoint — C4c When / If / Do rule editor (2026-11-20)
+## Current checkpoint — C5 project persistence (2026-11-20)
+
+- **Merged.** The owner authorized integrating C4b and C4c: PR #54 merged as `09d3bea`; PR #55 was retargeted to
+  `main`, verified green, then merged as `4a6c874`. Issues #52 and #53 are closed.
+- **Branch.** `feat/56-project-persistence`, from updated main; [issue #56](https://github.com/aioanei/spawnkit/issues/56).
+- **Added.** Versioned workspace/rule codec, two-generation recovery journal, retained-ID save snapshots, missing
+  capability checks and non-destructive previews. Project menu, native Android/desktop file pickers, autosave,
+  explicit recovery and unsaved-change dialogs; basic browser/iOS recovery adapters.
+- **Validation.** Six persistence common tests and six persistence UI tests pass. The complete local gate passed:
+  `spotlessApply`, then separately `spotlessCheck allJvmAndWebTests localNativeTests` plus Android APK, desktop and
+  JS/Wasm app compilation (`BUILD SUCCESSFUL`, 615 tasks, 2m 11s). The cross-target gate caught negative zero being
+  normalized on JS; the codec now retains its explicit token. Phone QA caught a squeezed Play label; the compact
+  toolbar now has an object-actions menu and a 360 dp / 130% text regression test. Android native-picker/restart
+  smoke evidence and remote CI are being completed. See [persistence](docs/project-persistence.md).
+- **Stop point.** The owner requested stopping after this C5 PR is finished. C6 (Release and Arcade) remains planned;
+  do not start it during this task. The preserved player-shell checkpoint remains separate.
+
+## Previous checkpoint — C4c When / If / Do rule editor (2026-11-20)
 
 - **C4b.** [PR #54](https://github.com/aioanei/spawnkit/pull/54) has green `build` and iOS checks. The automatic
   permission classifier refused the merge command twice, so it waits for the owner to merge or allow it.

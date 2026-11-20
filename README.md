@@ -13,10 +13,11 @@ implemented slice is described below.
 > Contest is a showcase opportunity rather than an architectural constraint.
 > This README will grow a "try it in 2 minutes" section as features land.
 
-The current M1 work includes the versioned Game Document, the three-level Platformer Adventure template,
-the deterministic runtime, and a shared Compose `GameView` with keyboard/touch input and a HUD.
-The creator app still opens its initial shell. Player-shell work is checkpointed separately; browser deployment
-is unfinished. The [general-purpose architecture revision](docs/design/2026-11-20-general-purpose-engine.md) and
+The creator app now opens a [responsive builder](docs/builder.md): add and move objects, edit generated properties,
+assemble visual When / If / Do rules, and play with keyboard or touch input. Android and desktop provide
+[project files, autosave and recovery](docs/project-persistence.md). General runtime, program, graphics and gameplay
+modules power this builder. The legacy three-level Platformer Adventure and deterministic renderer remain a tested
+baseline. Exported player shells and publishing remain unfinished. The [general-purpose architecture revision](docs/design/2026-11-20-general-purpose-engine.md) and
 [revised plan](docs/plans/2026-11-20-engine-foundation-revision.md) record the accepted engine ownership and guided
 creation requirements; their full runtime/editor implementation is unfinished. Existing platformer mechanics are a
 demo baseline, not the target engine's universal gameplay contract.
@@ -28,7 +29,8 @@ custom-logic and persistence alternatives. The owner reviewed and merged it; its
 The first [headless runtime foundation](docs/runtime-foundation.md) now runs empty/player-free worlds and custom
 components/systems through public APIs, with a separately compiled extension consumer. It is an initial R1 evidence
 increment. [Native checkpoints and replay](docs/runtime-checkpoints.md) add explicit capture of component/private
-system state and deterministic fingerprints; backend selection, portable behaviors and the visual editor remain future work.
+system state and deterministic fingerprints. The selected storage, portable behavior executor and visual builder
+have since landed; broader extension, editor-depth and release work remains in the revised plan.
 
 See [PROGRESS.md](PROGRESS.md) for the latest checkpoint and [PLANS.md](PLANS.md) for the approved plan location.
 The renderer's [browser smoke check](tools/render-smoke/README.md) and [Wasm captures](docs/media/README.md)

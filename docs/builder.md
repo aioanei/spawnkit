@@ -12,6 +12,10 @@ on Android and desktop.
 ## What a creator can do
 
 - **Start** from a functional blank project. A guided empty state invites adding objects.
+- **Keep and reopen work (C5).** The **Project** menu provides New, Open project file, Save, Save a copy and Rename
+  game. Android and desktop use native file pickers. Changes autosave locally; startup offers to restore the draft,
+  including a previous valid draft when the latest one is damaged. New/Open confirm before replacing unsaved work.
+  Cancellation and failed opens/writes keep the current game. See [project files and recovery](project-persistence.md).
 - **Add objects** from a palette (Box, Circle, Platform, Player, Camera). Each preset is built only from general
   engine components; nothing is hardcoded for a genre. The builder runs the same `StandardEngine` as exported
   players ([gameplay](gameplay.md)), so Text, Tag and Number components can be added from the inspector.
@@ -128,7 +132,7 @@ keeps lines at least 32 px apart. The selection outline is 2.5 dp white, which c
 ## Not yet
 
 - More blocks (spawning, sounds, scene changes, variables) and reordering rules or blocks by dragging.
-- Saving and opening projects (C5).
+- Native project-file pickers on iOS and web; those targets have local recovery adapters.
 - Release and Arcade (C6).
 - AI Studio (C7).
 - Multi-select and rotate/resize handles.
