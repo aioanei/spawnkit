@@ -5,7 +5,8 @@ selected guided visual creation for non-programmers, removed time pressure as an
 requested implementation of the documentation revision. Persistence is secondary to executable capabilities.
 
 Plan PR #20 is merged with owner authorization and R0 repository/GitHub reconciliation is complete. Current work
-is R1a / issue #21: [headless runtime foundation](docs/runtime-foundation.md). Broader R1 backend/state/program
+is R1b / issue #23: [native checkpoints and replay](docs/runtime-checkpoints.md), building on the merged
+[headless runtime foundation](docs/runtime-foundation.md). Broader R1 backend/program
 proofs and the visual editor remain unfinished. Do not resume old Tasks 11–12 or assume a production backend
 has been selected. All product features and mandatory technologies remain.
 

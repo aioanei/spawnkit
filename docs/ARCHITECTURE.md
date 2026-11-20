@@ -24,8 +24,12 @@ engine. A separately compiled `samples/runtimeProbe` registers custom state and 
 The legacy compiler, physics, renderer and golden remain unchanged. See [runtime foundation](runtime-foundation.md)
 for execution/failure contracts and an example that does not load JSON or require a player.
 
-This is R1 evidence, not a completed backend selection, snapshot/replay profile, portable behavior executor or
-visual editor. Those remain explicit acceptance gates in the revised plan.
+The [R1b checkpoint increment](runtime-checkpoints.md) adds explicit component/private-system capture, fresh-world
+restore with entity-reference remapping and canonical replay fingerprints. Missing state contracts fail rather
+than being silently omitted. Snapshots are runtime-scoped and in-memory; native hooks remain trusted.
+
+This is R1 evidence, not a completed backend selection, portable behavior executor or visual editor. Those remain
+explicit acceptance gates in the revised plan.
 
 ## Big picture
 

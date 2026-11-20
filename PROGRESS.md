@@ -1,6 +1,17 @@
 # SpawnKit progress
 
-## Current checkpoint — R1a headless runtime implementation (2026-11-20)
+## Current checkpoint — R1b native checkpoints and replay (2026-11-20)
+
+- The owner authorized merging PR #22 and granted standing authorization for future completed PRs after required checks pass. PR #22 merged at `b4e90ed`; branched from clean main as `feat/23-runtime-checkpoints`. [Issue #23](https://github.com/aioanei/spawnkit/issues/23) tracks this focused R1 increment.
+- Implemented opaque in-memory snapshots for healthy idle worlds, optional component state codecs, explicit `CheckpointSystem` capture/restore of private native fields, complete current allocator/tick state, live/stale same-world entity remapping and fresh independent restores. Unsupported attached state/system contracts fail explicitly.
+- Snapshot value collections are copied on capture and per restore. Contexts expire/release world references; capture blocks writes through its world API. Traversal limits reject cyclic/over-budget values. Native hooks remain trusted/pure by contract; this is not automatic serialization of arbitrary native/external state or portable-program rollback.
+- Added a canonical FNV-1a state fingerprint and a separately compiled consumer mid-run replay test. The single golden `-4909871966990312915L` was derived from JVM six-tick Counter(5), including private update count=6; other targets must match it unchanged.
+- Tests first failed for the missing API. After implementation, a nullable collection assertion needed a type-inference correction; remaining JVM failure was the intentionally unset golden. The recorded JVM golden and all 33 runtime/consumer tests then passed. Final `spotlessApply` passed (53 s), followed separately by `spotlessCheck allJvmAndWebTests localNativeTests` (`BUILD SUCCESSFUL`, 1m8s; 343 tasks). All 33 tests pass on JVM, Android host, JS Node, Wasm Node and mingwX64: 165 executions, zero failures/errors, one unchanged golden.
+- Source checkpoint `a85e087` contains the state contracts/checkpoints/hash/replay tests. Full-branch documentation verification passed (8 Markdown files, 49 local links/anchors); `git diff --check` passed. Linux/iOS execution remains CI evidence, not claimed from Windows.
+- Checkpoint `f3e428d` documents the API/evidence and remaining scope. [PR #24](https://github.com/aioanei/spawnkit/pull/24) contains this increment; its latest Linux/iOS checks are the source of remote status. Merge only after those checks pass, under the owner's standing authorization, without bypassing repository rules.
+- No dependency or persistence format was added. Legacy model/engine/renderer and platformer golden are unchanged. Remaining R1 storage/program/effect comparisons and richer capabilities remain open; no visual editor or novice study is claimed.
+
+## Previous checkpoint — R1a headless runtime implementation (2026-11-20)
 
 - The owner explicitly authorized merging PR #20 and continuing implementation. PR #20 merged at `eae2d3f`; branched from clean main as `feat/21-runtime-foundation`. [Issue #21](https://github.com/aioanei/spawnkit/issues/21) tracks this first R1 evidence increment.
 - R0 reconciled: issues #6–#13 preserve their original bodies and now record revised dependencies; #6/#7 remain open. Obsolete M1–M6 due dates were removed; the external contest showcase date was retained. Player shells remain at `b2bf830` on their separate branch.

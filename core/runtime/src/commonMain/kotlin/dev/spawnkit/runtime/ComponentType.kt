@@ -25,7 +25,19 @@ public class ComponentType<T : Any> internal constructor(
     /** Human-facing metadata for discovery and future authoring tools. */
     public val authoring: AuthoringInfo,
     internal val registry: Any,
-)
+    private val checkpoint: StateCodec<T>?,
+) {
+    internal val supportsCheckpoint: Boolean get() = checkpoint != null
+
+    @Suppress("UNCHECKED_CAST") // Values enter this store only through the matching typed component key.
+    internal fun capture(value: Any, context: StateCaptureContext): StateValue =
+        checkNotNull(checkpoint) { "Component '$id' has no checkpoint codec" }.capture(value as T, context)
+
+    internal fun restore(
+        state: StateValue,
+        context: StateRestoreContext,
+    ): Any = checkNotNull(checkpoint) { "Component '$id' has no checkpoint codec" }.restore(state, context)
+}
 
 internal fun requireCapabilityId(id: String) {
     require(id.matches(Regex("[a-z][a-z0-9_.-]*:[a-z][a-z0-9_.-]*"))) {

@@ -16,8 +16,8 @@ Plan/status: [PLANS.md](PLANS.md), [PROGRESS.md](PROGRESS.md).
 
 The owner confirmed engine ownership and guided creation for non-programmers, removed time pressure as an
 architectural constraint, then authorized merging plan PR #20 and starting implementation. R0 reconciliation is
-complete. Current work is R1a / issue #21: provisional headless lifecycle/scheduling APIs in `core/runtime` and a
-separately compiled consumer in `samples/runtimeProbe`. R1 comparisons/state capture/program proofs and the
+complete. R1a / issue #21 is merged. Current work is R1b / issue #23: explicit native checkpoints, entity remapping
+and replay fingerprints in `core/runtime`, proven through `samples/runtimeProbe`. Remaining R1 comparisons/program proofs and the
 visual editor remain unfinished. Do not resume old Tasks 11–12 or treat unselected libraries as approved.
 Preserve completed work and player checkpoint `b2bf830` on `feat/6-player-shells`. JSON remains allowed for
 storage/transport; its schema and a closed list of gameplay mechanics cannot define engine capability.
@@ -41,7 +41,7 @@ storage/transport; its schema and a closed list of gameplay mechanics cannot def
 | `core/model` | KMP, all targets | existing v1 document schema, IDs, serialization and migrations; legacy import boundary in the target design |
 | `core/templates` | KMP, all targets | existing embedded template fixtures; preserve during migration |
 | `core/engine` | KMP, all targets | preserved tested platformer runtime and compatibility regression baseline |
-| `core/runtime` | KMP, all targets | R1a headless world/component/scheduler evidence implementation; provisional APIs, no legacy model dependency |
+| `core/runtime` | KMP, all targets | provisional headless world/component/scheduler and explicit checkpoint/replay APIs; no legacy model dependency |
 | `samples/runtimeProbe` | KMP, all targets | separately compiled public-API consumer and cross-target extension evidence |
 | `core/validation` | KMP, all targets | integrity checks, reachability solver, playtest, economy check |
 | `core/editing` | KMP, all targets | planned real workspace operations, undo/redo, transactions and changesets |

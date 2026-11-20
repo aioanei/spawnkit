@@ -1,6 +1,7 @@
-# Headless runtime foundation — R1a evidence
+# Headless runtime foundation — R1 evidence
 
 Tracked by [issue #21](https://github.com/aioanei/spawnkit/issues/21), following the merged [plan PR #20](https://github.com/aioanei/spawnkit/pull/20).
+The next increment, [issue #23](https://github.com/aioanei/spawnkit/issues/23), adds [explicit checkpoints and replay](runtime-checkpoints.md).
 
 ## Implemented boundary
 
@@ -57,7 +58,8 @@ requiring creators to write this Kotlin or enter technical identifiers. A comple
 - A native update/commit failure is rethrown and faults the world. Pending commands are discarded; previous direct
   writes and already committed structural effects remain inspectable. Further mutation/stepping fails, and
   `failedSystem` names the origin, including failures in its queued initializer. Create a fresh world to restart.
-  This does not implement or weaken the future portable-program atomic segment/rollback contract.
+  An earlier healthy checkpoint can create a new world for restart. This does not implement or weaken the future
+  portable-program atomic segment/rollback contract.
 
 ## Evidence and remaining R1 work
 
@@ -84,7 +86,8 @@ declare Wasm rather than a JS target. These source declarations do not establish
 variant compatibility; do not infer it from the project's multiplatform label. Artifact/adapter compatibility,
 state capture and performance evidence remain necessary before selecting or rejecting a particular version/fork.
 
-Still required: complete mutable-state capture/restore/hash (including private system state), snapshot/replay
-conformance, portable-program/interpreter comparison and effect/budget proofs, richer registered property/function
+Explicit in-memory component/private-system capture, fresh-world restore and replay fingerprints are implemented
+in [R1b](runtime-checkpoints.md), with missing state contracts rejected. Still required: portable-program/interpreter
+comparison and effect/budget proofs, richer registered property/function
 capabilities and measured library/backend selection. This API alone does not provide a generality proof across
 three games, a visual editor, no-code behaviors, novice-user acceptance, physics, publishing or marketplace execution.
