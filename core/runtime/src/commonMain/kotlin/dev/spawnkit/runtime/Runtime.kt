@@ -26,6 +26,10 @@ public class RuntimeBuilder {
     private val registry = Any()
     private val components = mutableMapOf<String, ComponentType<*>>()
     private val systems = mutableMapOf<String, SystemRegistration>()
+    private val descriptors = mutableMapOf<String, ComponentDescriptor<*>>()
+    private val resources = mutableMapOf<String, ResourceType<*>>()
+    private val actions = mutableMapOf<String, InputAction>()
+    private val axes = mutableMapOf<String, InputAxis>()
     private var built = false
 
     /**
@@ -40,7 +44,45 @@ public class RuntimeBuilder {
         check(!built) { "Runtime registration has closed" }
         requireCapabilityId(id)
         require(id !in components) { "Duplicate component '$id'" }
-        return ComponentType<T>(id, authoring, registry, checkpoint).also { components[id] = it }
+        return ComponentType<T>(id, authoring, registry, checkpoint, components.size).also { components[id] = it }
+    }
+
+    /**
+     * Registers a per-world singleton resource. [create] must return a fresh value for every world. [checkpoint] is
+     * required for snapshots of worlds created by this runtime; without it, [World.snapshot] fails explicitly.
+     */
+    public fun <T : Any> resource(
+        id: String,
+        authoring: AuthoringInfo,
+        checkpoint: StateCodec<T>?,
+        create: () -> T,
+    ): ResourceType<T> {
+        check(!built) { "Runtime registration has closed" }
+        requireCapabilityId(id)
+        require(id !in resources) { "Duplicate resource '$id'" }
+        return ResourceType(id, authoring, registry, checkpoint, create, resources.size).also { resources[id] = it }
+    }
+
+    /** Registers a named on/off input that hosts can bind to keys, buttons or touch controls. */
+    public fun action(
+        id: String,
+        authoring: AuthoringInfo,
+    ): InputAction {
+        check(!built) { "Runtime registration has closed" }
+        requireCapabilityId(id)
+        require(id !in actions) { "Duplicate input action '$id'" }
+        return InputAction(id, authoring, registry).also { actions[id] = it }
+    }
+
+    /** Registers a named analog input with values in `[-1, 1]`. */
+    public fun axis(
+        id: String,
+        authoring: AuthoringInfo,
+    ): InputAxis {
+        check(!built) { "Runtime registration has closed" }
+        requireCapabilityId(id)
+        require(id !in axes) { "Duplicate input axis '$id'" }
+        return InputAxis(id, authoring, registry).also { axes[id] = it }
     }
 
     /**
@@ -60,12 +102,41 @@ public class RuntimeBuilder {
         systems[id] = SystemRegistration(id, phase, before.toSet(), after.toSet(), create)
     }
 
+    /**
+     * Adds authoring metadata for a component registered by this builder: friendly properties with value kinds,
+     * defaults and visibility, plus a factory. Editors and agents discover it through [Runtime.catalog].
+     */
+    public fun <T : Any> describe(
+        component: ComponentType<T>,
+        configure: ComponentDescriptorBuilder<T>.() -> Unit,
+    ): ComponentDescriptor<T> {
+        check(!built) { "Runtime registration has closed" }
+        require(components[component.id] === component) { "Component '${component.id}' belongs to another runtime" }
+        require(component.id !in descriptors) { "Component '${component.id}' is already described" }
+        val descriptor = ComponentDescriptorBuilder(component).apply(configure).build()
+        for (property in descriptor.properties) {
+            val kind = property.kind
+            if (kind is ValueKind.ObjectReference) {
+                kind.requires.forEach { require(components[it.id] === it) { "Reference filter '${it.id}' belongs to another runtime" } }
+            }
+        }
+        return descriptor.also { descriptors[component.id] = it }
+    }
+
     /** Validates the complete schedule and freezes registrations. No game document or player is involved. */
     public fun build(): Runtime {
         check(!built) { "Runtime registration has closed" }
         val schedule = orderSystems(systems.values.toList())
         built = true
-        return Runtime(registry, components.values.sortedBy { it.id }, schedule)
+        return Runtime(
+            registry,
+            components.values.sortedBy { it.id },
+            schedule,
+            descriptors.values.sortedBy { it.component.id },
+            resources.values.sortedBy { it.ordinal },
+            actions.values.sortedBy { it.id },
+            axes.values.sortedBy { it.id },
+        )
     }
 }
 
@@ -74,12 +145,32 @@ public class Runtime internal constructor(
     private val registry: Any,
     private val components: List<ComponentType<*>>,
     private val schedule: List<SystemRegistration>,
+    private val descriptors: List<ComponentDescriptor<*>>,
+    private val resources: List<ResourceType<*>>,
+    private val actions: List<InputAction>,
+    private val axes: List<InputAxis>,
 ) {
+    /** Registered input actions in ID order, for binding UIs and agents. */
+    public val inputActions: List<InputAction> get() = actions.toList()
+
+    /** Registered input axes in ID order. */
+    public val inputAxes: List<InputAxis> get() = axes.toList()
+
+    /** Described components in ID order, for palettes, inspectors and agent capability discovery. */
+    public val catalog: List<ComponentDescriptor<*>> get() = descriptors.toList()
+
+    /** The descriptor of [component], or `null` when it has no authoring metadata. */
+    @Suppress("UNCHECKED_CAST") // Descriptors are registered under their own component's ID.
+    public fun <T : Any> descriptor(component: ComponentType<T>): ComponentDescriptor<T>? =
+        descriptors.firstOrNull { it.component === component } as ComponentDescriptor<T>?
+
+    internal fun owns(world: World): Boolean = world.registryIdentity === registry
+
     /** Effective fixed-tick system order; returned as a copy so callers cannot mutate the installed schedule. */
     public val systemOrder: List<String> get() = schedule.map { it.id }
 
     /** Constructs an empty world and fresh system instances. Component instances are supplied through [World.set]. */
-    public fun createWorld(): World = World(registry, components, schedule.map { it.id to it.create() })
+    public fun createWorld(): World = World(registry, components, schedule.map { it.id to it.create() }, resources, actions, axes)
 
     /**
      * Restores into fresh world/system instances from this runtime's checkpoint. Repeated restores are independent;

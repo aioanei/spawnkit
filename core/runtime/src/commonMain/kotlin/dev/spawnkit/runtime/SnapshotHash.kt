@@ -27,7 +27,63 @@ internal fun hashCapturedWorld(state: CapturedWorld): Long {
         hash.text(id)
         hash.state(value)
     }
+    // Sections added by R2b are hashed only when present, so existing checkpoints keep their fingerprints.
+    if (state.hierarchy.isNotEmpty()) {
+        hash.text("hierarchy")
+        hash.number(state.hierarchy.size.toLong())
+        state.hierarchy.forEach { (parent, children) ->
+            hash.number(parent.toLong())
+            hash.number(children.size.toLong())
+            children.forEach { hash.number(it.toLong()) }
+        }
+    }
+    if (state.resources.isNotEmpty()) {
+        hash.text("resources")
+        hash.number(state.resources.size.toLong())
+        state.resources.forEach { (id, value) ->
+            hash.text(id)
+            hash.state(value)
+        }
+    }
+    state.scenes?.let { scenes ->
+        hash.text("scenes")
+        hash.number(scenes.counter)
+        hash.number(scenes.identities.size.toLong())
+        scenes.identities.forEach { (index, identity) ->
+            hash.number(index.toLong())
+            hash.text(identity.templateId)
+            hash.number(identity.instance)
+            hash.text(identity.objectId)
+        }
+    }
+    state.input?.let { input ->
+        hash.text("input")
+        hashFrame(hash, input.current)
+        hashFrame(hash, input.previous)
+        hash.number(if (input.pending == null) 0L else 1L)
+        input.pending?.let { hashFrame(hash, it) }
+    }
     return hash.result
+}
+
+private fun hashFrame(
+    hash: SnapshotHash,
+    frame: CapturedFrame,
+) {
+    hash.number(frame.down.size.toLong())
+    frame.down.forEach(hash::text)
+    hash.number(frame.axes.size.toLong())
+    frame.axes.forEach { (id, value) ->
+        hash.text(id)
+        hash.number(value.toRawBits())
+    }
+    hash.number(frame.pointers.size.toLong())
+    frame.pointers.forEach {
+        hash.number(it.id.toLong())
+        hash.number(it.x.toRawBits())
+        hash.number(it.y.toRawBits())
+        hash.number(if (it.pressed) 1L else 0L)
+    }
 }
 
 private class SnapshotHash {

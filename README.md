@@ -21,9 +21,9 @@ is unfinished. The [general-purpose architecture revision](docs/design/2026-11-2
 creation requirements; their full runtime/editor implementation is unfinished. Existing platformer mechanics are a
 demo baseline, not the target engine's universal gameplay contract.
 
-The latest [architecture reassessment](docs/design/2026-11-20-engine-alternatives-review.md) compares runtime,
-custom-logic and persistence alternatives and updates the plan for review. Further implementation waits for that
-review and owner direction to continue; all merged runtime evidence and approved product features are preserved.
+The [architecture reassessment](docs/design/2026-11-20-engine-alternatives-review.md) compares runtime,
+custom-logic and persistence alternatives. The owner reviewed and merged it; its split of the remaining R1 work
+(storage comparison, then the portable program executor) is what R1c–R1d delivered.
 
 The first [headless runtime foundation](docs/runtime-foundation.md) now runs empty/player-free worlds and custom
 components/systems through public APIs, with a separately compiled extension consumer. It is an initial R1 evidence

@@ -5,11 +5,10 @@
 - Design and evidence: [architecture revision](../design/2026-11-20-general-purpose-engine.md).
 - Delivery sequence: [revised plan](../plans/2026-11-20-engine-foundation-revision.md).
 
-Review addendum, 2026-11-20: the owner's latest request is to reevaluate alternatives and revise the plan before
-proceeding. The [architecture reassessment](../design/2026-11-20-engine-alternatives-review.md) and plan updates
-are proposed for review. This ADR's accepted requirements remain intact; storage, program implementation and
-persistence choices remain evidence-based decisions. Merged R1a/R1b work is preserved. Further implementation
-waits for owner review and direction to continue.
+Review addendum, 2026-11-20: at the owner's request, the
+[architecture reassessment](../design/2026-11-20-engine-alternatives-review.md) re-evaluated the alternatives. The
+owner reviewed and merged it (PR #25). This ADR's accepted requirements are unchanged; storage, program
+implementation and persistence choices stay evidence-based, and R1c–R1d made them with recorded evidence.
 
 ## Context
 

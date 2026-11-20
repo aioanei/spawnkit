@@ -27,6 +27,14 @@ internal data class CapturedWorld(
     val registeredComponents: List<String>,
     val components: List<CapturedComponent>,
     val systems: List<Pair<String, StateValue>>,
+    /** Parent slot to ordered child slots, ascending by parent. */
+    val hierarchy: List<Pair<Int, List<Int>>> = emptyList(),
+    /** Resource ID to captured value, ascending by ID. */
+    val resources: List<Pair<String, StateValue>> = emptyList(),
+    /** Input frames, present only when the runtime registers actions or axes. */
+    val input: CapturedInput? = null,
+    /** Scene-instance counter and identities, present once any template was instantiated. */
+    val scenes: CapturedScenes? = null,
 )
 
 internal data class CapturedSlot(
@@ -37,4 +45,21 @@ internal data class CapturedSlot(
 internal data class CapturedComponent(
     val component: ComponentType<*>,
     val entries: List<Pair<Int, StateValue>>,
+)
+
+internal data class CapturedFrame(
+    val down: List<String>,
+    val axes: List<Pair<String, Double>>,
+    val pointers: List<Pointer>,
+)
+
+internal data class CapturedInput(
+    val current: CapturedFrame,
+    val previous: CapturedFrame,
+    val pending: CapturedFrame?,
+)
+
+internal data class CapturedScenes(
+    val counter: Long,
+    val identities: List<Pair<Int, ObjectIdentity>>,
 )

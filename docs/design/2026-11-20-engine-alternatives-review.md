@@ -1,6 +1,6 @@
 # Engine alternatives and architecture reassessment
 
-Status: **proposal for review**, 2026-11-20. This reassesses the accepted [general-purpose direction](2026-11-20-general-purpose-engine.md) against the owner's renewed request to revise the plan before implementation. It preserves the accepted product requirements and merged work. Recommendations below do not select dependencies or authorize more implementation.
+Status: **reviewed and merged by the owner** (PR #25). Written 2026-11-20 at baseline `ff86bd0`; later R1 work followed its split (storage comparison in R1c, program executor in R1d), so the "remaining" items below describe that baseline, not today. Original status: proposal for review. This reassesses the accepted [general-purpose direction](2026-11-20-general-purpose-engine.md) against the owner's renewed request to revise the plan before implementation. It preserves the accepted product requirements and merged work. Recommendations below do not select dependencies or authorize more implementation.
 
 ## 1. What is established and what remains a choice
 

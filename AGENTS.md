@@ -14,17 +14,29 @@ Plan/status: [PLANS.md](PLANS.md), [PROGRESS.md](PROGRESS.md).
 
 ## Current direction and implementation checkpoint
 
-The owner confirmed engine ownership and guided creation for non-programmers, removed time pressure as an
-architectural constraint, then authorized merging plan PR #20 and starting implementation. R0 reconciliation is
-complete. R1a / issue #21 and R1b / issue #23 are merged, including explicit native checkpoints, entity remapping
-and replay fingerprints in `core/runtime`, proven through `samples/runtimeProbe`. The latest request is to
-reevaluate alternatives and revise the plan before proceeding. Current work is the documentation-only
-[architecture reassessment](docs/design/2026-11-20-engine-alternatives-review.md), proposed for review. Further
-implementation waits for owner review and direction to continue. Remaining R1 comparisons/program proofs and the
-visual editor remain unfinished. Do not resume old Tasks 11–12 or treat unselected libraries as approved.
-Preserve completed work and player checkpoint `b2bf830` on `feat/6-player-shells`. JSON remains allowed for
-storage/transport; its schema and a closed list of gameplay mechanics cannot define engine capability.
+The owner confirmed SpawnKit owns its engine and that guided creation for non-programmers is required. They
+authorized implementation of the R0–R9 plan, then clarified the product vision on 2026-11-20
+([gap analysis](docs/design/2026-11-20-product-vision-gap-analysis.md),
+[ADR-0007](docs/adr/0007-mobile-builder-and-in-builder-release.md)).
 
+- **Done:** R1 is complete: runtime, checkpoints, storage and the [portable program executor](docs/runtime-programs.md).
+  R2a–R2f are merged: [descriptors](docs/runtime-descriptors.md), [hierarchy, resources, random and scene
+  templates](docs/runtime-hierarchy.md), [deterministic input](docs/runtime-input.md), and descriptor and input
+  bindings for programs.
+- **Now:** the [contest delivery track](docs/plans/2026-11-20-engine-foundation-revision.md#contest-delivery-track),
+  C1–C8, from C1 (2D presentation) onward.
+- **Open for owner review:** PR #25 (architecture reassessment). It is not merged autonomously.
+- **Preserve:** completed work and player checkpoint `b2bf830` on `feat/6-player-shells`.
+- **Do not:** resume old Tasks 11–12, or treat unselected libraries as approved. JSON remains allowed for
+  storage and transport, but its schema and a closed list of gameplay mechanics cannot define engine capability.
+
+## Product non-negotiables
+
+- The builder is first-class on Android and desktop (then iOS and web). Every editor screen needs a compact,
+  touch-first layout as well as an expanded one; a desktop-only layout fails review. A creator must never need a
+  desktop computer.
+- Creators release independent games from the builder (web export and Arcade first, Android export next). They
+  never use Gradle, an IDE or a terminal, and credentials never enter projects, logs or exports.
 - SpawnKit owns the runtime, gameplay APIs, behavior execution, editor capabilities and extension SDK. Focused
   libraries are allowed; another complete engine cannot become the foundation.
 - Guided visual creation is the default: blank projects or optional examples, drag-and-drop objects, friendly
@@ -45,13 +57,16 @@ storage/transport; its schema and a closed list of gameplay mechanics cannot def
 | `core/templates` | KMP, all targets | existing embedded template fixtures; preserve during migration |
 | `core/engine` | KMP, all targets | preserved tested platformer runtime and compatibility regression baseline |
 | `core/runtime` | KMP, all targets | provisional headless world/component/scheduler and explicit checkpoint/replay APIs; no legacy model dependency |
+| `core/program` | KMP, all targets | portable program executor: typed programs, type checking, resumable bytecode VM, atomic segments, checkpointed waits |
+| `core/graphics` | KMP, all targets | general 2D presentation: transform, shape, sprite and camera components with descriptors; render lists, hit testing, view transforms |
 | `samples/runtimeProbe` | KMP, all targets | separately compiled public-API consumer and cross-target extension evidence |
+| `benchmarks/runtimeStorage` | KMP executable (jvm, js, wasmJs, mingwX64, linuxX64) | unshipped runtime storage benchmark harness; public `World` API only |
 | `core/validation` | KMP, all targets | integrity checks, reachability solver, playtest, economy check |
-| `core/editing` | KMP, all targets | planned real workspace operations, undo/redo, transactions and changesets |
+| `core/editing` | KMP, all targets | workspace model (project/scenes/objects/component values), typed validated operations, undo/redo, scene→world building with identity mapping |
 | `core/api` | KMP, all targets | client/server DTOs |
-| `render` | KMP + Compose | `GameView`: Canvas renderer, camera, input, HUD |
+| `render` | KMP + Compose | shared `RuntimeCanvas` for general-runtime frames (editor and players); legacy platformer `GameView` |
 | `ai` | KMP | planned Koog engine/editor capability tools, media providers, record/replay executors |
-| `app/shared` + `app/*App` | KMP + Compose | creator app (editor, AI Studio, arcade) and platform entry points |
+| `app/shared` + `app/*App` | KMP + Compose | creator app: responsive builder (viewport, hierarchy, generated inspector, play) on Android/desktop/iOS/web, plus platform entry points |
 | `player/shared` + `player/*App` | KMP + Compose | exported-game shells (single game / arcade gallery) |
 | `server` | Ktor (JVM) | publishing, arcade hosting, validation |
 
@@ -74,6 +89,7 @@ Compose modules omit `mingwX64` and `linuxX64`.
 | iOS simulator tests (macOS only; CI job `ios`) | `./gradlew iosSimulatorArm64Test` |
 | Creator app | `./gradlew :app:desktopApp:run` · `:app:webApp:wasmJsBrowserDevelopmentRun` · `:app:androidApp:installDebug` |
 | Server | `./gradlew :server:run` |
+| Runtime storage benchmark (not a test gate) | `./gradlew :benchmarks:runtimeStorage:jvmRun` · `jsNodeProductionRun` · `wasmJsNodeProductionRun` · `runReleaseExecutableMingwX64` |
 
 Do not run `./gradlew build` or `allTests` locally: they include browser (Karma) and Apple tasks that are slow or
 unavailable on most machines. Use the aggregates above.
@@ -98,7 +114,8 @@ unavailable on most machines. Use the aggregates above.
 
 ## Guardrails
 
-- Never commit secrets: `.env`, API keys, keystores, signing certificates. Keys are read from the environment.
+- Never commit secrets: `.env`, API keys, keystores, signing certificates. Keys come from the environment (development, CI, desktop) or the platform's secure storage on devices, never
+  from project files, exports or logs.
 - Only the coordinating session edits `settings.gradle.kts`, `gradle/libs.versions.toml` and `core/model` while
   parallel work is in progress; other agents request changes to those files.
 - If a quality gate fails, read the failure and fix the cause. Do not retry blindly, weaken a test, add `@Ignore`,
@@ -109,9 +126,9 @@ unavailable on most machines. Use the aggregates above.
 
 ## Workflow
 
-1. Honor the current plan-review checkpoint before implementation. After owner review and direction to continue,
-   resume from the documented checkpoint in the revised R0–R9 dependency order and the lowest open milestone
-   on GitHub, `priority:high` issues first. Continue unfinished R1 evidence work before moving to R2.
+1. Continue from the documented checkpoint: the contest delivery track C1–C8 in the plan, respecting each item's
+   stated dependencies. It delivers R3–R9 subsets; the remaining R-step work stays planned. Within that, take
+   `priority:high` issues first.
    Each task has an issue with an objective, requirements and acceptance criteria.
 2. Branch from `main`: `feat|fix|chore|docs|test/<issue-number>-<slug>`.
 3. Test first where practical; keep commits small, using Conventional Commits (`feat(engine): …`).

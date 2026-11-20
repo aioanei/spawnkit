@@ -16,11 +16,15 @@ public class World internal constructor(
     private val registry: Any,
     private val registeredComponents: List<ComponentType<*>>,
     private val systems: List<Pair<String, WorldSystem>>,
+    private val registeredResources: List<ResourceType<*>> = emptyList(),
+    private val registeredActions: List<InputAction> = emptyList(),
+    private val registeredAxes: List<InputAxis> = emptyList(),
 ) {
     private val owner = Any()
+    private val resources: Array<Any> = Array(registeredResources.size) { registeredResources[it].create() }
     private val slots = mutableListOf<Slot>()
     private val freeSlots = mutableListOf<Int>()
-    private val stores = mutableMapOf<ComponentType<*>, MutableMap<Int, Any>>()
+    private val columns = arrayOfNulls<ComponentColumn>(registeredComponents.size)
     private var stage = Stage.Idle
     private var currentSystem = "runtime:commands"
 
@@ -42,6 +46,34 @@ public class World internal constructor(
 
     internal val checkpointIdentity: Any get() = owner
 
+    internal val registryIdentity: Any get() = registry
+
+    internal var currentInput: InputFrame = InputFrame.EMPTY
+    internal var previousInput: InputFrame = InputFrame.EMPTY
+    private var pendingInput: InputFrame? = null
+    private var instanceCounter = 0L
+
+    /** Input for the current tick; see [submitInput]. */
+    public val input: InputView = InputView(this)
+
+    /**
+     * Supplies the input frame for the next [step]. Only allowed between ticks on a healthy world. Without a new
+     * submission, the previous frame stays in effect, so held input persists across ticks.
+     */
+    public fun submitInput(frame: InputFrame) {
+        check(stage == Stage.Idle && !isFaulted) { "Input can only be submitted between ticks on a healthy world" }
+        frame.requireValid(registry)
+        pendingInput = frame
+    }
+
+    internal fun checkedInput(action: InputAction): InputAction {
+        require(action.registry === registry) { "Input action '${action.id}' belongs to another runtime" }
+        return action
+    }
+
+    /** Whether authoring edits may apply now: a healthy world between ticks. */
+    internal val acceptsAuthoringEdits: Boolean get() = !isFaulted && stage == Stage.Idle
+
     /** Creates an empty entity, reusing free slots in deterministic last-freed-first order. */
     public fun spawn(): EntityHandle {
         requireStructuralEdit()
@@ -55,17 +87,138 @@ public class World internal constructor(
     public fun isAlive(entity: EntityHandle): Boolean =
         entity.owner === owner && slots.getOrNull(entity.index)?.let { it.alive && it.generation == entity.generation } == true
 
-    /** Removes an entity and its components; stale or foreign handles are rejected. */
+    /**
+     * Removes an entity and its components; stale or foreign handles are rejected. It is detached from its parent;
+     * its children become roots, keeping their order. Use [destroyTree] to remove descendants too.
+     */
     public fun destroy(entity: EntityHandle) {
         requireStructuralEdit()
         requireEntity(entity)
         val slot = slots[entity.index]
         check(slot.generation < Long.MAX_VALUE) { "Entity generation exhausted" }
-        stores.values.forEach { it.remove(entity.index) }
+        detach(entity.index)
+        slot.children?.forEach { slots[it].parent = NO_PARENT }
+        slot.identity = null
+        slot.children = null
+        for (column in columns) column?.remove(entity.index)
         slot.alive = false
         slot.generation++
+        slot.handle = null
         freeSlots += entity.index
         entityCount--
+    }
+
+    /** Destroys [entity] and all its descendants, children before parents, in child order. */
+    public fun destroyTree(entity: EntityHandle) {
+        requireStructuralEdit()
+        requireEntity(entity)
+        for (child in children(entity)) destroyTree(child)
+        destroy(entity)
+    }
+
+    /** The parent of [entity], or `null` for a root. */
+    public fun parent(entity: EntityHandle): EntityHandle? {
+        requireEntity(entity)
+        val parent = slots[entity.index].parent
+        return if (parent == NO_PARENT) null else handle(parent)
+    }
+
+    /** Children of [entity] in their authored order. */
+    public fun children(entity: EntityHandle): List<EntityHandle> {
+        requireEntity(entity)
+        return slots[entity.index].children?.map(::handle) ?: emptyList()
+    }
+
+    /**
+     * Makes [child] a child of [parent] at position [index] (default: last), or a root when [parent] is `null`.
+     * Reparenting within the same parent reorders. Self-parenting and cycles are rejected.
+     */
+    public fun setParent(
+        child: EntityHandle,
+        parent: EntityHandle?,
+        index: Int = -1,
+    ) {
+        requireStructuralEdit()
+        requireEntity(child)
+        require(index >= -1) { "Child position $index is invalid; use -1 to append" }
+        if (parent != null) {
+            requireEntity(parent)
+            var cursor = parent.index
+            while (cursor != NO_PARENT) {
+                require(cursor != child.index) { "An object cannot be placed inside itself or its own descendants" }
+                cursor = slots[cursor].parent
+            }
+        }
+        if (parent != null && index >= 0) {
+            // Validate before detaching, so a rejected edit changes nothing.
+            val existing = slots[parent.index].children?.size ?: 0
+            val available = if (slots[child.index].parent == parent.index) existing - 1 else existing
+            require(index <= available) { "Child position $index is outside 0..$available" }
+        }
+        detach(child.index)
+        if (parent == null) return
+        val siblings = slots[parent.index].children ?: mutableListOf<Int>().also { slots[parent.index].children = it }
+        siblings.add(if (index < 0) siblings.size else index, child.index)
+        slots[child.index].parent = parent.index
+    }
+
+    /**
+     * Instantiates [template] between ticks (or during command commit): creates its objects in declaration order with
+     * fresh component values, reproduces its hierarchy and places its roots under [parent] when given. Every created
+     * entity records an [ObjectIdentity]. Components are validated before anything is created.
+     */
+    public fun instantiate(
+        template: SceneTemplate,
+        parent: EntityHandle? = null,
+    ): SceneInstance {
+        requireStructuralEdit()
+        parent?.let(::requireEntity)
+        template.objects.forEach { obj -> obj.components.forEach { requireComponent(it.component) } }
+        check(instanceCounter < Long.MAX_VALUE) { "Scene instance counter exhausted" }
+        // Create every component value first: a failing factory then leaves the world untouched.
+        val values = template.objects.map { obj -> obj.components.map { seed -> seed to seed.create() } }
+        val number = ++instanceCounter
+        val handles = LinkedHashMap<String, EntityHandle>()
+        for ((i, obj) in template.objects.withIndex()) {
+            val entity = spawn()
+            handles[obj.id] = entity
+            slots[entity.index].identity = ObjectIdentity(template.id, number, obj.id)
+            values[i].forEach { (seed, value) -> attachValue(entity, seed, value) }
+        }
+        for (obj in template.objects) {
+            val target = obj.parent?.let(handles::getValue) ?: parent ?: continue
+            setParent(handles.getValue(obj.id), target)
+        }
+        return SceneInstance(template, number, handles)
+    }
+
+    /** Where [entity] came from, or `null` when it was not created from a scene template. */
+    public fun identity(entity: EntityHandle): ObjectIdentity? {
+        requireEntity(entity)
+        return slots[entity.index].identity
+    }
+
+    @Suppress("UNCHECKED_CAST") // [value] was produced by this seed's own typed factory.
+    private fun <T : Any> attachValue(
+        entity: EntityHandle,
+        seed: ComponentSeed<T>,
+        value: Any,
+    ) = set(entity, seed.component, value as T)
+
+    /** Returns the world's value of a registered resource. */
+    @Suppress("UNCHECKED_CAST") // Each table entry was created by its own typed resource factory.
+    public fun <T : Any> resource(type: ResourceType<T>): T {
+        require(type.registry === registry) { "Resource '${type.id}' belongs to another runtime" }
+        return resources[type.ordinal] as T
+    }
+
+    private fun detach(index: Int) {
+        val slot = slots[index]
+        if (slot.parent == NO_PARENT) return
+        val siblings = checkNotNull(slots[slot.parent].children)
+        siblings.remove(index)
+        if (siblings.isEmpty()) slots[slot.parent].children = null
+        slot.parent = NO_PARENT
     }
 
     /**
@@ -81,9 +234,9 @@ public class World internal constructor(
         check(!isFaulted && stage != Stage.Capturing && stage != Stage.Restoring) { "World is faulted or checkpointing" }
         requireEntity(entity)
         requireComponent(component)
-        val existing = stores[component]
-        if (existing?.containsKey(entity.index) != true) requireStructuralEdit()
-        stores.getOrPut(component) { mutableMapOf() }[entity.index] = value
+        val column = columns[component.ordinal]
+        if (column?.contains(entity.index) != true) requireStructuralEdit()
+        (column ?: ComponentColumn().also { columns[component.ordinal] = it }).put(entity.index, value)
     }
 
     /** Reads a component, or `null` if absent. Stale/foreign handles and foreign component registrations fail. */
@@ -91,7 +244,7 @@ public class World internal constructor(
     public fun <T : Any> get(entity: EntityHandle, component: ComponentType<T>): T? {
         requireEntity(entity)
         requireComponent(component)
-        return stores[component]?.get(entity.index) as T?
+        return columns[component.ordinal]?.get(entity.index) as T?
     }
 
     /** Detaches a component outside a system update and returns its previous value, if present. */
@@ -100,16 +253,47 @@ public class World internal constructor(
         requireStructuralEdit()
         requireEntity(entity)
         requireComponent(component)
-        return stores[component]?.remove(entity.index) as T?
+        return columns[component.ordinal]?.remove(entity.index) as T?
     }
 
-    /** Captures live handles having all [components], in ascending slot order; no types means every entity. */
+    /**
+     * Captures live handles having all [components], in ascending slot order; no types means every entity.
+     * The smallest requested column drives the query, so sparse components are not found by scanning every slot.
+     */
     public fun entities(vararg components: ComponentType<*>): List<EntityHandle> {
         components.forEach(::requireComponent)
-        return slots.indices
-            .filter { index ->
-                slots[index].alive && components.all { stores[it]?.containsKey(index) == true }
-            }.map(::handle)
+        if (components.isEmpty()) {
+            val result = ArrayList<EntityHandle>(entityCount)
+            for (index in slots.indices) if (slots[index].alive) result += handle(index)
+            return result
+        }
+        val required = arrayOfNulls<ComponentColumn>(components.size)
+        var driver = -1
+        for ((i, component) in components.withIndex()) {
+            val column = columns[component.ordinal]
+            if (column == null || column.size == 0) return emptyList()
+            required[i] = column
+            if (driver < 0 || column.size < checkNotNull(required[driver]).size) driver = i
+        }
+        val smallest = checkNotNull(required[driver])
+        if (smallest.size.toLong() * ComponentColumn.SORT_COST_FACTOR >= slots.size) {
+            // Dense relative to the slot range: an ordered slot scan avoids sorting.
+            val result = ArrayList<EntityHandle>(smallest.size)
+            for (index in slots.indices) {
+                if (required.all { checkNotNull(it).contains(index) }) result += handle(index)
+            }
+            return result
+        }
+        val matches = IntArray(smallest.size)
+        var count = 0
+        for (position in 0 until smallest.size) {
+            val index = smallest.slotAt(position)
+            if (required.all { checkNotNull(it).contains(index) }) matches[count++] = index
+        }
+        matches.sort(0, count)
+        val result = ArrayList<EntityHandle>(count)
+        for (i in 0 until count) result += handle(matches[i])
+        return result
     }
 
     /**
@@ -119,6 +303,9 @@ public class World internal constructor(
     public fun step() {
         check(stage == Stage.Idle && !isFaulted) { "World is already stepping or faulted" }
         check(tick < Long.MAX_VALUE) { "Tick counter exhausted" }
+        previousInput = currentInput
+        currentInput = pendingInput ?: currentInput
+        pendingInput = null
         val commands = WorldCommands(this) { currentSystem }
         stage = Stage.Updating
         tick++
@@ -145,19 +332,26 @@ public class World internal constructor(
      */
     public fun snapshot(limits: SnapshotLimits = SnapshotLimits()): WorldSnapshot {
         check(stage == Stage.Idle && !isFaulted) { "Snapshots require a healthy idle world" }
-        val populated = stores.filterValues { it.isNotEmpty() }.entries.sortedBy { it.key.id }
-        populated.forEach { check(it.key.supportsCheckpoint) { "Component '${it.key.id}' has no checkpoint codec" } }
+        // registeredComponents is sorted by ID, keeping capture order canonical and independent of registration order.
+        val populated =
+            registeredComponents.mapNotNull { component ->
+                columns[component.ordinal]?.takeIf { it.size > 0 }?.let { component to it }
+            }
+        populated.forEach { check(it.first.supportsCheckpoint) { "Component '${it.first.id}' has no checkpoint codec" } }
         systems.forEach { (id, system) -> check(system is CheckpointSystem) { "System '$id' has no checkpoint contract" } }
+        registeredResources.forEach { check(it.supportsCheckpoint) { "Resource '${it.id}' has no checkpoint codec" } }
         val context = StateCaptureContext(this)
         val freezer = StateFreezer(owner, limits)
         stage = Stage.Capturing
         try {
             val capturedComponents =
-                populated.map { (component, values) ->
+                populated.map { (component, column) ->
                     CapturedComponent(
                         component,
-                        values.entries.sortedBy { it.key }.map { (index, value) ->
-                            index to freezer.copy(component.capture(value, context))
+                        ArrayList<Pair<Int, StateValue>>(column.size).also { entries ->
+                            column.forEachInSlotOrder { index, value ->
+                                entries += index to freezer.copy(component.capture(value, context))
+                            }
                         },
                     )
                 }
@@ -175,6 +369,20 @@ public class World internal constructor(
                     registeredComponents.map { it.id },
                     capturedComponents,
                     capturedSystems,
+                    slots.indices.mapNotNull { index -> slots[index].children?.let { index to it.toList() } },
+                    registeredResources.sortedBy { it.id }.map { it.id to freezer.copy(it.capture(resources[it.ordinal], context)) },
+                    if (registeredActions.isEmpty() && registeredAxes.isEmpty() && !hasPointerInput()) {
+                        null
+                    } else {
+                        CapturedInput(capture(currentInput), capture(previousInput), pendingInput?.let(::capture))
+                    },
+                    if (instanceCounter ==
+                        0L
+                    ) {
+                        null
+                    } else {
+                        CapturedScenes(instanceCounter, slots.indices.mapNotNull { i -> slots[i].identity?.let { i to it } })
+                    },
                 ),
             )
         } finally {
@@ -196,22 +404,47 @@ public class World internal constructor(
             freeSlots += state.freeSlots
             entityCount = slots.count { it.alive }
             for ((component, entries) in state.components) {
-                stores[component] =
-                    entries
-                        .associate { (index, value) ->
-                            index to component.restore(copyCapturedState(value), context)
-                        }.toMutableMap()
+                val column = ComponentColumn(entries.size, slots.size)
+                for ((index, value) in entries) column.put(index, component.restore(copyCapturedState(value), context))
+                columns[component.ordinal] = column
             }
             for ((index, captured) in state.systems.withIndex()) {
                 val (id, system) = systems[index]
                 check(id == captured.first && system is CheckpointSystem) { "System '$id' has no matching checkpoint contract" }
                 system.restoreState(copyCapturedState(captured.second), context)
             }
+            for ((parent, children) in state.hierarchy) {
+                slots[parent].children = children.toMutableList()
+                children.forEach { slots[it].parent = parent }
+            }
+            state.scenes?.let { scenes ->
+                instanceCounter = scenes.counter
+                scenes.identities.forEach { (index, identity) -> slots[index].identity = identity }
+            }
+            state.input?.let {
+                currentInput = restoreFrame(it.current)
+                previousInput = restoreFrame(it.previous)
+                pendingInput = it.pending?.let(::restoreFrame)
+            }
+            for ((id, value) in state.resources) {
+                val type = registeredResources.first { it.id == id }
+                resources[type.ordinal] = type.restore(copyCapturedState(value), context)
+            }
         } finally {
             context.close()
             stage = Stage.Idle
         }
     }
+
+    private fun hasPointerInput(): Boolean =
+        currentInput.pointers.isNotEmpty() || previousInput.pointers.isNotEmpty() || pendingInput?.pointers?.isNotEmpty() == true
+
+    internal fun restoreInputFrame(frame: CapturedFrame): InputFrame =
+        InputFrame(
+            frame.down.map { id -> registeredActions.first { it.id == id } }.toSet(),
+            frame.axes.associate { (id, value) -> registeredAxes.first { it.id == id } to value },
+            frame.pointers,
+        )
 
     internal fun requireOwnedReference(entity: EntityHandle) {
         require(entity.owner === owner && entity.index in slots.indices && entity.generation in 0..slots[entity.index].generation) {
@@ -237,12 +470,39 @@ public class World internal constructor(
         check(stage == Stage.Idle || stage == Stage.Committing) { "Use WorldCommands during updates; checkpoint state is read-only" }
     }
 
-    private fun handle(index: Int): EntityHandle = EntityHandle(owner, index, slots[index].generation)
+    /** Returns the cached immutable handle for a live slot's current generation. */
+    private fun handle(index: Int): EntityHandle {
+        val slot = slots[index]
+        return slot.handle ?: EntityHandle(owner, index, slot.generation).also { slot.handle = it }
+    }
 
     private class Slot(
         var generation: Long = 0L,
         var alive: Boolean = true,
+        /** Handle for the current generation; cleared whenever the generation changes. */
+        var handle: EntityHandle? = null,
+        /** Parent slot, or [NO_PARENT]. */
+        var parent: Int = NO_PARENT,
+        /** Ordered child slots, or `null` when there are none. */
+        var children: MutableList<Int>? = null,
+        /** Scene identity of the entity, if instantiated from a template. */
+        var identity: ObjectIdentity? = null,
     )
 
     private enum class Stage { Idle, Updating, Committing, Capturing, Restoring }
+
+    private companion object {
+        const val NO_PARENT = -1
+    }
 }
+
+private fun capture(frame: InputFrame): CapturedFrame =
+    CapturedFrame(
+        frame.down.map { it.id }.sorted(),
+        frame.axes.entries
+            .map { it.key.id to it.value }
+            .sortedBy { it.first },
+        frame.pointers.toList(),
+    )
+
+private fun World.restoreFrame(frame: CapturedFrame): InputFrame = restoreInputFrame(frame)

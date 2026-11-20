@@ -2,6 +2,7 @@ package dev.spawnkit.samples.runtimeprobe
 
 import dev.spawnkit.runtime.AuthoringInfo
 import dev.spawnkit.runtime.CheckpointSystem
+import dev.spawnkit.runtime.ComponentDescriptor
 import dev.spawnkit.runtime.ComponentType
 import dev.spawnkit.runtime.RuntimeBuilder
 import dev.spawnkit.runtime.StateCaptureContext
@@ -9,6 +10,7 @@ import dev.spawnkit.runtime.StateCodec
 import dev.spawnkit.runtime.StateCodecs
 import dev.spawnkit.runtime.StateRestoreContext
 import dev.spawnkit.runtime.StateValue
+import dev.spawnkit.runtime.ValueKind
 import dev.spawnkit.runtime.World
 import dev.spawnkit.runtime.WorldCommands
 
@@ -25,6 +27,21 @@ public class CounterFeature(
     /** Discoverable custom state; the runtime contains no knowledge of this class or identifier. */
     public val counter: ComponentType<Counter> =
         builder.component("probe:counter", AuthoringInfo("Counter", "An example counter", "Examples"), CounterCodec)
+
+    /** Authoring metadata, so generic inspectors and agents can edit the counter without custom code. */
+    public val descriptor: ComponentDescriptor<Counter> =
+        builder.describe(counter) {
+            create { Counter() }
+            property(
+                "value",
+                ValueKind.WholeNumber(min = 0, max = 1_000_000),
+                AuthoringInfo("Value", "Current count"),
+                default = 0L,
+                read = { it.value.toLong() },
+                write = { _, v -> Counter(v.toInt()) },
+                examples = listOf("0 to start counting from zero"),
+            )
+        }
 
     init {
         builder.system("probe:increment") { CounterSystem(counter) }

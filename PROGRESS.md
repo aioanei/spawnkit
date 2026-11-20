@@ -1,14 +1,208 @@
 # SpawnKit progress
 
-## Current checkpoint — architecture reassessment for review (2026-11-20)
+## Current checkpoint — C3 builder shell (2026-11-20)
 
-- The owner renewed the request for a genuine extensible general-purpose engine, research into alternatives and a revised plan before implementation. This follow-up is documentation-only on `docs/19-engine-architecture-reassessment`, based on clean main at `ff86bd0`. Further implementation waits for owner review and direction to continue.
-- Verified [PR #24](https://github.com/aioanei/spawnkit/pull/24) is merged at `ff86bd0`, issue #23 is closed and its `build` / `ios-simulator` checks succeeded. R1a and R1b are completed increments; the whole R1 gate remains unfinished. No PR was open at review start.
-- Added the [alternatives reassessment](docs/design/2026-11-20-engine-alternatives-review.md): scene/object composition, ECS, scheduled composition, immutable reducers, complete-engine integration; common interpreter versus Lua, QuickJS, guest Wasm and JVM scripting; independent project/checkpoint/export persistence. Recommendations are distinguished from source facts and unperformed compatibility/performance tests.
-- Rechecked Fleks 2.16's primary target declarations/license, Godot/Unity organization, Lua hooks, QuickJS limits, Wasmtime fuel, Kotlin scripting/web interoperation, Bevy plugins and Koog class-based tools. No dependency is adopted and no new executable comparison is claimed.
-- Revised R1 to distinguish completed lifecycle/native-state evidence from remaining storage and program/effect comparisons, with named candidates, rejection criteria, common fixtures and explicit deliverables. Corrected the proposed general runtime boundary to the existing `core/runtime`; added persistence separation and public-SDK/frozen-API demo evidence.
-- Preserved all product commitments, mandatory KMP/Compose/Koog/Ktor technologies, legacy fixtures/tests and player checkpoint `b2bf830`. Updated current indexes, ADR review note, README and agent guidance. No runtime/editor source, dependency, build setting, remote issue or merge changed in this reassessment.
-- Documentation verification passed: 9 changed/new Markdown files, 65 relative links/anchors resolved, zero failures; `git diff --check` passed. Runtime/Gradle tests were not rerun for this documentation-only reassessment; earlier implementation and CI results above describe the merged baseline.
+- **C2 is done.** PR #48 merged as `955d589`; the C3 branch already sits on that merge.
+- **Branch and issue.** Branch `feat/47-builder-shell`; [issue #47](https://github.com/aioanei/spawnkit/issues/47).
+- **Builder.** The real builder lives in `app/shared`: `EditorState`, `Viewport` (touch and mouse gestures, drag
+  move as one undo step, pan, pinch and wheel zoom), the descriptor-generated `Inspector`, `EditorScreen` (compact and
+  expanded layouts, palette, hierarchy, toolbar, status) and a 60 Hz play loop.
+- **Verification.** Compose UI tests pass at phone and desktop sizes, with a viewport pixel check. The Android debug
+  APK was installed and driven on the API 36 emulator with real taps and a swipe. Screenshots are in `docs/media`.
+  Emulator testing found and fixed density scaling, grid density and selection visibility. Docs:
+  [builder](docs/builder.md).
+- **Pre-PR review fixes.** Inline validation messages under rejected inspector fields (an issue requirement that only
+  reached the status bar), keyboard shortcuts on a focused scene (undo/redo, duplicate, delete, nudge, Escape), and
+  horizontal-only scrolls no longer zoom in. Each has a UI test.
+- **Next step.** Open the C3 PR, review and merge. Then C4: visual rules. Install
+  `ProgramFeature` in `BuilderEngine` with descriptor and input bindings and gameplay host functions, add a
+  `ComponentDoc`-like behavior attachment for programs in the workspace, and build a touch-friendly When/If/Do editor.
+
+## Current checkpoint — C2 editing core (2026-11-20)
+
+- **C1 is done.** PR #45 merged after an independent review; zoom guard, bounded grid and a real layer-order pixel
+  check were fixed before merge.
+- **Branch and issue.** Branch `feat/46-editing-workspace`; [issue #46](https://github.com/aioanei/spawnkit/issues/46).
+  It adds module `core/editing`:
+  - immutable Project/SceneDoc/ObjectDoc/ComponentDoc;
+  - typed validated `EditOperation`s;
+  - `Editor`, with snapshot undo/redo, revisions and listeners;
+  - `buildSceneWorld`, with identity mapping for selection and play isolation.
+- **Tests.** 7 common tests pass on JVM, Android host, JS, Wasm and mingwX64. Docs: [editing](docs/editing.md).
+- **Next step.** PR, review, merge. C3 (builder shell) is already implemented on `feat/47-builder-shell`, stacked on
+  this branch: Compose UI tests at phone and desktop sizes pass and the Android debug APK builds. Android emulator
+  verification is in progress.
+
+## Current checkpoint — C1 2D presentation (2026-11-20)
+
+- **Vision reconciliation done.** PR #43 merged after an independent review, with its fixes applied before merge.
+  Issue #42 is closed.
+- **Branch and issue.** Branch `feat/44-graphics2d`; [issue #44](https://github.com/aioanei/spawnkit/issues/44).
+- **Added.**
+  - New module `core/graphics`: Transform2D/Shape2D/Sprite2D/Camera2D with descriptors and codecs; Affine2D;
+    render lists in layer and scene order; hit testing; view transforms.
+  - `ValueKind.Color`.
+  - `render/RuntimeCanvas`: a shared Compose renderer with a JVM Skia pixel test and screenshot
+    `docs/media/runtime-canvas.png`.
+- **Verified locally.** The renderer compiles for Android, JS and Wasm. Docs: [2D graphics](docs/graphics-2d.md).
+- **Next step.** Gates, PR, review, merge. Then C2: `core/editing`, with the workspace (project, scenes, objects
+  from component descriptors and seeds, rules as programs), typed operations, undo/redo and play-world
+  instantiation. Then C3, the responsive builder on Android and desktop.
+
+## Current checkpoint — product vision reconciliation and contest track (2026-11-20)
+
+- **Merged before this work.** PR #41 (R2f scene templates) merged as `cfa16a3`, after green CI and an independent
+  AI-subagent review whose fixes landed before merge. R1 and R2a–R2f are complete.
+- **Owner clarification.** The owner clarified the full product vision; the three non-negotiables are a genuine
+  engine, a full builder on Android and desktop, and release from the builder.
+- **Branch.** `docs/42-vision-gap-analysis`.
+- **Added.**
+  - [Gap analysis](docs/design/2026-11-20-product-vision-gap-analysis.md): classifications, with contest rules
+    rechecked 2026-11-20.
+  - [ADR-0007](docs/adr/0007-mobile-builder-and-in-builder-release.md).
+  - The plan's
+    [contest delivery track](docs/plans/2026-11-20-engine-foundation-revision.md#contest-delivery-track) C1–C8.
+  - Updated agent guidance and plan index.
+- **Correction.** The earlier "≥ 2 platforms" contest rule was an inference; the official rules state none.
+- **Key facts.**
+  - The creator app is still a shell; no editor, AI or server functionality exists yet.
+  - The engine direction is retained without rewrites.
+  - Earlier desktop/web-only creator scoping and Gradle-built per-game players are superseded.
+- **Next step.** C1, 2D presentation facilities in the general runtime: transform, shape and sprite drawables,
+  layers, camera, and a Compose renderer for any runtime world shared by editor and player. Then C2 workspace and
+  operations, and C3 the responsive builder on Android and desktop.
+
+## Current checkpoint — R2f scene templates and instance identity (2026-11-20, autonomous overnight session)
+
+- **R2e is done.** PR #39 merged as `175b432`. Review fixes: atomic registration, and foreign inputs fault the rule.
+- **Branch and issue.** Branch `feat/40-scene-templates`; [issue #40](https://github.com/aioanei/spawnkit/issues/40).
+  Adds `SceneTemplate`/`TemplateObject`/`ComponentSeed`, `World.instantiate`, `WorldCommands.instantiate`,
+  `SceneInstance` and `World.identity`, with a checkpointed counter and identities.
+- **Next step.** Gates, PR, review, merge. R2 then has only small remaining items: asset resource references and
+  scenario stepping helpers. Then R3: extract the legacy renderer's viewport/camera/input-cancellation/
+  interpolation into generic observations, and add transforms and drawable/layer APIs over `core/runtime`.
+
+## Previous checkpoint — R2e input functions for rules (2026-11-20, autonomous overnight session)
+
+- **R2d is done.** PR #37 merged as `6d6e8fe`. Review fixes: defensive frame copies, and checkpointing of
+  pointer-only input.
+- **Branch and issue.** Branch `feat/38-program-input`; [issue #38](https://github.com/aioanei/spawnkit/issues/38).
+  Adds `ProgramHostBuilder.inputs` (isDown/wasPressed/wasReleased/axis by ID) and `HostCallContext.input`.
+- **Next step.** Gates, PR, review, merge. Then scene-instance identity (authoring IDs mapped to runtime handles),
+  or R3 presentation facilities (transforms, camera, drawables) extracted from the legacy renderer.
+
+## Previous checkpoint — R2d deterministic input (2026-11-20, autonomous overnight session)
+
+- **R2c is done.** PR #35 merged as `4bb8295`. The review found nothing blocking; descriptor bindings now register
+  atomically.
+- **Branch and issue.** Branch `feat/36-input`; [issue #36](https://github.com/aioanei/spawnkit/issues/36).
+- **Added.** `RuntimeBuilder.action`/`axis`, `InputFrame`/`Pointer`, `World.submitInput` and `World.input`
+  (isDown/wasPressed/wasReleased/axis/pointers). Checkpointed current/previous/pending frames, with a hash section
+  only when inputs are registered. Recorded replay matches the live hash on all targets. Docs:
+  [input](docs/runtime-input.md).
+- **Next step.** Gates, PR, review, merge. Then:
+  - scene-instance identity (authoring IDs mapped to runtime handles);
+  - program input host functions;
+  - R3 presentation facilities (transforms, camera, drawables), extracted from the legacy renderer.
+
+## Previous checkpoint — R2c descriptor-derived program bindings (2026-11-20, autonomous overnight session)
+
+- **R2b is done.** PR #33 merged as `e2ac0f9`. The review found nothing blocking; hierarchy position validation now
+  runs before any change.
+- **Branch and issue.** Branch `feat/34-descriptor-bindings`;
+  [issue #34](https://github.com/aioanei/spawnkit/issues/34).
+- **Added.** `ProgramHostBuilder.properties(descriptor, prefix)` maps whole number, decimal, yes/no, text and choice
+  properties to typed program properties. Writes are validated when they execute, with the new
+  `FaultKind.InvalidValue` and rollback. `PropertyDescriptor.with` is now public.
+- **Next step.** Gates, PR, review, merge. Then continue R2 with:
+  - input actions/axes/pointers as runtime resources, with a deterministic per-tick input frame;
+  - scene-instance identity (authoring IDs mapped to runtime handles).
+
+## Previous checkpoint — R2b hierarchy, resources and seeded random (2026-11-20, autonomous overnight session)
+
+- **R2a is done.** PR #31 merged as `c4cde07`. The independent review found nothing blocking; edit gating, factory
+  validation and cross-target decimal input were fixed before merge.
+- **Branch and issue.** Branch `feat/32-hierarchy-resources`;
+  [issue #32](https://github.com/aioanei/spawnkit/issues/32).
+- **Added.**
+  - World hierarchy: `setParent`, `parent`, `children`, `destroyTree`, deferred commands, and detach-on-destroy.
+  - `RuntimeBuilder.resource` and `World.resource`.
+  - SplitMix64 `SeededRandom` with a codec.
+  - Snapshot and hash sections that appear only when non-empty, so existing goldens are unchanged.
+- **Tests.** All targets pass locally. Docs: [hierarchy](docs/runtime-hierarchy.md).
+- **Next step.** Gates, PR, review, merge. Then continue R2 with:
+  - function/event descriptors, deriving `ProgramHost` bindings from component descriptors;
+  - input actions/axes as runtime resources;
+  - scene-instance identity (authoring IDs mapped to runtime handles).
+
+## Previous checkpoint — R2a capability descriptors (2026-11-20, autonomous overnight session)
+
+- **R1 is complete.** PR #29 (R1d executor) merged as `1d8edab` after green CI. An independent AI-subagent review
+  found two blocking issues: a type hole letting a `ClassCastException` escape, and unbounded text growth. Both
+  were fixed and re-verified, along with should-fix items. Issue #28 is closed.
+- **Branch and issue.** Branch `feat/30-capability-descriptors`;
+  [issue #30](https://github.com/aioanei/spawnkit/issues/30).
+- **Added in `core/runtime`.**
+  - `RuntimeBuilder.describe`, with value kinds (whole number, decimal, yes/no, text, choice, object reference),
+    constraints, defaults, visibility and examples.
+  - `Runtime.catalog` and `descriptor()`.
+  - Inspector functions: `inspect`, typed and ID-based `edit` returning undo values, `addComponent` and
+    `referenceCandidates`.
+  - `samples/runtimeProbe` describes `Counter` and edits it through the generic model.
+- **Docs.** [descriptors](docs/runtime-descriptors.md).
+- **Next step.** Run the gates, open the PR, review and merge. Then continue R2 with hierarchy (parent/children
+  with cycle checks and ordered children), seeded RNG and timers as runtime resources, and function/event
+  descriptors. Deriving `ProgramHost` property bindings from component descriptors is a follow-up.
+
+## Previous checkpoint — R1d portable program executor (2026-11-20, autonomous overnight session)
+
+- **R1c is done.** PR #27 merged as `9732f1b` after green `build`/`ios-simulator`. An independent AI-subagent review
+  found nothing blocking; its fixes are in `573d649` and `a2718f9`. Issue #26 is closed. PR #25 (reassessment)
+  stays open for owner review.
+- **Branch and issue.** Branch `feat/28-program-executor` from main `9732f1b`;
+  [issue #28](https://github.com/aioanei/spawnkit/issues/28).
+- **Screening.** Every embedded candidate fails required targets. quickjs-kt 1.0.18 and Chasm 2.5.0 publish no
+  js/wasmJs variants. korlibs Luak 4.0.0-alpha-2 has no wasmJs and has been unmaintained since 2023. minigdx Luak
+  covers jvm/js only.
+- **New module `core/program`.** Typed program tree, type checker with source diagnostics, resumable bytecode VM
+  and `ProgramFeature` runtime integration. It covers deterministic limits, atomic segments, checkpointed waits and
+  effect IDs that replay deterministically.
+- **Checkpoints.** `a9bbf05` (executor and tests), `1ab0eee` (platform-independent fingerprints).
+- **Tests.** 30 tests pass on each of JVM, Android host, JS, Wasm and mingwX64. The cross-target golden is fuel
+  3044, hash `-1990361367860152568`. Decision note: [runtime programs](docs/runtime-programs.md).
+- **Next step.** Run the full gates, open the PR, get an independent review, then merge on green CI. After that,
+  R1 is complete except for focused rendering/collision choices, which the plan allows to stay open until R3.
+  Next is R2: general world, resources and execution metadata. Start with typed property/function/event
+  descriptors (authoring metadata) and hierarchy/resource references in `core/runtime`.
+
+## Previous checkpoint — R1c runtime storage decision (2026-11-20, autonomous overnight session)
+
+- **Session context.** The owner asked for autonomous overnight continuation of the approved plan. They authorized
+  merging the agent's own PRs once required CI passes, after independent review, without bypassing branch rules.
+- **PR #25.** The uncommitted architecture reassessment was committed as `docs/19-engine-architecture-reassessment`
+  and opened as [PR #25](https://github.com/aioanei/spawnkit/pull/25). It stays open for owner review and is not
+  merged autonomously. Its status lines still say "proposed for review".
+- **Scope of this work.** It follows the R1 storage item already approved in the merged PR #20 plan.
+- **Branch and issue.** Branch `feat/26-runtime-storage` from main `ff86bd0`;
+  [issue #26](https://github.com/aioanei/spawnkit/issues/26).
+- **Fleks screening.** Fleks 2.16 was rejected at target screening. Its published Maven artifacts cover jvm, wasmJs,
+  linuxX64, mingwX64 and macOS, but have no JS variant (last JS release 2.12) and no iOS variant in any version.
+  It was not integrated or benchmarked.
+- **Equivalence fixture.** A seeded churn scenario in `samples/runtimeProbe` uses public APIs only. Its goldens were
+  recorded from the original map store at checkpoint `9a49597`: 298 entities, hash `-1536454527644900448`. Query
+  order feeds private state, so the goldens also pin ordering.
+- **Selected store.** Sparse-set `ComponentColumn`s indexed by component ordinal, smallest-column-driven ordered
+  queries, cached live handles, and presized restore/ordered capture (`bbc5c23`, follow-up perf commit). The public
+  API and checkpoint format are unchanged, and the baseline goldens pass on the new store.
+- **Benchmarks.** The `benchmarks/runtimeStorage` executable measures the public API on JVM, Node JS, Node Wasm and
+  mingwX64. Queries are 4.4–23× faster and steady/churn ticks 1.6–7.4× faster. Snapshot/restore are 1.0–4.5× faster,
+  with two GC/JIT-noisy rows recorded as inconclusive; JVM snapshot allocation is slightly lower. Raw outputs and tables:
+  [runtime storage](docs/runtime-storage.md), [evidence](docs/evidence/runtime-storage/).
+- **Evidence gaps.** No Android/iOS device benchmarks, no linuxX64 run on this host, a single unisolated machine,
+  and allocation measured on JVM only.
+- **Next step.** Run the full gates, push, open the PR, get an independent review and merge only on green CI. Then
+  start the R1 program/host-effect comparison as its own issue. Screen Lua, QuickJS and guest Wasm against required
+  targets first, then build the common Kotlin interpreter fixture.
 
 ## Previous checkpoint — R1b native checkpoints and replay (2026-11-20)
 

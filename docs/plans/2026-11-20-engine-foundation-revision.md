@@ -1,10 +1,8 @@
 # SpawnKit — revised engine foundation and delivery plan
 
-Status: **accepted requirements; reassessed plan proposed for review**, 2026-11-20. R0 is complete; R1a and R1b are merged. The owner's latest request is to revise the plan before proceeding with implementation. Further implementation is paused at this review checkpoint. Existing approval of the engine direction and prior implementation remains recorded; the remaining R1 comparisons and visual editor are unfinished.
+Status: **accepted requirements; R0–R1 complete, R2a–R2f merged, contest delivery track in progress**, 2026-11-20. The owner confirmed engine ownership, guided visual creation and milestone-based delivery, then authorized merging plan PR #20 and continuing implementation. The initial R1a lifecycle/scheduling increment does not complete R1 or the visual editor.
 
 Design: [general-purpose engine revision](../design/2026-11-20-general-purpose-engine.md). Decision record: [ADR-0006](../adr/0006-general-purpose-engine-and-editor.md).
-
-Research and recommendation: [alternatives reassessment](../design/2026-11-20-engine-alternatives-review.md). It compares scene/object composition, ECS, scheduled composition, immutable event/reducer designs, complete-engine integration, portable logic runtimes and independent persistence choices. These are evaluated choices, not prerequisites selected by a pattern name.
 
 This revises the approved plan in response to the owner's explicit architecture change. It preserves completed work and all product commitments. It replaces the remaining ordering of [M0–M1](2026-11-19-m0-m1-bootstrap-and-engine.md); it does not restart the repository. Checkbox items below record acceptance gates, not claims of shipped functionality.
 
@@ -13,10 +11,10 @@ This revises the approved plan in response to the owner's explicit architecture 
 - Plan's starting mainline: `5353e2a`, including merged PR #18 and its passing Linux/iOS checks. Implementation later branched from `eae2d3f`, the owner-authorized merge of plan PR #20.
 - Existing runtime/model/template/renderer code is the platformer compatibility baseline. Its test evidence remains valid for that baseline.
 - Paused Task 11 / issue #6: local branch `feat/6-player-shells`, checkpoint `b2bf830`. Six JVM player-state tests and `spotlessApply` passed. The full gate was interrupted and platform acceptance remains unfinished. Preserve this work; adapt it at R6 instead of discarding it or treating it as a generic engine API.
-- Original documentation revision: [issue #19](https://github.com/aioanei/spawnkit/issues/19), merged in PR #20. This follow-up reassessment is documentation-only on `docs/19-engine-architecture-reassessment`, based on clean main at `ff86bd0` (merged PR #24).
+- Documentation branch: `docs/19-own-engine-no-code-plan`, based on main, containing documentation changes only; tracked by [issue #19](https://github.com/aioanei/spawnkit/issues/19).
 - Kotlin Multiplatform, Compose Multiplatform, Koog and Ktor remain mandatory. Retain current pinned build/toolchain versions unless a separately justified compatibility change is necessary.
 - Keep all current core targets: JVM, Android, JS, Wasm, iOS arm64/simulator, mingwX64 and linuxX64; Compose UI omits native desktop targets. Preserve headless engine execution.
-- R0 reconciliation is complete. R1a / issue #21 and R1b / issue #23 are merged; the runtime remains provisional. Review this reassessment before further implementation, then continue the remaining R1 evidence under the established issue/PR workflow. No specific library or production backend is approved without the complete gate's evidence.
+- R0 reconciliation is complete. Continue R1 evidence under the established issue/PR workflow; the R1a code remains provisional. No specific library or production backend is approved without the complete gate's evidence.
 - Engine ownership and creation without programming knowledge are equal requirements. Guided visual creation is the default, with optional examples and AI assistance. The contest deadline is not an architectural or product-scope constraint.
 
 ## 2. Accepted architectural and creation requirements
@@ -33,12 +31,6 @@ This revises the approved plan in response to the owner's explicit architecture 
 10. Progress follows technical and novice-usability acceptance gates. Estimates inform sequencing; neither contest pressure nor development speed justifies narrowing engine capability or postponing basic usability.
 
 No library/backend choice is asserted without the compatibility evidence in R1. Approval of these boundaries does not approve a specific physics library, storage backend or language runtime.
-
-### Review boundary and recommended choices
-
-Retain scene/component authoring over an explicitly scheduled runtime as the best fit for the accepted ownership, extensibility and creation requirements. Keep storage behind that contract and compare the existing simple store with a qualifying Fleks candidate. Favor one common Kotlin program interpreter only if the embedded-language comparison does not establish a better qualifying implementation. Lua, QuickJS and guest Wasm are concrete alternatives; JVM Kotlin scripting does not establish a portable executor. Persistence remains separately selectable at R5.
-
-This recommendation preserves all accepted requirements and all valid implementation. It does not authorize a new runtime increment, select a library or declare the R1 gate passed. Resume implementation only after the owner reviews the revised plan and directs continuation.
 
 ## 3. Incremental implementation sequence
 
@@ -59,7 +51,7 @@ First increment: [issue #21](https://github.com/aioanei/spawnkit/issues/21), [he
 It introduces provisional lifecycle/scheduling APIs and an independently compiled consumer; the whole R1 gate
 remains open until storage, state-capture and program comparisons are demonstrated.
 
-Merged R1b / [issue #23](https://github.com/aioanei/spawnkit/issues/23), [PR #24](https://github.com/aioanei/spawnkit/pull/24), adds [declared native checkpoints/replay](../runtime-checkpoints.md):
+R1b / [issue #23](https://github.com/aioanei/spawnkit/issues/23) adds [declared native checkpoints/replay](../runtime-checkpoints.md):
 component codecs, explicit private system state, allocator capture, fresh-world entity remapping and a single
 cross-target fingerprint golden. Storage/program comparison and effect/budget proofs still keep R1 open.
 
@@ -67,35 +59,24 @@ Use bounded, disposable spikes on an approved feature branch. Produce a decision
 
 Bound the evaluation by explicit evidence rather than elapsed days. Reject candidates first on required target/headless support, engine ownership, open registration, state capture/order and execution interruption; only survivors need integration/performance measurements. Use tiny common fixtures, not multiple production-ready prototypes. End with one selected implementation path and explicit evidence gaps. Do not shorten capability or usability requirements to meet a contest date.
 
-- [x] Prove provisional entity/component lifecycle, open type registration and phase ordering independently of files and Compose (R1a); these are evidence APIs, not the complete engine-operation/metadata SDK.
-- [x] Prove explicit native component/private-system capture, fresh-world restore, entity remapping and canonical replay fingerprints (R1b); no persisted checkpoint format or portable effect rollback is implied.
-- [ ] Compare the existing simple component store and a qualifying pinned Fleks candidate using one common contract: dynamic create/destroy/attach/remove, stable iteration, external types, replay/snapshot and representative entity counts. Check artifact/adapter support for every required target first; Fleks 2.16 source declarations leave JS/iOS questions open. Publish license/maintenance/dependency/toolchain findings before adoption; include any required fork/target-maintenance cost.
+- [ ] Define minimal entity/component lifecycle, type registration, phase ordering, snapshot and engine-operation interfaces, independent of files and Compose.
+- [x] Compare a simple component store and Fleks using one common contract: dynamic create/destroy/attach/remove, stable iteration, external types, replay/snapshot and representative entity counts. Publish license/maintenance/dependency/toolchain findings before adoption. Done in R1c / [issue #26](https://github.com/aioanei/spawnkit/issues/26): Fleks 2.16 rejected at target screening (no published JS/iOS artifacts); SpawnKit-owned sparse-set store selected with baseline-golden equivalence and cross-target benchmarks — see [runtime storage](../runtime-storage.md).
 - [ ] Evaluate focused rendering, collision or media facilities only where useful, including individually usable KorGE facilities if appropriate. Retain SpawnKit's world, execution semantics, behavior runtime, editor APIs and extension SDK; adoption of a complete third-party engine is excluded.
-- [ ] Compare a small typed common-Kotlin interpreter with embedded Lua, JavaScript/QuickJS and guest-Wasm options that survive target/host feasibility screening. Require functions, state, branching/iteration, typed host calls, budget interruption, source diagnostics, supported targets and deterministic behavior. Prove atomic segment commit/rollback, explicit yield state and deterministic host-call charges. Use one executor for all no-code frontends; no JVM-only scripting fallback disguised as multiplatform support.
-- [x] Demonstrate a player-free world created directly through APIs and a component supplied by a separate consumer module, without file loading (R1a/R1b).
-- [x] Demonstrate that provisional runtime/checkpoint candidate on JVM, Android host, JS/Wasm Node and mingwX64 locally, with Linux and iOS CI evidence in PR #24. This does not prove a Fleks adapter, portable interpreter or exported UI.
-- [ ] Demonstrate the selected storage and portable-program path on the required targets; distinguish compilation, headless execution and device/export evidence.
+- [x] Compare a small typed program interpreter with credible embeddable-language options. Require functions, state, branching/iteration, typed host calls, budget interruption, source diagnostics, supported targets and deterministic behavior. Prove atomic segment commit/rollback, explicit yield state and deterministic host-call charges. Use one executor for all no-code frontends; no JVM-only scripting fallback disguised as multiplatform support. Done in R1d / [issue #28](https://github.com/aioanei/spawnkit/issues/28): QuickJS, Chasm and Luak fail required-target screening; the common-Kotlin executor in `core/program` is selected and proven — see [portable programs](../runtime-programs.md).
+- [ ] Demonstrate a player-free world created directly through APIs and a component supplied by a separate consumer module. File loading is absent from this proof.
+- [ ] Demonstrate the proposed path on JVM, JS/Wasm Node and Native; verify Android/iOS compilation through the established CI where necessary.
 
-Remaining R1 work is split into two focused issues after this review; numbers are not assigned by this document:
-
-| Work | Required deliverable | Completion rule |
-|---|---|---|
-| Storage comparison and decision | Pinned candidate/artifact/license matrix, shared fixtures, ordering/checkpoint equivalence, update/churn/allocation/capture results with commands and environment | One selected store behind SpawnKit APIs; no required target dropped and no unexplained benchmark inference |
-| Program/host-effect comparison and proof | Candidate screening, function/query/event/timer-yield fixture, type diagnostics, loop/recursion/allocation limits, source mapping, atomic failure tests and suspended-state replay | One chosen executable program path; bounded host bindings, effect commit/deduplication semantics and target results recorded |
-
-Document a candidate's rejection at the first failed mandatory criterion; no full prototype is required for an ineligible runtime. Required targets and semantics are pass/fail constraints. Among eligible candidates, compare measured performance, debugging, maintenance and integration costs. No invented score or time limit substitutes for results. Focused rendering/physics choices can remain explicitly open until R3 when they do not affect the R1 boundary.
-
-Exit: select and record the storage/program implementation and any prerequisite backend decisions; name evidence gaps and their blocking milestones. Re-estimate following work from measured results. Do not build the editor against an unproven closed schema or confuse in-memory checkpoints with project persistence.
+Exit: select and record the storage/program/backend implementation; name unsupported evidence gaps. Re-estimate the following work from measured results. Do not build the editor against an unproven closed schema.
 
 ### R2 — general world, resources and execution
 
-Starting boundary: evolve the existing independent `core/runtime` evidence module. Keep `core/engine` as the explicit legacy compatibility path until a reviewed consolidation/migration is justified; do not move general APIs into the legacy dependency graph merely to match an earlier candidate module name. No empty placeholder modules.
+Suggested boundary: evolve `core/engine` incrementally while retaining an explicit legacy entry path. No empty placeholder modules.
 
-- [ ] Generation-checked handles, entity/component lifecycle, optional hierarchy, resource references and scene-instance identity.
+- [ ] Generation-checked handles, entity/component lifecycle, optional hierarchy, resource references and scene-instance identity. Progress: handles/lifecycle (R1a), ordered hierarchy and per-world resources (R2b / [issue #32](https://github.com/aioanei/spawnkit/issues/32)); scene templates and instance identity (R2f / [issue #40](https://github.com/aioanei/spawnkit/issues/40)); asset resource references remain.
 - [ ] Open component/behavior factories; typed property/function/event metadata using explicit common Kotlin registration.
-- [ ] Separate executable signatures from authoring presentation metadata: names, explanations, categories, defaults, units, constraints, reference pickers, examples, contextual help and basic/advanced visibility. No serializer- or genre-specific inspector switch.
+- [ ] Separate executable signatures from authoring presentation metadata: names, explanations, categories, defaults, units, constraints, reference pickers, examples, contextual help and basic/advanced visibility. No serializer- or genre-specific inspector switch. Progress: R2a / [issue #30](https://github.com/aioanei/spawnkit/issues/30) covers component property descriptors, a catalog, a generic inspector model and validated edits ([descriptors](../runtime-descriptors.md)); function/event descriptors and program-binding derivation remain.
 - [ ] Ordered single-threaded scheduler with fixed-tick and presentation boundaries; event/structural command ordering; independent world instances.
-- [ ] General input actions/axes/pointers, seeded RNG, timers, runtime inspection and scenario stepping.
+- [ ] General input actions/axes/pointers, seeded RNG, timers, runtime inspection and scenario stepping. Progress: input actions/axes/pointers (R2d / [issue #36](https://github.com/aioanei/spawnkit/issues/36)), seeded RNG (R2b), runtime inspection (R2a), program timers (R1d); scenario stepping remains.
 - [ ] Snapshot/hash coverage for all new deterministic state; missing capabilities/dependencies return diagnostics.
 
 Tests: empty world; no player; multiple controlled entities; create/destroy during callbacks; stale handles; cycle detection for parent/order dependencies; independent instances; stable registration/query/event order; deterministic repeat runs across targets. Include mid-run capture/restore/replay for an external behavior with private mutable state. Keep existing engine tests green through their compatibility adapter.
@@ -105,7 +86,7 @@ Exit: a game can create and execute arbitrary registered component/behavior asse
 ### R3 — general 2D presentation and collision facilities
 
 - [ ] Extract existing viewport, camera, input cancellation, fixed-step presentation and interpolation into generic runtime observations.
-- [ ] Explicit camera selection; transforms; drawable/sprite and layer APIs; assets/font/animation resources; game-UI property/event binding.
+- [ ] Explicit camera selection; transforms; drawable/sprite and layer APIs; assets/font/animation resources; game-UI property/event binding. Progress: C1 / [issue #44](https://github.com/aioanei/spawnkit/issues/44) adds transforms, shape/sprite drawables, layers, camera selection, render lists and a shared Compose renderer ([2D graphics](../graphics-2d.md)); assets, fonts, animation and game UI remain.
 - [ ] General collision shapes, filtering, overlap/raycast/contact APIs and configurable kinematic motion. Preserve existing collision algorithms where applicable.
 - [ ] Document the initial axis-aligned physics capability and extension seam for advanced physics. Keep demo-specific controller and rendering semantics outside these APIs.
 - [ ] Clear unit/coordinate contracts; preserve existing demo scale through its adapter.
@@ -120,8 +101,8 @@ Build one executable programming foundation and an early guided creation loop to
 
 - [ ] Typed program representation, user state/records/collections, functions/parameters/returns, conditions, iteration, events, timers and engine calls.
 - [ ] Type checking/preparation, execution budgets, continuation state and source-to-runtime diagnostics; failures cannot hang the host.
-- [ ] An actual workspace object model and editor transactions for entity/component/property/behavior edits, with preconditions, undo/redo and rollback.
-- [ ] A small Compose hierarchy/inspector and event/function editing surface using those operations. Play instantiates a separate world; step/inspect/stop is functional.
+- [ ] An actual workspace object model and editor transactions for entity/component/property/behavior edits, with preconditions, undo/redo and rollback. Progress: C2 / [issue #46](https://github.com/aioanei/spawnkit/issues/46) adds the workspace model, typed validated operations, batches, undo/redo and isolated scene worlds ([editing](../editing.md)); behavior edits arrive with C4.
+- [ ] A small Compose hierarchy/inspector and event/function editing surface using those operations. Play instantiates a separate world; step/inspect/stop is functional. Progress: C3 / [issue #47](https://github.com/aioanei/spawnkit/issues/47) adds the responsive builder (viewport, hierarchy, generated inspector, palette, undo/redo, Play/Stop) on Android and desktop ([builder](../builder.md)); event/function editing is C4.
 - [ ] Functional blank project, drag-and-drop object placement, visible selection, friendly behavior forms with defaults and visual When / If / Do rule controls. No mandatory template, code, expression string, technical ID or AI key.
 - [ ] Complete the loop: place an object → add/edit a behavior → assemble/change a rule → Play → inspect the result → Stop → undo. For example, visually create a Score counter and a contact rule that increases it and removes an object.
 - [ ] Scaffold ready-made behaviors through the same public engine/program APIs as advanced editing and extensions. Basic and advanced views must preserve and edit the same project; no separate beginner mechanics schema/runtime.
@@ -139,7 +120,6 @@ Exit: the guided creation loop works without programming knowledge and can compo
 - [ ] Keyboard navigation, visible focus, readable contrast and scalable text; progressive disclosure of advanced graphs, reusable functions, types and settings.
 - [ ] Directory/repository persistence interfaces, per-resource codecs, stable IDs, autosave/recovery, import/export and dependency locks. Browser storage is explicitly bounded; later OPFS/cloud sync remains planned.
 - [ ] v1 `GameProject` import path and deliberate migrations; no silent reinterpretation or data loss when a package is unavailable.
-- [ ] Record persistence selection separately from runtime storage and checkpoint contracts: compare readable per-resource codecs with transactional/database or binary options against recovery, diffability, browser support and loading needs. Keep authoring saves, optional persisted runtime state and prepared export encoding independently versioned. Ordinary engine execution must not require a persistence codec.
 - [ ] Developer package registration, capabilities, version/target compatibility, resource codecs/migrations and editor hooks.
 - [ ] Separate consumer package, using only the public SDK, adds a component, behavior and editor operation. It appears in inspector/program catalog, participates in undo and can run in supported exports. Use first-party code as an external-consumer test, not a claim of an actual third-party marketplace seller.
 - [ ] Generate usable property controls and behavior forms for that extension from its descriptors without a custom inspector. Missing packages, failed edits and interrupted sessions preserve work through recovery/undo/autosave.
@@ -151,7 +131,6 @@ Exit: extensions do not require changing a sealed core list, central inspector s
 - [ ] Move platformer controller/patrol/collection/checkpoint/goal/progression and procedural appearance into a demonstration package using the public SDK.
 - [ ] Preserve the legacy baseline and meaningful behavioral regressions. Explain any deliberate semantics changes with focused tests; do not overwrite a golden simply to make migration pass.
 - [ ] Build a top-down puzzle/action demonstration with no platformer-controller assumption and Brainrot Tycoon with UI/economy/character evolution. Freeze the engine surface across these proofs; identify any true missing primitive as an architecture finding.
-- [ ] Record the engine API revision used by all demonstrations. Verify generic modules import neither legacy gameplay nor demo types and demos use public SDK/facility APIs only. If a general primitive must change, review the finding and rerun every demonstration against the new revision before claiming the frozen-surface proof.
 - [ ] Build and modify the demonstrations through the shared visual editor, including visual rules and editable ready-made behaviors. Verify the creation/recovery exercises across two mechanically different games and an extension-provided behavior without programming or AI assistance.
 - [ ] Resume `b2bf830` / issue #6 selectively. Reuse platform entry points, fonts and state tests; keep sequential adventure screens in the platformer demo. Generic player hosts a package's entry scene and UI/lifecycle.
 - [ ] Verify desktop, Chrome/Wasm and Android emulator with screenshots; link iOS framework and run simulator tests in CI. Preserve physical-device checks as explicit outstanding evidence where unavailable.
@@ -192,6 +171,49 @@ Exit: reproducible exports and a real publishing slice; documented target and pa
 - [ ] Clearly separate shipped features, replay modes, prototype limitations and future commercial features in README and demos.
 - [ ] Preserve the optional contest screencast/essay/tag/submission workflow and owner actions as a showcase of the available release. Technical and usability gates determine product readiness; no assertion of Unity/Godot feature parity.
 
+## Contest delivery track
+
+The owner's product clarification (2026-11-20, [gap analysis](../design/2026-11-20-product-vision-gap-analysis.md),
+[ADR-0007](../adr/0007-mobile-builder-and-in-builder-release.md)) makes three requirements shape implementation from
+now on:
+
+- a genuine engine;
+- a full builder on Android and desktop;
+- release directly from the builder.
+
+For the 7 Dec 2026 contest, the following ordered slice runs through the R3–R8 steps on the general engine. It does
+not replace them: each item delivers part of the named R-step, and unfinished parts stay in that step.
+
+| # | Increment (R-step) | Acceptance |
+|---|---|---|
+| C1 | 2D presentation facilities (R3) | Transform, shape and sprite drawables, layers and a camera in the general runtime. A Compose renderer draws any runtime world, and the same renderer serves editor and player. Tests cover transforms and draw order. |
+| C2 | Workspace and editor operations (R4) | `core/editing`: project, scenes and objects built from descriptors and templates; typed operations; undo/redo; play-world instantiation from the workspace. Tests cover operation, undo and play isolation. |
+| C3 | Responsive builder shell (R4) | Compose editor on Android and desktop: viewport with tap or click select, drag move, pinch or wheel zoom, and pan; a palette of objects; a hierarchy; a descriptor-generated inspector; Play/Stop. Compact and expanded layouts. Verified with Android emulator and desktop screenshots. |
+| C4 | Visual rules (R4) | When/If/Do rule editor that edits `core/program` programs, with friendly blocks and diagnostics shown on the object or rule, and touch-friendly. Creating a Score + collect rule without code works on Android. |
+| C5 | Project persistence (R5) | Save, open and autosave the workspace through a versioned codec (storage detail), with recovery, and import/export of a project file on Android and desktop. Covered by round-trip tests. |
+| C6 | Release and Arcade (R8, R6) | Release Manager screen: web export (standalone player plus package) from the builder, and publishing to the Ktor Arcade with a public play URL. The player runs exported games without the creator. Android APK export follows if time allows. |
+| C7 | Koog AI Studio (R7) | Character Forge and level assistant agents using editor operations and validation, with progress, cancel, cost and accept/reject. Labelled replay without keys. |
+| C8 | Demos and submission (R6, R9) | At least two mechanically different games built in the builder on the same engine. README with run instructions for all targets, screencast script, essay. |
+
+Order of work: C1 → C2 → C3 → C4 → C5 → C6 → C7 → C8, with documentation kept current per PR. Each C-item takes only
+the subset of its R-step needed by the slice, and its stated dependencies must be done first:
+
+- C2 needs C1.
+- C3 needs C1 and C2.
+- C4 needs C2 and C3.
+- C5 needs C2.
+- C6 needs C1 and C5.
+- C7 needs C2–C4.
+- C8 needs all of the above.
+
+C5 (an R5 subset) is needed by R4's save/reopen usability loop. C6 before C7 orders independent work; Koog depends on
+editor operations, not on publishing.
+
+The deadline orders the slice only. R-step gates, capability and usability requirements stay unchanged, and nothing
+leaves the roadmap. Each increment gets its
+own issue and PR. If time runs short, cut depth within an increment (fewer drawables, fewer rule blocks) before
+cutting increments. The Android-plus-desktop builder, the in-builder release and Koog use are not cut.
+
 ## 4. Existing GitHub work mapping
 
 | Existing work | Revised disposition |
@@ -206,7 +228,7 @@ Exit: reproducible exports and a real publishing slice; documented target and pa
 | #12 hardening / #13 submission | R9; re-estimate dates after R1 and R4 |
 | Commercial roadmap | Retained; add explicit component/behavior/editor extension distribution, not only asset fragments |
 
-R0's earlier remote issue/milestone reconciliation is complete. This reassessment makes no new remote issue edits. Its proposed R1 issue split and any later backlog changes follow owner review. Existing merge authorization never substitutes for architecture acceptance, successful checks or completed acceptance criteria, and does not override the latest instruction to revise the plan before further implementation.
+Changes to remote issues are proposed, not performed by this document. Existing merge authorization never substitutes for architecture acceptance, successful checks or completed acceptance criteria.
 
 ## 5. Capability and usability gates
 
