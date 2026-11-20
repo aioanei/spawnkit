@@ -73,8 +73,8 @@ which have the environment requirements described below.
 | Web creator, Wasm | **Supported** (`wasm-js/app` build output) | The bundle renders the builder in headless Chrome ([capture](media/web-toolchain-builder.png)) |
 | Web creator, Kotlin/JS | **Not supported**: `js/app` is an incomplete preview that cannot run or package | Exception G3 |
 | Kotlin/JS tests | **Not supported** in 0.14.1 | `kotlin test -p js`: "No test tasks were found for platforms: JS". Exception G1. |
-| Wasm tests | **Runs in a headless browser via Playwright**, unlike Gradle's Node runner. Blocked on this host by a provisioning defect (known issue 1). | Verified in the `kotlin-toolchain` CI job on Linux. Exception G2 until green. |
-| linuxX64 / iOS simulator tests | Compile verified on Windows; execution needs Linux / macOS | CI `kotlin-toolchain` (Linux) and `ios` (macOS) jobs |
+| Wasm tests | **Supported in a headless browser via Playwright** (Gradle uses Node). Must not run on hosts with an ancestor `package.json` (known issue 1). | CI `kotlin-toolchain` on Linux (PR #65): 248/248, including `render`'s 17 common tests that Gradle runs only on JVM and Android host. Exception G2 until green on `main`. |
+| linuxX64 / iOS simulator tests | **Supported** | CI (PR #65): linuxX64 231/231 on the Linux runner; `kotlin test -p iosSimulatorArm64` 248/248 on the macOS runner |
 | iOS framework for `app/iosApp` | **Different model.** The Toolchain builds iOS apps from an `ios/app` module and generates its own Xcode project; a `kmp/lib` does not export frameworks to an external Xcode project. | Exception G5 |
 | Desktop installers (MSI, DMG, DEB) | **Not supported** (package formats: `jar`, `executable-jar`, `aab`, `maven-central-bundle`, `ipa`) | Exception G4 |
 | Multi-target benchmark executables | Application products are single-platform, and JS applications cannot run | Exception G6 |

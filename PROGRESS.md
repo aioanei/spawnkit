@@ -21,6 +21,8 @@
     `check ktlint` is clean, and a planted violation fails it. Apps build; server, desktop JAR and Android AAB package.
   - Counts equal Gradle's on JVM (231 core, 19 render, 16 shared, 1 server), Android host (231 + 17) and mingwX64
     (231).
+  - CI on PR #65: `build`, `kotlin-toolchain` and `ios-simulator` all pass. The Toolchain ran 517 JVM/Android, 231
+    linuxX64, 248 Wasm browser and 248 iOS simulator tests.
   - Runtime: the Toolchain APK played rules to "Score: 1" on the API 36 emulator. The desktop JAR and the Wasm bundle
     render the builder. The server JAR answers `/health`.
   - Gradle on the moved sources: `spotlessCheck` passed. Separately, `allJvmAndWebTests localNativeTests` plus
@@ -33,8 +35,7 @@
     documented as known issue 1; do not run Wasm tests locally on this machine.
   - A Gradle daemon died from system memory exhaustion with the emulator running; it passed after idle daemons were
     stopped.
-- **Next step.** Open the K1 PR and confirm the new CI jobs (Wasm browser tests and linuxX64 run there first). Then
-  continue C6 ([#64](https://github.com/aioanei/spawnkit/issues/64)) with the Toolchain-built web player; K2 follows
+- **Next step.** Owner review of PR #65. Then continue C6 ([#64](https://github.com/aioanei/spawnkit/issues/64)) with the Toolchain-built web player; K2 follows
   once the Toolchain job is green on `main`.
 
 ## Previous checkpoint — C5 project persistence (2026-11-20)
