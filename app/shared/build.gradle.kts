@@ -19,6 +19,7 @@ kotlin {
             implementation(project(":core:editing"))
             implementation(project(":core:gameplay"))
             implementation(project(":render"))
+            implementation(project(":player:playerKit"))
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)

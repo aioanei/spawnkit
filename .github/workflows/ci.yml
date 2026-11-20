@@ -94,8 +94,8 @@ jobs:
       - name: Tests (Wasm, headless browser)
         run: ./kotlin test -p wasmJs
 
-      - name: Build apps (Android APK, desktop, Wasm web)
-        run: ./kotlin build -m androidApp -m desktopApp -m webApp
+      - name: Build apps (Android APK, desktop, Wasm web creator and universal web player)
+        run: ./kotlin build -m androidApp -m desktopApp -m webApp -m webPlayer
 
       - name: Package (server and desktop executable JARs, unsigned Android release bundle)
         run: ./kotlin package -m server -m desktopApp -m androidApp

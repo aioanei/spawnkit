@@ -13,6 +13,8 @@ modules:
   - core/program
   - core/runtime
   - core/templates
+  - player/playerKit
+  - player/webPlayer
   - plugins/embedded-templates
   - plugins/ktlint
   - render

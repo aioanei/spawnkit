@@ -13,6 +13,7 @@ dependencies:
   - //core/editing
   - //core/gameplay
   - //render
+  - //player/playerKit
   - $libs.compose.uiToolingPreview
   - $libs.androidx.lifecycle.viewmodelCompose
   - $libs.androidx.lifecycle.runtimeCompose
