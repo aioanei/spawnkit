@@ -18,8 +18,12 @@ the deterministic runtime, and a shared Compose `GameView` with keyboard/touch i
 The creator app still opens its initial shell. Player-shell work is checkpointed separately; browser deployment
 is unfinished. The [general-purpose architecture revision](docs/design/2026-11-20-general-purpose-engine.md) and
 [revised plan](docs/plans/2026-11-20-engine-foundation-revision.md) record the accepted engine ownership and guided
-creation requirements; their runtime/editor implementation is future work. Existing platformer mechanics are a
+creation requirements; their full runtime/editor implementation is unfinished. Existing platformer mechanics are a
 demo baseline, not the target engine's universal gameplay contract.
+
+The latest [architecture reassessment](docs/design/2026-11-20-engine-alternatives-review.md) compares runtime,
+custom-logic and persistence alternatives and updates the plan for review. Further implementation waits for that
+review and owner direction to continue; all merged runtime evidence and approved product features are preserved.
 
 The first [headless runtime foundation](docs/runtime-foundation.md) now runs empty/player-free worlds and custom
 components/systems through public APIs, with a separately compiled extension consumer. It is an initial R1 evidence

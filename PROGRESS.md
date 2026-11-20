@@ -1,6 +1,16 @@
 # SpawnKit progress
 
-## Current checkpoint — R1b native checkpoints and replay (2026-11-20)
+## Current checkpoint — architecture reassessment for review (2026-11-20)
+
+- The owner renewed the request for a genuine extensible general-purpose engine, research into alternatives and a revised plan before implementation. This follow-up is documentation-only on `docs/19-engine-architecture-reassessment`, based on clean main at `ff86bd0`. Further implementation waits for owner review and direction to continue.
+- Verified [PR #24](https://github.com/aioanei/spawnkit/pull/24) is merged at `ff86bd0`, issue #23 is closed and its `build` / `ios-simulator` checks succeeded. R1a and R1b are completed increments; the whole R1 gate remains unfinished. No PR was open at review start.
+- Added the [alternatives reassessment](docs/design/2026-11-20-engine-alternatives-review.md): scene/object composition, ECS, scheduled composition, immutable reducers, complete-engine integration; common interpreter versus Lua, QuickJS, guest Wasm and JVM scripting; independent project/checkpoint/export persistence. Recommendations are distinguished from source facts and unperformed compatibility/performance tests.
+- Rechecked Fleks 2.16's primary target declarations/license, Godot/Unity organization, Lua hooks, QuickJS limits, Wasmtime fuel, Kotlin scripting/web interoperation, Bevy plugins and Koog class-based tools. No dependency is adopted and no new executable comparison is claimed.
+- Revised R1 to distinguish completed lifecycle/native-state evidence from remaining storage and program/effect comparisons, with named candidates, rejection criteria, common fixtures and explicit deliverables. Corrected the proposed general runtime boundary to the existing `core/runtime`; added persistence separation and public-SDK/frozen-API demo evidence.
+- Preserved all product commitments, mandatory KMP/Compose/Koog/Ktor technologies, legacy fixtures/tests and player checkpoint `b2bf830`. Updated current indexes, ADR review note, README and agent guidance. No runtime/editor source, dependency, build setting, remote issue or merge changed in this reassessment.
+- Documentation verification passed: 9 changed/new Markdown files, 65 relative links/anchors resolved, zero failures; `git diff --check` passed. Runtime/Gradle tests were not rerun for this documentation-only reassessment; earlier implementation and CI results above describe the merged baseline.
+
+## Previous checkpoint — R1b native checkpoints and replay (2026-11-20)
 
 - The owner authorized merging PR #22 and granted standing authorization for future completed PRs after required checks pass. PR #22 merged at `b4e90ed`; branched from clean main as `feat/23-runtime-checkpoints`. [Issue #23](https://github.com/aioanei/spawnkit/issues/23) tracks this focused R1 increment.
 - Implemented opaque in-memory snapshots for healthy idle worlds, optional component state codecs, explicit `CheckpointSystem` capture/restore of private native fields, complete current allocator/tick state, live/stale same-world entity remapping and fresh independent restores. Unsupported attached state/system contracts fail explicitly.

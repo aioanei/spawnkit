@@ -16,8 +16,11 @@ Plan/status: [PLANS.md](PLANS.md), [PROGRESS.md](PROGRESS.md).
 
 The owner confirmed engine ownership and guided creation for non-programmers, removed time pressure as an
 architectural constraint, then authorized merging plan PR #20 and starting implementation. R0 reconciliation is
-complete. R1a / issue #21 is merged. Current work is R1b / issue #23: explicit native checkpoints, entity remapping
-and replay fingerprints in `core/runtime`, proven through `samples/runtimeProbe`. Remaining R1 comparisons/program proofs and the
+complete. R1a / issue #21 and R1b / issue #23 are merged, including explicit native checkpoints, entity remapping
+and replay fingerprints in `core/runtime`, proven through `samples/runtimeProbe`. The latest request is to
+reevaluate alternatives and revise the plan before proceeding. Current work is the documentation-only
+[architecture reassessment](docs/design/2026-11-20-engine-alternatives-review.md), proposed for review. Further
+implementation waits for owner review and direction to continue. Remaining R1 comparisons/program proofs and the
 visual editor remain unfinished. Do not resume old Tasks 11–12 or treat unselected libraries as approved.
 Preserve completed work and player checkpoint `b2bf830` on `feat/6-player-shells`. JSON remains allowed for
 storage/transport; its schema and a closed list of gameplay mechanics cannot define engine capability.
@@ -106,7 +109,8 @@ unavailable on most machines. Use the aggregates above.
 
 ## Workflow
 
-1. Continue from the documented checkpoint in the revised R0–R9 dependency order and the lowest open milestone
+1. Honor the current plan-review checkpoint before implementation. After owner review and direction to continue,
+   resume from the documented checkpoint in the revised R0–R9 dependency order and the lowest open milestone
    on GitHub, `priority:high` issues first. Continue unfinished R1 evidence work before moving to R2.
    Each task has an issue with an objective, requirements and acceptance criteria.
 2. Branch from `main`: `feat|fix|chore|docs|test/<issue-number>-<slug>`.

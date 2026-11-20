@@ -5,6 +5,12 @@
 - Design and evidence: [architecture revision](../design/2026-11-20-general-purpose-engine.md).
 - Delivery sequence: [revised plan](../plans/2026-11-20-engine-foundation-revision.md).
 
+Review addendum, 2026-11-20: the owner's latest request is to reevaluate alternatives and revise the plan before
+proceeding. The [architecture reassessment](../design/2026-11-20-engine-alternatives-review.md) and plan updates
+are proposed for review. This ADR's accepted requirements remain intact; storage, program implementation and
+persistence choices remain evidence-based decisions. Merged R1a/R1b work is preserved. Further implementation
+waits for owner review and direction to continue.
+
 ## Context
 
 The original platformer slice has a sealed gameplay component hierarchy, mandatory player, fixed platformer systems, role-specific storage and global level-completion semantics. A JSON compiler defines its available mechanics. This does not meet the revised goal of an extensible 2D engine with an integrated editor, custom gameplay and third-party component/behavior/tool distribution.
