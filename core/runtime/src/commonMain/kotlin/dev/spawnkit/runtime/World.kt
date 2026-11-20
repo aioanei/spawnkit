@@ -16,8 +16,10 @@ public class World internal constructor(
     private val registry: Any,
     private val registeredComponents: List<ComponentType<*>>,
     private val systems: List<Pair<String, WorldSystem>>,
+    private val registeredResources: List<ResourceType<*>> = emptyList(),
 ) {
     private val owner = Any()
+    private val resources: Array<Any> = Array(registeredResources.size) { registeredResources[it].create() }
     private val slots = mutableListOf<Slot>()
     private val freeSlots = mutableListOf<Int>()
     private val columns = arrayOfNulls<ComponentColumn>(registeredComponents.size)
@@ -60,18 +62,94 @@ public class World internal constructor(
     public fun isAlive(entity: EntityHandle): Boolean =
         entity.owner === owner && slots.getOrNull(entity.index)?.let { it.alive && it.generation == entity.generation } == true
 
-    /** Removes an entity and its components; stale or foreign handles are rejected. */
+    /**
+     * Removes an entity and its components; stale or foreign handles are rejected. It is detached from its parent;
+     * its children become roots, keeping their order. Use [destroyTree] to remove descendants too.
+     */
     public fun destroy(entity: EntityHandle) {
         requireStructuralEdit()
         requireEntity(entity)
         val slot = slots[entity.index]
         check(slot.generation < Long.MAX_VALUE) { "Entity generation exhausted" }
+        detach(entity.index)
+        slot.children?.forEach { slots[it].parent = NO_PARENT }
+        slot.children = null
         for (column in columns) column?.remove(entity.index)
         slot.alive = false
         slot.generation++
         slot.handle = null
         freeSlots += entity.index
         entityCount--
+    }
+
+    /** Destroys [entity] and all its descendants, children before parents, in child order. */
+    public fun destroyTree(entity: EntityHandle) {
+        requireStructuralEdit()
+        requireEntity(entity)
+        for (child in children(entity)) destroyTree(child)
+        destroy(entity)
+    }
+
+    /** The parent of [entity], or `null` for a root. */
+    public fun parent(entity: EntityHandle): EntityHandle? {
+        requireEntity(entity)
+        val parent = slots[entity.index].parent
+        return if (parent == NO_PARENT) null else handle(parent)
+    }
+
+    /** Children of [entity] in their authored order. */
+    public fun children(entity: EntityHandle): List<EntityHandle> {
+        requireEntity(entity)
+        return slots[entity.index].children?.map(::handle) ?: emptyList()
+    }
+
+    /**
+     * Makes [child] a child of [parent] at position [index] (default: last), or a root when [parent] is `null`.
+     * Reparenting within the same parent reorders. Self-parenting and cycles are rejected.
+     */
+    public fun setParent(
+        child: EntityHandle,
+        parent: EntityHandle?,
+        index: Int = -1,
+    ) {
+        requireStructuralEdit()
+        requireEntity(child)
+        require(index >= -1) { "Child position $index is invalid; use -1 to append" }
+        if (parent != null) {
+            requireEntity(parent)
+            var cursor = parent.index
+            while (cursor != NO_PARENT) {
+                require(cursor != child.index) { "An object cannot be placed inside itself or its own descendants" }
+                cursor = slots[cursor].parent
+            }
+        }
+        if (parent != null && index >= 0) {
+            // Validate before detaching, so a rejected edit changes nothing.
+            val existing = slots[parent.index].children?.size ?: 0
+            val available = if (slots[child.index].parent == parent.index) existing - 1 else existing
+            require(index <= available) { "Child position $index is outside 0..$available" }
+        }
+        detach(child.index)
+        if (parent == null) return
+        val siblings = slots[parent.index].children ?: mutableListOf<Int>().also { slots[parent.index].children = it }
+        siblings.add(if (index < 0) siblings.size else index, child.index)
+        slots[child.index].parent = parent.index
+    }
+
+    /** Returns the world's value of a registered resource. */
+    @Suppress("UNCHECKED_CAST") // Each table entry was created by its own typed resource factory.
+    public fun <T : Any> resource(type: ResourceType<T>): T {
+        require(type.registry === registry) { "Resource '${type.id}' belongs to another runtime" }
+        return resources[type.ordinal] as T
+    }
+
+    private fun detach(index: Int) {
+        val slot = slots[index]
+        if (slot.parent == NO_PARENT) return
+        val siblings = checkNotNull(slots[slot.parent].children)
+        siblings.remove(index)
+        if (siblings.isEmpty()) slots[slot.parent].children = null
+        slot.parent = NO_PARENT
     }
 
     /**
@@ -189,6 +267,7 @@ public class World internal constructor(
             }
         populated.forEach { check(it.first.supportsCheckpoint) { "Component '${it.first.id}' has no checkpoint codec" } }
         systems.forEach { (id, system) -> check(system is CheckpointSystem) { "System '$id' has no checkpoint contract" } }
+        registeredResources.forEach { check(it.supportsCheckpoint) { "Resource '${it.id}' has no checkpoint codec" } }
         val context = StateCaptureContext(this)
         val freezer = StateFreezer(owner, limits)
         stage = Stage.Capturing
@@ -218,6 +297,8 @@ public class World internal constructor(
                     registeredComponents.map { it.id },
                     capturedComponents,
                     capturedSystems,
+                    slots.indices.mapNotNull { index -> slots[index].children?.let { index to it.toList() } },
+                    registeredResources.sortedBy { it.id }.map { it.id to freezer.copy(it.capture(resources[it.ordinal], context)) },
                 ),
             )
         } finally {
@@ -247,6 +328,14 @@ public class World internal constructor(
                 val (id, system) = systems[index]
                 check(id == captured.first && system is CheckpointSystem) { "System '$id' has no matching checkpoint contract" }
                 system.restoreState(copyCapturedState(captured.second), context)
+            }
+            for ((parent, children) in state.hierarchy) {
+                slots[parent].children = children.toMutableList()
+                children.forEach { slots[it].parent = parent }
+            }
+            for ((id, value) in state.resources) {
+                val type = registeredResources.first { it.id == id }
+                resources[type.ordinal] = type.restore(copyCapturedState(value), context)
             }
         } finally {
             context.close()
@@ -289,7 +378,15 @@ public class World internal constructor(
         var alive: Boolean = true,
         /** Handle for the current generation; cleared whenever the generation changes. */
         var handle: EntityHandle? = null,
+        /** Parent slot, or [NO_PARENT]. */
+        var parent: Int = NO_PARENT,
+        /** Ordered child slots, or `null` when there are none. */
+        var children: MutableList<Int>? = null,
     )
 
     private enum class Stage { Idle, Updating, Committing, Capturing, Restoring }
+
+    private companion object {
+        const val NO_PARENT = -1
+    }
 }

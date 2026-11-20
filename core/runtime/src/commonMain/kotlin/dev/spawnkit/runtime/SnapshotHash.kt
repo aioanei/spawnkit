@@ -27,6 +27,24 @@ internal fun hashCapturedWorld(state: CapturedWorld): Long {
         hash.text(id)
         hash.state(value)
     }
+    // Sections added by R2b are hashed only when present, so existing checkpoints keep their fingerprints.
+    if (state.hierarchy.isNotEmpty()) {
+        hash.text("hierarchy")
+        hash.number(state.hierarchy.size.toLong())
+        state.hierarchy.forEach { (parent, children) ->
+            hash.number(parent.toLong())
+            hash.number(children.size.toLong())
+            children.forEach { hash.number(it.toLong()) }
+        }
+    }
+    if (state.resources.isNotEmpty()) {
+        hash.text("resources")
+        hash.number(state.resources.size.toLong())
+        state.resources.forEach { (id, value) ->
+            hash.text(id)
+            hash.state(value)
+        }
+    }
     return hash.result
 }
 
