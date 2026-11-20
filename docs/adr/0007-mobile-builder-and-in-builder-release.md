@@ -1,6 +1,7 @@
 # ADR-0007: Mobile-first-class builder and in-builder release
 
 Status: **accepted** (owner product-vision clarification, 2026-11-20). Extends [ADR-0006](0006-general-purpose-engine-and-editor.md).
+Refined by [ADR-0008](0008-kotlin-toolchain.md): compiled releases and remote builds use the Kotlin Toolchain.
 
 ## Context
 

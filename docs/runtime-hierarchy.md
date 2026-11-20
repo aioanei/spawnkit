@@ -47,7 +47,7 @@ unchanged. That covers the storage equivalence golden, the R1b consumer golden a
 
 ## Evidence
 
-[`HierarchyResourceTest`](../core/runtime/src/commonTest/kotlin/dev/spawnkit/runtime/HierarchyResourceTest.kt) runs
+[`HierarchyResourceTest`](../core/runtime/test/dev/spawnkit/runtime/HierarchyResourceTest.kt) runs
 on JVM, Android host, JS, Wasm and mingwX64. It covers:
 
 - ordering, insertion, reordering and reparenting;
@@ -81,7 +81,7 @@ editor and diagnostics can therefore map a runtime object back to what the creat
 per world and start at 1. Destroying an entity clears its identity. The counter and identities are checkpointed and
 hashed once any template has been instantiated.
 
-Evidence: [`SceneTemplateTest`](../core/runtime/src/commonTest/kotlin/dev/spawnkit/runtime/SceneTemplateTest.kt)
+Evidence: [`SceneTemplateTest`](../core/runtime/test/dev/spawnkit/runtime/SceneTemplateTest.kt)
 covers:
 
 - validation and atomic rejection;

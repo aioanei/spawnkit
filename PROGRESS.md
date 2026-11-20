@@ -1,6 +1,43 @@
 # SpawnKit progress
 
-## Current checkpoint — C5 project persistence (2026-11-20)
+## Current checkpoint — K1 Kotlin Toolchain adoption (2026-11-20)
+
+- **Decision.** The owner made the Kotlin Toolchain mandatory, for SpawnKit's own build and as the Release Manager's
+  build engine. [ADR-0008](docs/adr/0008-kotlin-toolchain.md), [issue #58](https://github.com/aioanei/spawnkit/issues/58),
+  branch `chore/58-kotlin-toolchain`. C5 is merged (PR #57).
+- **Added.**
+  - The Kotlin Toolchain 0.14.1 wrappers, checksum-verified.
+  - `project.yaml` and a `module.yaml` for every module except the benchmark harness, with templates in `toolchain/`.
+  - Local plugins `embedded-templates` and `ktlint`.
+  - Sources moved to the Toolchain layout; Gradle reads it through `ToolchainLayout.kt`.
+  - A `kotlin-toolchain` CI job and an iOS Toolchain step.
+  - The core `kotlin-tooling-kotlin-toolchain` skill was added to the vendored skill set. Skills and the kotlinlang MCP
+    server are configured for Claude Code and Codex.
+  - Docs: [migration status](docs/kotlin-toolchain.md), the
+    [Release Manager build architecture](docs/design/2026-11-20-release-manager-kotlin-toolchain.md), and plan track K.
+  - Issues #59–#63 (K2–K6) and #64 (C6) were created; epic #11 was updated.
+- **Evidence.**
+  - Toolchain: `test -p jvm -p android` passes 517/517 with no failures. `-p mingwX64` passes 231/231.
+    `check ktlint` is clean, and a planted violation fails it. Apps build; server, desktop JAR and Android AAB package.
+  - Counts equal Gradle's on JVM (231 core, 19 render, 16 shared, 1 server), Android host (231 + 17) and mingwX64
+    (231).
+  - Runtime: the Toolchain APK played rules to "Score: 1" on the API 36 emulator. The desktop JAR and the Wasm bundle
+    render the builder. The server JAR answers `/health`.
+  - Gradle on the moved sources: `spotlessCheck` passed. Separately, `allJvmAndWebTests localNativeTests` plus
+    Android, desktop and JS/Wasm compilation passed (`BUILD SUCCESSFUL`, 624 tasks).
+- **Found and fixed.**
+  - Replacing source directories in Gradle dropped Compose's generated resource sources; directories are now added.
+  - Python edits on Windows default to cp1252 and CRLF; repaired, and later edits use explicit UTF-8.
+  - The Toolchain's Wasm test provisioning ran `pnpm add playwright` against a Node project in the user's home
+    directory. Its `package.json`, lockfiles and `node_modules` were restored from the user's npm lockfile. This is
+    documented as known issue 1; do not run Wasm tests locally on this machine.
+  - A Gradle daemon died from system memory exhaustion with the emulator running; it passed after idle daemons were
+    stopped.
+- **Next step.** Open the K1 PR and confirm the new CI jobs (Wasm browser tests and linuxX64 run there first). Then
+  continue C6 ([#64](https://github.com/aioanei/spawnkit/issues/64)) with the Toolchain-built web player; K2 follows
+  once the Toolchain job is green on `main`.
+
+## Previous checkpoint — C5 project persistence (2026-11-20)
 
 - **Merged.** The owner authorized integrating C4b and C4c: PR #54 merged as `09d3bea`; PR #55 was retargeted to
   `main`, verified green, then merged as `4a6c874`. Issues #52 and #53 are closed.

@@ -214,7 +214,7 @@ delivered.
 
 ## Evidence
 
-Tests are in [`core/program/src/commonTest`](../core/program/src/commonTest/kotlin/dev/spawnkit/program). Each test
+Tests are in [`core/program/test`](../core/program/test/dev/spawnkit/program). Each test
 runs unchanged on JVM, Android host, Node JS, Node Wasm and mingwX64 (30 tests per target); Linux and iOS run in CI.
 
 - **Acceptance fixture** (`ProgramCheckpointTest`):

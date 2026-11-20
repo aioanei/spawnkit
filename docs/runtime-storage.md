@@ -42,14 +42,14 @@ none are cited.
 
 ## Common contract and equivalence evidence
 
-[`StorageScenario`](../samples/runtimeProbe/src/commonMain/kotlin/dev/spawnkit/samples/runtimeprobe/StorageScenario.kt)
+[`StorageScenario`](../samples/runtimeProbe/src/dev/spawnkit/samples/runtimeprobe/StorageScenario.kt)
 lives in the separately compiled consumer and uses public APIs only. It covers:
 
 - four external component types: dense, subset, sparse marker, and an entity reference that can go stale;
 - a motion system that folds query visit order into private checkpointed state;
 - a churn system that uses a seeded 64-bit LCG to record spawn/destroy/attach/remove commands each tick.
 
-[`StorageEquivalenceTest`](../samples/runtimeProbe/src/commonTest/kotlin/dev/spawnkit/samples/runtimeprobe/StorageEquivalenceTest.kt)
+[`StorageEquivalenceTest`](../samples/runtimeProbe/test/dev/spawnkit/samples/runtimeprobe/StorageEquivalenceTest.kt)
 pins the following, with goldens recorded on JVM against the **original map-based store** (commit `9a49597`) before
 any storage change:
 
@@ -60,7 +60,7 @@ any storage change:
 
 Because query order feeds private state, any ordering difference changes the hash. The same goldens pass on the
 sparse-set store on every locally runnable target (see [Verification](#verification)).
-[`ComponentStorageTest`](../core/runtime/src/commonTest/kotlin/dev/spawnkit/runtime/ComponentStorageTest.kt)
+[`ComponentStorageTest`](../core/runtime/test/dev/spawnkit/runtime/ComponentStorageTest.kt)
 covers swap-removal, growth, both ordered-iteration strategies, empty queries and handle caching. A randomized
 churn test compares both query strategies with a brute-force filter at densities on both sides of 1/16.
 

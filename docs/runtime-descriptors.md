@@ -88,7 +88,7 @@ reapplying it is then rejected like any other stale reference. `addComponent` at
 
 ## Evidence
 
-- [`DescriptorTest`](../core/runtime/src/commonTest/kotlin/dev/spawnkit/runtime/DescriptorTest.kt) covers:
+- [`DescriptorTest`](../core/runtime/test/dev/spawnkit/runtime/DescriptorTest.kt) covers:
   - registration validation and catalog order;
   - inspector values and visibility;
   - accepted and rejected edits for each value kind, with rejections leaving the world unchanged: range, NaN and
@@ -97,7 +97,7 @@ reapplying it is then rejected like any other stale reference. `addComponent` at
   - undo values;
   - reference validation (live, foreign, missing component, destroyed) and picker candidates;
   - factory-based add, duplicates and stale objects.
-- [`ExtensionInspectorTest`](../samples/runtimeProbe/src/commonTest/kotlin/dev/spawnkit/samples/runtimeprobe/ExtensionInspectorTest.kt)
+- [`ExtensionInspectorTest`](../samples/runtimeProbe/test/dev/spawnkit/samples/runtimeprobe/ExtensionInspectorTest.kt)
   shows that the separately compiled consumer's `Counter` is discovered, added, inspected and edited through the
   generic model alone. Its own system then runs on the edited value.
 
