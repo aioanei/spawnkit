@@ -13,7 +13,8 @@ on Android and desktop.
 
 - **Start** from a functional blank project. A guided empty state invites adding objects.
 - **Add objects** from a palette (Box, Circle, Platform, Player, Camera). Each preset is built only from general
-  engine components; nothing is hardcoded for a genre.
+  engine components; nothing is hardcoded for a genre. The builder runs the same `StandardEngine` as exported
+  players ([gameplay](gameplay.md)), so Text, Tag and Number components can be added from the inspector.
 - **Select** by tapping or clicking in the viewport (hit testing honours rotation, scale and ellipses), or from the
   scene hierarchy. Tapping empty space clears the selection.
 - **Move** an object by dragging it. The whole drag is one undoable change. Child objects move correctly under

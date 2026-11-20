@@ -13,6 +13,7 @@ Each comes with a descriptor, so the generated inspector, rules and agents can e
 | `Transform2D` | x, y, rotation (degrees, clockwise), scaleX/scaleY (advanced) | Local to the parent; composed through the R2b hierarchy. y points down. |
 | `Shape2D` | form (rectangle or ellipse), width, height, color, layer, visible | Centred on the object's origin. |
 | `Sprite2D` | asset, width, height, tint (advanced), layer, visible | References a project asset ID. A missing image draws a visible placeholder. |
+| `Text2D` | text, size, color, layer, visible | One line centred on the object; `size` is the line height in world units. Hit tests use an estimated box (0.6 × size per letter). Added in C4a. |
 | `Camera2D` | zoom, active | The first active camera in scene order is used. |
 
 `ValueKind.Color` (ARGB in a `Long`) was added to descriptors for color pickers. Colors are not bound to programs
@@ -46,7 +47,14 @@ desktop, iOS, JS and Wasm.
 
 The image above is produced by `RuntimeCanvasRenderTest` (JVM), which renders a runtime scene offscreen with Skia and
 asserts actual pixel colors: the ground, the hero drawn over the ground where both overlap (layer order), and the
-camera-relative sun position. Invalid camera zoom values set natively are ignored or clamped, and the grid spacing
+camera-relative sun position. A second test draws text: it is centred on its object, a higher-layer shape covers
+it, and nothing is drawn far from the object. The renderer lays text out once at a reference size with Compose's
+`TextMeasurer` and scales one line to the item's world height, so text zooms with the scene. `drawRenderList` draws
+text only when given a `TextMeasurer`; `RuntimeCanvas` always supplies one.
+
+![Text rendering](media/runtime-canvas-text.png)
+
+Invalid camera zoom values set natively are ignored or clamped, and the grid spacing
 adapts in powers of ten with a bounded line count.
 
 ## Evidence
@@ -57,14 +65,15 @@ adapts in powers of ten with a bounded line count.
   - hit tests on rotated, scaled and elliptical items and across layers;
   - camera and viewport conversion;
   - descriptor edits, including invalid color and choice;
-  - checkpoint round trip.
+  - checkpoint round trip;
+  - text draw order, estimated bounds, editing and checkpoints.
 - `RuntimeCanvasRenderTest` (JVM) checks pixels as described above.
 
 ## Not yet
 
 - Sprite sheets and animation.
 - Tilemaps.
-- Text and game UI.
+- Multi-line text, fonts and game UI layout.
 - Collision and physics facilities (the rest of R3).
 - Asset storage (C5).
 - Camera follow behaviors.

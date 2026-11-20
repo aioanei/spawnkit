@@ -18,7 +18,7 @@ They submit it with `World.submitInput(frame)` between ticks. The runtime never 
 |---|---|
 | When a frame applies | It becomes the current frame at the start of the next `step()`. The previous current frame is kept for edge detection. |
 | No new submission | The last frame stays in effect, so held input persists. |
-| Reading | `world.input.isDown`, `wasPressed`, `wasReleased` (edges relative to the previous tick), `axis` (0 when absent) and `pointers`. |
+| Reading | `world.input.isDown`, `wasPressed`, `wasReleased` (edges relative to the previous tick), `axis` (0 when absent), `pointers` and `previousPointers` (C4a, for detecting presses and releases). Pointer positions are world units: hosts convert screen positions through the active camera before submitting. |
 | Validation | Rejected: submission during a tick or on a faulted world; actions or axes from another runtime; axis values outside `[-1, 1]` or non-finite; non-finite pointer coordinates; duplicate pointer IDs. |
 
 ## Replay and checkpoints

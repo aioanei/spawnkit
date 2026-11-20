@@ -54,6 +54,7 @@ All types and values are immutable, which keeps rollback and checkpoint copies a
   - return;
   - emit an event;
   - wait N ticks;
+  - remove an object (`Destroy`, C4a);
   - request an effect;
   - evaluate an expression.
 - **Expressions:**
@@ -116,6 +117,23 @@ the generated inspector, visual rules and agents, with identical constraints. Ev
 `isDown`, `wasPressed` and `wasReleased` take an action ID and return yes/no; `axis` takes an axis ID and returns a
 decimal. Host functions see the world's `InputView` through `HostCallContext.input`. Recorded frames replay identically
 through rules. Evidence: `ProgramInputTest`.
+
+### World access for host functions (C4a)
+
+`HostCallContext.world` is the world the program runs in, so packages can offer functions that find objects or
+read components (the [gameplay package](gameplay.md) uses it for `touching`, `tapped` and `firstTagged`). Host
+functions must not change components or structure there: programs change the world through statements, which stay
+atomic. A host-owned resource such as a seeded random generator may advance; that is deterministic, but it is not
+rolled back if the segment later faults. Evidence: `ProgramHostWorldTest`.
+
+## Removing objects (C4a)
+
+`Stmt.Destroy(entity)` takes an object (a type error otherwise). Removals are buffered in the segment and applied
+when it commits, through deferred `destroyTree` commands. The object and its children therefore disappear at the
+end of the tick, after every system has run, and other rules still see them during that tick. A faulted segment
+removes nothing. Removing an object that no longer exists (for example one remembered across a `wait`) faults with
+`MissingProperty` at the block. Removing the program's own object stops its rules with it. Evidence:
+`ProgramDestroyTest` (end-of-tick removal with children, rollback, stale target, type check, self-removal, replay).
 
 ## Execution semantics
 
