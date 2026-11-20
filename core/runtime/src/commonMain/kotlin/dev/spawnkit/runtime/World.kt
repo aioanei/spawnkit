@@ -44,6 +44,9 @@ public class World internal constructor(
 
     internal val registryIdentity: Any get() = registry
 
+    /** Whether authoring edits may apply now: a healthy world between ticks. */
+    internal val acceptsAuthoringEdits: Boolean get() = !isFaulted && stage == Stage.Idle
+
     /** Creates an empty entity, reusing free slots in deterministic last-freed-first order. */
     public fun spawn(): EntityHandle {
         requireStructuralEdit()

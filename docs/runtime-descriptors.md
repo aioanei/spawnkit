@@ -77,15 +77,23 @@ naming the property:
 - the reference is stale, foreign or filtered out;
 - the component or property ID is unknown.
 
+Edits apply only while the world is healthy and paused between ticks. A running, faulted or checkpointing world
+rejects the edit before any write lambda runs, so mutable components are never half-edited. ID-based input is
+converted identically on every target: decimals accept `Int`, `Float` or `Double`, while whole numbers need `Long`.
+A `create {}` factory must start every property at its declared default; `describe` checks this.
+
 A successful edit returns `EditResult.Applied(previous)`, which is enough for the R4 editor transactions to build
-undo. `addComponent` attaches a fresh factory value.
+undo. An undo value can be a reference to an object that has since been destroyed;
+reapplying it is then rejected like any other stale reference. `addComponent` attaches a fresh factory value.
 
 ## Evidence
 
 - [`DescriptorTest`](../core/runtime/src/commonTest/kotlin/dev/spawnkit/runtime/DescriptorTest.kt) covers:
   - registration validation and catalog order;
   - inspector values and visibility;
-  - every value kind's accepted and rejected edits, with rejections leaving the world unchanged;
+  - accepted and rejected edits for each value kind, with rejections leaving the world unchanged: range, NaN and
+    infinity, cross-target decimal coercion, text length and line breaks, choices and wrong value types;
+  - edits rejected on a faulted world without running write lambdas, and factory/default mismatches rejected;
   - undo values;
   - reference validation (live, foreign, missing component, destroyed) and picker candidates;
   - factory-based add, duplicates and stale objects.

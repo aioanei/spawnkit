@@ -34,8 +34,11 @@ public sealed interface ValueKind<V : Any> {
         world: World?,
     ): String?
 
-    /** Whether [value] has this kind's Kotlin value type, for untyped editor input. */
-    public fun accepts(value: Any): Boolean
+    /**
+     * Converts untyped editor input to this kind's Kotlin value type, or returns `null` when it has another type.
+     * Conversions are identical on every target (decimals accept any `Int`, `Float` or `Double` input).
+     */
+    public fun coerce(value: Any): V?
 
     /** A whole number between [min] and [max], adjusted in [step]s, displayed with [unit]. */
     public data class WholeNumber(
@@ -57,7 +60,7 @@ public sealed interface ValueKind<V : Any> {
             world: World?,
         ): String? = if (value < min || value > max) "Choose a whole number from $min to $max" else null
 
-        override fun accepts(value: Any): Boolean = value is Long
+        override fun coerce(value: Any): Long? = value as? Long
     }
 
     /** A finite decimal between [min] and [max], displayed with [unit]. */
@@ -78,7 +81,13 @@ public sealed interface ValueKind<V : Any> {
             world: World?,
         ): String? = if (!value.isFinite() || value < min || value > max) "Choose a number from $min to $max" else null
 
-        override fun accepts(value: Any): Boolean = value is Double
+        override fun coerce(value: Any): Double? =
+            when (value) {
+                is Double -> value
+                is Float -> value.toDouble()
+                is Int -> value.toDouble()
+                else -> null
+            }
     }
 
     /** A yes/no switch. */
@@ -88,7 +97,7 @@ public sealed interface ValueKind<V : Any> {
             world: World?,
         ): String? = null
 
-        override fun accepts(value: Any): Boolean = value is Boolean
+        override fun coerce(value: Any): Boolean? = value as? Boolean
     }
 
     /** Text up to [maxLength] characters; [multiline] suggests a larger editor. */
@@ -108,11 +117,11 @@ public sealed interface ValueKind<V : Any> {
         ): String? =
             when {
                 value.length > maxLength -> "Use at most $maxLength characters"
-                !multiline && '\n' in value -> "This text must fit on one line"
+                !multiline && ('\n' in value || '\r' in value) -> "This text must fit on one line"
                 else -> null
             }
 
-        override fun accepts(value: Any): Boolean = value is String
+        override fun coerce(value: Any): String? = value as? String
     }
 
     /** One of [options], stored by option ID. */
@@ -130,7 +139,7 @@ public sealed interface ValueKind<V : Any> {
             world: World?,
         ): String? = if (options.none { it.id == value }) "Choose one of: ${options.joinToString { it.label }}" else null
 
-        override fun accepts(value: Any): Boolean = value is String
+        override fun coerce(value: Any): String? = value as? String
     }
 
     /**
@@ -152,7 +161,7 @@ public sealed interface ValueKind<V : Any> {
             return "Choose an object that has ${missing.authoring.name}"
         }
 
-        override fun accepts(value: Any): Boolean = value is ObjectRef
+        override fun coerce(value: Any): ObjectRef? = value as? ObjectRef
     }
 }
 
@@ -237,6 +246,18 @@ public class ComponentDescriptorBuilder<T : Any> internal constructor(
 
     internal fun build(): ComponentDescriptor<T> {
         val create = requireNotNull(factory) { "Component '${component.id}' descriptor needs a create { } factory" }
+        val sample = create()
+        for (property in properties) checkDefault(property, sample)
         return ComponentDescriptor(component, properties.toList(), visibility, create)
+    }
+}
+
+private fun <T : Any, V : Any> checkDefault(
+    property: PropertyDescriptor<T, V>,
+    sample: T,
+) {
+    val value = property.get(sample)
+    require(value == property.default) {
+        "The create { } factory must start '${property.id}' at its default ${property.default}, not $value"
     }
 }

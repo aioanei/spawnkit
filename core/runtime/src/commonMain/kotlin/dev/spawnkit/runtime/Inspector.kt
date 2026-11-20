@@ -62,7 +62,8 @@ private fun <T : Any> inspectComponent(
 }
 
 /**
- * Validates and applies a typed property edit outside a tick. Stale objects, missing components and values the
+ * Validates and applies a typed property edit between ticks. A running (mid-tick), faulted or checkpointing world
+ * rejects the edit before any component value is touched. Stale objects, missing components and values the
  * property's [ValueKind] rejects produce [EditResult.Rejected] without changing anything.
  */
 public fun <T : Any, V : Any> Runtime.edit(
@@ -78,6 +79,7 @@ public fun <T : Any, V : Any> Runtime.edit(
 
     @Suppress("UNCHECKED_CAST") // The descriptor that owns `property` describes ComponentType<T>.
     val component = descriptor.component as ComponentType<T>
+    if (!world.acceptsAuthoringEdits) return EditResult.Rejected(STOPPED)
     if (!world.isAlive(entity)) return EditResult.Rejected("That object no longer exists")
     val current = world.get(entity, component) ?: return EditResult.Rejected("The object has no ${component.authoring.name}")
     property.kind.problem(value, world)?.let { return EditResult.Rejected("${property.authoring.name}: $it") }
@@ -97,6 +99,7 @@ public fun Runtime.edit(
     propertyId: String,
     value: Any,
 ): EditResult {
+    require(owns(world)) { "World belongs to another runtime" }
     val descriptor =
         catalog.firstOrNull { it.component.id == componentId }
             ?: return EditResult.Rejected("No installed component is called '$componentId'")
@@ -111,9 +114,8 @@ private fun <T : Any, V : Any> Runtime.editErased(
     property: PropertyDescriptor<T, V>,
     value: Any,
 ): EditResult {
-    if (!property.kind.accepts(value)) return EditResult.Rejected("${property.authoring.name} needs a different kind of value")
-    @Suppress("UNCHECKED_CAST") // Checked by ValueKind.accepts above.
-    return edit(world, entity, property, value as V)
+    val coerced = property.kind.coerce(value) ?: return EditResult.Rejected("${property.authoring.name} needs a different kind of value")
+    return edit(world, entity, property, coerced)
 }
 
 /**
@@ -128,6 +130,7 @@ public fun <T : Any> Runtime.addComponent(
 ): EditResult {
     require(owns(world)) { "World belongs to another runtime" }
     val descriptor = descriptor(component) ?: return EditResult.Rejected("${component.authoring.name} cannot be added from the editor")
+    if (!world.acceptsAuthoringEdits) return EditResult.Rejected(STOPPED)
     if (!world.isAlive(entity)) return EditResult.Rejected("That object no longer exists")
     if (world.get(entity, component) != null) return EditResult.Rejected("The object already has ${component.authoring.name}")
     world.set(entity, component, descriptor.create())
@@ -142,3 +145,5 @@ public fun Runtime.referenceCandidates(
     require(owns(world)) { "World belongs to another runtime" }
     return world.entities(*kind.requires.toTypedArray())
 }
+
+private const val STOPPED = "The scene can only be edited while it is paused between steps and has no error"

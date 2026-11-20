@@ -213,4 +213,69 @@ class DescriptorTest {
         val stranger = RuntimeBuilder().build()
         assertFailsWith<IllegalArgumentException> { stranger.inspect(world, missing) }
     }
+
+    @Test
+    fun decimalAndTextEditsAreConsistentAcrossTargets() {
+        val fixture = Fixture()
+        val runtime = fixture.runtime
+        val world = runtime.createWorld()
+        val entity = world.spawn()
+        world.set(entity, fixture.mover, Mover())
+        assertEquals(EditResult.Applied(0.5), runtime.edit(world, entity, fixture.friction, 0.25))
+        // Untyped whole-number input converts to a decimal identically on every target.
+        assertEquals(EditResult.Applied(0.25), runtime.edit(world, entity, "test:mover", "friction", 1))
+        assertEquals(1.0, world.get(entity, fixture.mover)?.friction)
+        assertIs<EditResult.Rejected>(runtime.edit(world, entity, fixture.friction, Double.POSITIVE_INFINITY))
+        assertIs<EditResult.Rejected>(runtime.edit(world, entity, "test:mover", "friction", 5L))
+        assertEquals(EditResult.Applied("Mover"), runtime.edit(world, entity, "test:mover", "label", "Hero"))
+        assertIs<EditResult.Rejected>(runtime.edit(world, entity, "test:mover", "label", "a\rb"))
+        assertEquals("Hero", world.get(entity, fixture.mover)?.label)
+    }
+
+    private class Box(
+        var size: Long,
+    )
+
+    @Test
+    fun faultedWorldsRejectEditsBeforeTouchingMutableComponents() {
+        val builder = RuntimeBuilder()
+        val box = builder.component<Box>("test:box", AuthoringInfo("Box"))
+        val extra = builder.component<Int>("test:extra", AuthoringInfo("Extra"))
+        var descriptor: PropertyDescriptor<Box, Long>? = null
+        builder.describe(box) {
+            create { Box(1) }
+            descriptor =
+                property("size", ValueKind.WholeNumber(0, 10), AuthoringInfo("Size"), 1L, { it.size }, { b, v ->
+                    b.apply {
+                        this.size =
+                            v
+                    }
+                })
+        }
+        builder.describe(extra) { create { 0 } }
+        val size = checkNotNull(descriptor)
+        builder.system("test:fail") { WorldSystem { _, _ -> error("boom") } }
+        val runtime = builder.build()
+        val world = runtime.createWorld()
+        val entity = world.spawn()
+        val value = Box(3)
+        world.set(entity, box, value)
+        assertFailsWith<IllegalStateException> { world.step() }
+        assertTrue(world.isFaulted)
+        assertIs<EditResult.Rejected>(runtime.edit(world, entity, size, 7L))
+        assertEquals(3L, value.size, "A rejected edit never runs the write lambda")
+        assertIs<EditResult.Rejected>(runtime.addComponent(world, entity, extra))
+    }
+
+    @Test
+    fun factoriesMustStartEveryPropertyAtItsDefault() {
+        val builder = RuntimeBuilder()
+        val score = builder.component<Long>("test:score", AuthoringInfo("Score"))
+        assertFailsWith<IllegalArgumentException> {
+            builder.describe(score) {
+                create { 50L }
+                property("points", ValueKind.WholeNumber(0, 100), AuthoringInfo("Points"), 0L, { it }, { _, v -> v })
+            }
+        }
+    }
 }
