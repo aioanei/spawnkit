@@ -1,6 +1,27 @@
 # SpawnKit progress
 
-## Current checkpoint — C6 started: game package (2026-11-20)
+## Current checkpoint — C6 Release Manager and Arcade (2026-11-20)
+
+- Continued on `feat/64-builder-export-arcade` from the reviewed game package and web player in PR #66.
+- Android and desktop creators can export a standalone ZIP or publish a release from **Project → Release game…**.
+  Both destinations validate the game before writing. Ktor validates uploads again, persists them and serves each
+  release at its own play URL. The creator and Arcade ship the same Toolchain-built player.
+- On the API 36 validation emulator, the system save picker wrote a 10,930,353-byte ZIP. The extracted game
+  ran in headless Chrome and keyboard movement collected a coin, reaching **Score: 1**. The same Android workspace
+  published to the packaged Ktor server and played through its returned URL. The offline emulator reached the
+  loopback server through a temporary adb tunnel. See the [release guide and evidence](docs/release.md).
+- **Validation before commit (continued session).**
+  - `./kotlin package -m androidApp` first failed: AGP's release lint rejected the network security config because
+    `includeSubdomains` was implicit. Making it explicit keeps plain HTTP limited to the exact loopback hosts.
+  - Toolchain: ktlint is clean; `test -p jvm -p android` passes 543 tests with 0 failures; `editing` passes on
+    mingwX64; apps build. The server JAR, desktop JAR and release AAB package. The APK, desktop JAR and server JAR
+    carry the byte-identical player.
+  - Gradle: `spotlessCheck` passes. `allJvmAndWebTests localNativeTests` plus the app builds pass (663 tasks, 0
+    failures).
+- The compact and expanded Release Manager were exercised in the builder's JVM UI suite. Web and iOS creators
+  display the available release platforms. Compiled store builds remain in K5/K6. C7 is the next contest slice.
+
+## Previous checkpoint — C6 game package and player (2026-11-20)
 
 - **Branch.** `feat/64-release-arcade`, stacked on the K1 branch (`chore/58-kotlin-toolchain`, PR #65), because the
   web player will be a Kotlin Toolchain `wasm-js/app`. [Issue #64](https://github.com/aioanei/spawnkit/issues/64).
