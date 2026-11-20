@@ -1,6 +1,6 @@
 # SpawnKit — revised engine foundation and delivery plan
 
-Status: **accepted requirements; R0 complete, R1 evidence in progress**, 2026-11-20. The owner confirmed engine ownership, guided visual creation and milestone-based delivery, then authorized merging plan PR #20 and continuing implementation. The initial R1a lifecycle/scheduling increment does not complete R1 or the visual editor.
+Status: **accepted requirements; R0–R1 complete, R2a–R2f merged, contest delivery track in progress**, 2026-11-20. The owner confirmed engine ownership, guided visual creation and milestone-based delivery, then authorized merging plan PR #20 and continuing implementation. The initial R1a lifecycle/scheduling increment does not complete R1 or the visual editor.
 
 Design: [general-purpose engine revision](../design/2026-11-20-general-purpose-engine.md). Decision record: [ADR-0006](../adr/0006-general-purpose-engine-and-editor.md).
 
@@ -170,6 +170,49 @@ Exit: reproducible exports and a real publishing slice; documented target and pa
 - [ ] Full supported local and CI gates, deterministic conformance, clean-clone run instructions, documentation/SDK examples and shared-code measurement.
 - [ ] Clearly separate shipped features, replay modes, prototype limitations and future commercial features in README and demos.
 - [ ] Preserve the optional contest screencast/essay/tag/submission workflow and owner actions as a showcase of the available release. Technical and usability gates determine product readiness; no assertion of Unity/Godot feature parity.
+
+## Contest delivery track
+
+The owner's product clarification (2026-11-20, [gap analysis](../design/2026-11-20-product-vision-gap-analysis.md),
+[ADR-0007](../adr/0007-mobile-builder-and-in-builder-release.md)) makes three requirements shape implementation from
+now on:
+
+- a genuine engine;
+- a full builder on Android and desktop;
+- release directly from the builder.
+
+For the 7 Dec 2026 contest, the following ordered slice runs through the R3–R8 steps on the general engine. It does
+not replace them: each item delivers part of the named R-step, and unfinished parts stay in that step.
+
+| # | Increment (R-step) | Acceptance |
+|---|---|---|
+| C1 | 2D presentation facilities (R3) | Transform, shape and sprite drawables, layers and a camera in the general runtime. A Compose renderer draws any runtime world, and the same renderer serves editor and player. Tests cover transforms and draw order. |
+| C2 | Workspace and editor operations (R4) | `core/editing`: project, scenes and objects built from descriptors and templates; typed operations; undo/redo; play-world instantiation from the workspace. Tests cover operation, undo and play isolation. |
+| C3 | Responsive builder shell (R4) | Compose editor on Android and desktop: viewport with tap or click select, drag move, pinch or wheel zoom, and pan; a palette of objects; a hierarchy; a descriptor-generated inspector; Play/Stop. Compact and expanded layouts. Verified with Android emulator and desktop screenshots. |
+| C4 | Visual rules (R4) | When/If/Do rule editor that edits `core/program` programs, with friendly blocks and diagnostics shown on the object or rule, and touch-friendly. Creating a Score + collect rule without code works on Android. |
+| C5 | Project persistence (R5) | Save, open and autosave the workspace through a versioned codec (storage detail), with recovery, and import/export of a project file on Android and desktop. Covered by round-trip tests. |
+| C6 | Release and Arcade (R8, R6) | Release Manager screen: web export (standalone player plus package) from the builder, and publishing to the Ktor Arcade with a public play URL. The player runs exported games without the creator. Android APK export follows if time allows. |
+| C7 | Koog AI Studio (R7) | Character Forge and level assistant agents using editor operations and validation, with progress, cancel, cost and accept/reject. Labelled replay without keys. |
+| C8 | Demos and submission (R6, R9) | At least two mechanically different games built in the builder on the same engine. README with run instructions for all targets, screencast script, essay. |
+
+Order of work: C1 → C2 → C3 → C4 → C5 → C6 → C7 → C8, with documentation kept current per PR. Each C-item takes only
+the subset of its R-step needed by the slice, and its stated dependencies must be done first:
+
+- C2 needs C1.
+- C3 needs C1 and C2.
+- C4 needs C2 and C3.
+- C5 needs C2.
+- C6 needs C1 and C5.
+- C7 needs C2–C4.
+- C8 needs all of the above.
+
+C5 (an R5 subset) is needed by R4's save/reopen usability loop. C6 before C7 orders independent work; Koog depends on
+editor operations, not on publishing.
+
+The deadline orders the slice only. R-step gates, capability and usability requirements stay unchanged, and nothing
+leaves the roadmap. Each increment gets its
+own issue and PR. If time runs short, cut depth within an increment (fewer drawables, fewer rule blocks) before
+cutting increments. The Android-plus-desktop builder, the in-builder release and Koog use are not cut.
 
 ## 4. Existing GitHub work mapping
 

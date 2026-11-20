@@ -1,5 +1,28 @@
 # SpawnKit progress
 
+## Current checkpoint — product vision reconciliation and contest track (2026-11-20)
+
+- **Merged before this work.** PR #41 (R2f scene templates) merged as `cfa16a3`, after green CI and an independent
+  AI-subagent review whose fixes landed before merge. R1 and R2a–R2f are complete.
+- **Owner clarification.** The owner clarified the full product vision; the three non-negotiables are a genuine
+  engine, a full builder on Android and desktop, and release from the builder.
+- **Branch.** `docs/42-vision-gap-analysis`.
+- **Added.**
+  - [Gap analysis](docs/design/2026-11-20-product-vision-gap-analysis.md): classifications, with contest rules
+    rechecked 2026-11-20.
+  - [ADR-0007](docs/adr/0007-mobile-builder-and-in-builder-release.md).
+  - The plan's
+    [contest delivery track](docs/plans/2026-11-20-engine-foundation-revision.md#contest-delivery-track) C1–C8.
+  - Updated agent guidance and plan index.
+- **Correction.** The earlier "≥ 2 platforms" contest rule was an inference; the official rules state none.
+- **Key facts.**
+  - The creator app is still a shell; no editor, AI or server functionality exists yet.
+  - The engine direction is retained without rewrites.
+  - Earlier desktop/web-only creator scoping and Gradle-built per-game players are superseded.
+- **Next step.** C1, 2D presentation facilities in the general runtime: transform, shape and sprite drawables,
+  layers, camera, and a Compose renderer for any runtime world shared by editor and player. Then C2 workspace and
+  operations, and C3 the responsive builder on Android and desktop.
+
 ## Current checkpoint — R2f scene templates and instance identity (2026-11-20, autonomous overnight session)
 
 - **R2e is done.** PR #39 merged as `175b432`. Review fixes: atomic registration, and foreign inputs fault the rule.
