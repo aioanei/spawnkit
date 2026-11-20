@@ -56,6 +56,20 @@ on Android and desktop.
   them, and the status bar says so.
 
   ![Playing on a phone](media/builder-play-phone.png)
+- **Make rules without code (C4c).** Select an object and open **Rules** (a tab on phones, a panel switch on
+  desktops). Each rule is a card: **When** a block, optional **And if** blocks, and **Do** blocks.
+  - **Editing blocks.** Tap a block to change it, or tap **+ Add rule**, **+ And if** or **+ Do** to add one. A dialog
+    offers large chips for the kind of block and its choices: tags that exist in the scene, keys, directions,
+    comparisons, "this object" or a tagged object. Numbers use −/+ steppers, so rules can be built without a keyboard.
+  - **Undo, problems and advanced rules.** Every change is one undoable step. Problems found when checking the rules
+    appear in red under the block they belong to. Rules made by agents or other tools that are not blocks appear as
+    advanced rules and are never changed.
+  - **Presets.** Player (tagged `player`), Coin (tagged `coin`) and Score (a "Score: 0" label with a number, tagged
+    `score`) make a first game quick.
+
+  | Android emulator: rules built with taps | Android emulator: playing |
+  |---|---|
+  | ![Rules](media/android-rules-edit.png) | ![Playing](media/android-rules-play.png) |
 - **Play and Stop.** Play builds an isolated world from the scene and steps it at a fixed 60 Hz. Stop returns to
   editing, and the project is never changed by playing.
 
@@ -87,17 +101,26 @@ keeps lines at least 32 px apart. The selection outline is 2.5 dp white, which c
     - a quick tap on an object is seen by its rules exactly once, and taps elsewhere are not;
     - at phone size, holding the on-screen Right control collects the coin, and a faulting rule's object and reason
       appear in the status bar.
+  - **`RuleEditorUiTest`:**
+    - At phone size, a Score + collect game is built with taps only: presets, inspector steppers, and the rule
+      dialog for both the player and the coin. It then checks undo/redo of a block, plays, and holds the on-screen
+      Right control until the label reads "Score: 1".
+    - At desktop size, it changes a When block, adds an And if, removes a Do block and deletes a block rule, while
+      an advanced rule is kept.
   - **Keyboard (desktop size):** arrow and Shift+arrow nudges, Ctrl+D, Delete, Ctrl+Z, Ctrl+Shift+Z, Ctrl+Y,
     Escape to deselect and Escape to stop play.
 - **Android emulator** (API 36, 1080×2400): `assembleDebug`, install, launch, then real `adb input` taps and a swipe
   add objects, drag the Player and open Properties. Play shows the play view and Stop. Screenshots:
   [edit](media/android-builder-edit.png), [play](media/android-builder-play.png).
+- **Android emulator, rules (C4c):** `tools/android-rules-smoke.py` drives the installed app on a running emulator with
+  real `adb` taps. It builds the Score + collect rules through the Rules tab, plays, and holds the on-screen Right
+  control; the play screenshot shows "Score: 1".
 - **Other targets:** the shared UI compiles for web (Wasm). iOS compiles in CI. No physical-device or iOS-device run
   is claimed.
 
 ## Not yet
 
-- Editing rules in the builder (C4c); rules can only be set through operations so far.
+- More blocks (spawning, sounds, scene changes, variables) and reordering rules or blocks by dragging.
 - Saving and opening projects (C5).
 - Release and Arcade (C6).
 - AI Studio (C7).

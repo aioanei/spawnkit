@@ -49,6 +49,29 @@ therefore does not turn an object's box. Pointer positions are world units: host
 the camera. Touching reads positions as they stand when the function is called, including earlier rules' committed
 moves this tick, but not moves made earlier in the same rule run (those apply when the run finishes).
 
+## Rule blocks (C4c)
+
+`RuleBlocks` is the friendly block vocabulary of the standard engine, used by the builder's rule editor and available
+to agents. A `Rule` is a When block, optional And-if blocks and Do blocks; it is checked every tick.
+
+| Conditions (When / And if) | Actions (Do) |
+|---|---|
+| Every moment · Game starts · Every N seconds | Move left/right/up/down at a speed per second |
+| Touching a tag · Tapped | Add to / take from a number (this object or a tagged one) |
+| Holding / pressing a standard action | Set a number |
+| A number compared with a value | Show a number in a text, after a prefix ("Score: n") |
+| How many objects have a tag, compared with a value | Remove this object |
+
+- **One executable model.** `RuleBlocks.compile` turns rules into ordinary every-tick handlers (one `if` each). Every
+  node of a block carries the block's node ID (`rule<i>.if<k>` or `rule<i>.do<k>`) and its plain description, so
+  diagnostics and faults point at the block (`RuleBlocks.locate`).
+- **Safe round trip.** `RuleBlocks.decompile` reads a handler as blocks only when compiling the recognised rule
+  reproduces it exactly. Anything else, such as a rule written by an agent, is a `RuleItem.Advanced` rule: it is shown
+  read-only and kept byte-for-byte when other rules change. The rule number comes from the handler's own node ID, so
+  block rules stay blocks when rules around them are added or removed; recompiling renumbers them by position.
+- **Timing.** The world counts ticks from 1: "Game starts" is `tick() == 1` and "Every N seconds" is
+  `tick() % (60·N) == 0`.
+
 ## Evidence
 
 `GameplayTest` (common, all core targets):
@@ -65,9 +88,12 @@ moves this tick, but not moves made earlier in the same rule run (those apply wh
 - **Text and lookups:** `textOf` formatting, and `firstTagged` faulting with the missing tag's name.
 - **Catalog:** the standard engine exposes these properties, functions, actions and components.
 
+`RuleBlocksTest` (common, all core targets): every block round-trips; every block prepares against the standard
+engine; non-block and re-identified handlers stay advanced and unchanged; block locations and descriptions; a
+Score + collect game built only from blocks plays; timed conditions fire on schedule.
+
 ## Not yet
 
-- The When / If / Do rule editor in the builder (C4b), and attaching rules to objects in the workspace.
-- Submitting keyboard and pointer input from the builder's play view (C4b).
+- Blocks for spawning objects, sounds, scenes and variables; rules with their own state.
 - Colors in rules, multiple tags per object, and collision response (solid objects, gravity) — R3 physics.
 - A per-game random seed setting.
