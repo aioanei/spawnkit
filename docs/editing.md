@@ -8,7 +8,7 @@ Android and desktop, Koog agents and tests all use this one module (`core/editin
 
 A `Project` holds `SceneDoc`s. Each scene holds `ObjectDoc`s with a stable ID, a name, an optional parent and
 `ComponentDoc`s (authored property values keyed by descriptor property ID; missing values use the descriptor
-default). The model is immutable and meaningful without ever being saved; persistence encodes it at a boundary (C5).
+default) and `rules` (C4b). The model is immutable and meaningful without ever being saved; persistence encodes it at a boundary (C5).
 `Project.blank()` is a functional empty project with one scene. Authoring order is sibling order.
 
 ## Operations
@@ -19,6 +19,7 @@ All changes go through typed `EditOperation`s, validated against the installed d
   `ReparentObject` (cycle check) and `DuplicateObject` (subtree with fresh IDs, placed after the original);
 - components: `AddComponent` (defaults) and `RemoveComponent`;
 - properties: `SetProperty`;
+- rules: `SetRules` (C4b), which replaces an object's rules as one undoable step;
 - scenes: `AddScene` and `RenameScene`;
 - `Batch`: atomic, with one undo step and a label.
 
@@ -38,6 +39,24 @@ an integer typed into a decimal field is accepted. Object-reference properties a
 - `validate` to check a single value as a property field types, without applying it;
 - `buildWorld(sceneId)` to build a fresh world through an R2f scene template.
 
+## Rules on objects (C4b)
+
+`ObjectDoc.rules` holds `core/program` handlers: the one executable model that visual rules (C4c), advanced tools
+and agents all edit. `SetRules` stores them without type-checking, so a creator can keep rules that are still being
+built. Duplicating an object copies its rules.
+
+`Editor(runtime, project, programs = feature)` attaches rules when it builds worlds. For each object with rules,
+`buildSceneWorld`:
+
+- prepares the rules as a program and attaches it as the object's behavior;
+- reports rules that do not prepare in `SceneWorld.diagnostics` (object ID to diagnostics located at block node IDs),
+  and plays that object without its rules while other objects play normally.
+
+The engine's program library keeps every version it has seen, so a program's ID includes a content fingerprint
+(`rules.<object>.<fingerprint>`). Editing rules and rebuilding never conflicts, and each checkpoint restores the
+version it was built with. Old versions stay registered for the session, which costs a little memory per edit.
+Without a `ProgramFeature`, rules are kept in the project but not run.
+
 `SceneWorld` maps authoring object IDs to entities and back (`ObjectIdentity`). The editor viewport hit-tests in the
 built world and selects the authored object. Play uses the same build, then steps the world; later edits never
 affect a world that was already built.
@@ -55,9 +74,13 @@ affect a world that was already built.
 - play isolation;
 - scene operations and listeners.
 
+`EditorRulesTest` (5 tests, same targets) covers `SetRules` undo/redo and duplication, rules running in play
+worlds, rebuilding after rule edits (with checkpoint round trips), diagnostics with other objects still playing,
+and editors without a program feature.
+
 ## Not yet
 
-- Rules and behaviors on objects (C4).
+- The visual rule editor (C4c). Rule state fields and functions are not authorable yet.
 - Persistence (C5).
 - Object-reference authoring.
 - Prefab editing.

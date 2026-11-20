@@ -1,5 +1,7 @@
 package dev.spawnkit.editing
 
+import dev.spawnkit.program.Handler
+
 /**
  * Authored values of one component on an object, keyed by descriptor property ID. Properties not listed use the
  * descriptor's default. Values have the Kotlin type of the property's value kind (`Long`, `Double`, `Boolean`,
@@ -22,6 +24,11 @@ public data class ObjectDoc(
     public val parent: String? = null,
     /** Components in the order they were added. */
     public val components: List<ComponentDoc> = emptyList(),
+    /**
+     * Rules that run on this object while playing, as `core/program` handlers. Visual rules, advanced tools and agents
+     * all edit this one executable model. Rules may have problems while being authored; worlds report and skip them.
+     */
+    public val rules: List<Handler> = emptyList(),
 ) {
     /** The authored values of [componentId], or `null` when the object lacks it. */
     public fun component(componentId: String): ComponentDoc? = components.firstOrNull { it.componentId == componentId }

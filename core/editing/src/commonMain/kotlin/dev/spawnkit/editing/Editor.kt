@@ -1,5 +1,10 @@
 package dev.spawnkit.editing
 
+import dev.spawnkit.program.Diagnostic
+import dev.spawnkit.program.PrepareResult
+import dev.spawnkit.program.Program
+import dev.spawnkit.program.ProgramFeature
+import dev.spawnkit.program.prepareProgram
 import dev.spawnkit.runtime.ComponentDescriptor
 import dev.spawnkit.runtime.ComponentSeed
 import dev.spawnkit.runtime.EntityHandle
@@ -18,6 +23,8 @@ public class Editor(
     public val runtime: Runtime,
     initial: Project = Project.blank(),
     private val historyLimit: Int = 200,
+    /** Executes object rules in built worlds; without it, rules are kept in the project but not run. */
+    public val programs: ProgramFeature? = null,
 ) {
     private val applier = OperationApplier(runtime)
     private val undoStack = ArrayDeque<Pair<Project, String>>()
@@ -93,7 +100,7 @@ public class Editor(
      * Builds a fresh world containing scene [sceneId] of the current project. The same function serves the editor
      * preview (never stepped) and Play (stepped); later edits never affect a world already built.
      */
-    public fun buildWorld(sceneId: String = project.scenes.first().id): SceneWorld = buildSceneWorld(runtime, project, sceneId)
+    public fun buildWorld(sceneId: String = project.scenes.first().id): SceneWorld = buildSceneWorld(runtime, project, sceneId, programs)
 
     private fun commit(next: Project) {
         project = next
@@ -107,6 +114,8 @@ public class SceneWorld internal constructor(
     /** The built world. */
     public val world: World,
     private val entities: Map<String, EntityHandle>,
+    /** Problems in objects' rules, by object ID. Those objects play without their rules. */
+    public val diagnostics: Map<String, List<Diagnostic>> = emptyMap(),
 ) {
     /** The entity created for authoring object [objectId], or `null`. */
     public fun entity(objectId: String): EntityHandle? = entities[objectId]
@@ -115,11 +124,15 @@ public class SceneWorld internal constructor(
     public fun objectId(entity: EntityHandle): String? = if (world.isAlive(entity)) world.identity(entity)?.objectId else null
 }
 
-/** Builds [sceneId] of [project] into a fresh world of [runtime] through a scene template. */
+/**
+ * Builds [sceneId] of [project] into a fresh world of [runtime] through a scene template. With [programs], each
+ * object's rules are prepared and attached; rules with problems are reported in [SceneWorld.diagnostics] and skipped.
+ */
 public fun buildSceneWorld(
     runtime: Runtime,
     project: Project,
     sceneId: String,
+    programs: ProgramFeature? = null,
 ): SceneWorld {
     val scene = requireNotNull(project.scene(sceneId)) { "Unknown scene '$sceneId'" }
     val objects =
@@ -128,7 +141,33 @@ public fun buildSceneWorld(
         }
     val world = runtime.createWorld()
     val instance = world.instantiate(SceneTemplate(scene.id, objects))
-    return SceneWorld(world, scene.objects.associate { it.id to checkNotNull(instance.entity(it.id)) })
+    val entities = scene.objects.associate { it.id to checkNotNull(instance.entity(it.id)) }
+    val diagnostics = LinkedHashMap<String, List<Diagnostic>>()
+    if (programs != null) {
+        for (obj in scene.objects) {
+            if (obj.rules.isEmpty()) continue
+            when (val prepared = prepareRules(programs, obj)) {
+                is PrepareResult.Ready -> world.set(entities.getValue(obj.id), programs.behavior, programs.instantiate(prepared.program))
+                is PrepareResult.Invalid -> diagnostics[obj.id] = prepared.diagnostics
+            }
+        }
+    }
+    return SceneWorld(world, entities, diagnostics)
+}
+
+/**
+ * Prepares [obj]'s rules as a program. The engine's program library keeps every version it has seen, so the ID
+ * includes a content fingerprint: editing rules and rebuilding never conflicts, and each checkpoint restores the
+ * version it was built with.
+ */
+private fun prepareRules(
+    programs: ProgramFeature,
+    obj: ObjectDoc,
+): PrepareResult {
+    val base = Program("rules.${obj.id}", handlers = obj.rules)
+    val first = prepareProgram(base, programs.host)
+    if (first !is PrepareResult.Ready) return first
+    return prepareProgram(base.copy(id = "${base.id}.${first.program.fingerprint.toULong().toString(16)}"), programs.host)
 }
 
 /** Template order is authoring order; sibling order within a parent follows it. */

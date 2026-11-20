@@ -15,6 +15,9 @@ import dev.spawnkit.gameplay.StandardEngine
 import dev.spawnkit.graphics.CameraView
 import dev.spawnkit.graphics.RenderList
 import dev.spawnkit.graphics.renderList
+import dev.spawnkit.runtime.InputAction
+import dev.spawnkit.runtime.InputFrame
+import dev.spawnkit.runtime.Pointer
 
 /** A ready-made object the creator can drop into the scene. */
 data class ObjectPreset(
@@ -47,12 +50,74 @@ private fun shape(
     color: Long,
 ) = ComponentDoc("graphics:shape", mapOf("form" to form, "width" to width, "height" to height, "color" to color))
 
-/** A running play session: an isolated world built from the scene when Play was pressed. */
+/**
+ * A running play session: an isolated world built from the scene when Play was pressed, plus the input the player is
+ * giving it. Keyboard keys, on-screen controls and pointers are combined into one [InputFrame] per tick.
+ */
 class PlaySession(
     val scene: SceneWorld,
+    private val actions: Map<String, InputAction>,
 ) {
     /** Incremented after every presented frame so the viewport redraws. */
     var frame by mutableLongStateOf(0L)
+
+    private val held = mutableMapOf<String, MutableSet<String>>()
+    private val pointers = LinkedHashMap<Int, Pointer>()
+    private val unsubmitted = mutableSetOf<Int>()
+    private val releaseAfterSubmit = mutableSetOf<Int>()
+
+    /** Starts holding action [actionId] from [source] (for example "keyboard" or "touch"). */
+    fun press(
+        actionId: String,
+        source: String,
+    ) {
+        if (actionId in actions) held.getOrPut(actionId) { mutableSetOf() } += source
+    }
+
+    /** Stops holding action [actionId] from [source]; the action stays held while another source holds it. */
+    fun release(
+        actionId: String,
+        source: String,
+    ) {
+        held[actionId]?.let {
+            it -= source
+            if (it.isEmpty()) held -= actionId
+        }
+    }
+
+    /** A pointer went down at world position ([x], [y]). */
+    fun pointerDown(
+        id: Int,
+        x: Double,
+        y: Double,
+    ) {
+        pointers[id] = Pointer(id, x, y, pressed = true)
+        unsubmitted += id
+        releaseAfterSubmit -= id
+    }
+
+    /** A pressed pointer moved to world position ([x], [y]). */
+    fun pointerMoved(
+        id: Int,
+        x: Double,
+        y: Double,
+    ) {
+        if (id in pointers) pointers[id] = Pointer(id, x, y, pressed = true)
+    }
+
+    /** A pointer was lifted. A press no tick has seen yet is still delivered once, so quick taps are never lost. */
+    fun pointerUp(id: Int) {
+        if (id in unsubmitted) releaseAfterSubmit += id else pointers -= id
+    }
+
+    /** The input for the next tick. */
+    fun nextInput(): InputFrame {
+        val frame = InputFrame(down = held.keys.mapNotNull(actions::get).toSet(), pointers = pointers.values.toList())
+        unsubmitted.clear()
+        releaseAfterSubmit.forEach { pointers -= it }
+        releaseAfterSubmit.clear()
+        return frame
+    }
 }
 
 /**
@@ -65,7 +130,7 @@ class EditorState(
     val engine: StandardEngine = StandardEngine(),
     project: Project = Project.blank(),
 ) {
-    val editor = Editor(engine.runtime, project)
+    val editor = Editor(engine.runtime, project, programs = engine.programs)
 
     /** Mirrors [Editor.revision] so Compose recomposes after every change. */
     var revision by mutableLongStateOf(0L)
@@ -171,7 +236,30 @@ class EditorState(
 
     fun startPlay() {
         selection = null
-        play = PlaySession(editor.buildWorld(sceneId))
+        play = PlaySession(editor.buildWorld(sceneId), engine.actions)
+    }
+
+    /**
+     * A plain-language problem with the running game's rules, naming the object: the first rule that stopped, or
+     * objects whose rules have problems and play without them. `null` when all rules are fine.
+     */
+    fun playProblem(): String? {
+        val session = play ?: return null
+        val world = session.scene.world
+        for (entity in world.entities(engine.programs.behavior)) {
+            val fault = world.get(entity, engine.programs.behavior)?.fault ?: continue
+            val name = session.scene.objectId(entity)?.let { scene.find(it)?.name } ?: "An object"
+            return "$name's rules stopped: ${fault.message}"
+        }
+        val broken =
+            session.scene.diagnostics.keys
+                .mapNotNull { scene.find(it)?.name }
+        if (broken.isEmpty()) return null
+        return "${broken.joinToString()} ${if (broken.size == 1) "has" else "have"} rule problems and play without rules: " +
+            session.scene.diagnostics.values
+                .first()
+                .first()
+                .message
     }
 
     fun stopPlay() {

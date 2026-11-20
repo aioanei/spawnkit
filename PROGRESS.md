@@ -1,5 +1,23 @@
 # SpawnKit progress
 
+## Current checkpoint — C4b rules in the workspace and playable input (2026-11-20)
+
+- **Merged.** PR #51 (C4a gameplay facilities) as `24613af`, after green `build` and iOS checks; issue #49 is closed.
+- **Planning.** The rest of C4 is split into [issue #52](https://github.com/aioanei/spawnkit/issues/52) (C4b,
+  executable rules and input) and [issue #53](https://github.com/aioanei/spawnkit/issues/53) (C4c, the
+  When / If / Do editor).
+- **Branch.** `feat/52-workspace-rules`.
+- **Added.**
+  - `core/editing`: `ObjectDoc.rules` (program handlers) and `SetRules`. `Editor(programs = ...)` and
+    `buildSceneWorld` attach prepared rules, with content-versioned program IDs and `SceneWorld.diagnostics`.
+  - `app/shared`: the builder's editor runs rules through `StandardEngine.programs`. Play input comes from the
+    keyboard, from world-space taps (quick taps latched to one tick), and from on-screen controls on compact layouts.
+    Rule faults and problems are explained in the status bar.
+  - Docs: editing and builder.
+- **Next step.** Gates, PR, review, merge. Then C4c: a block catalog that round-trips with handlers, a Rules
+  section for the selected object, diagnostics on blocks, and a phone-size UI test building Score + collect from taps
+  only.
+
 ## Current checkpoint — C4a rule-ready gameplay facilities (2026-11-20)
 
 - **Merged.** PR #50 (C3 builder shell) as `cba603f`, after a pre-PR self-review that added inline validation
