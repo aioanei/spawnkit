@@ -203,17 +203,17 @@ public fun Graphics2D.renderList(world: World): RenderList {
     val transforms = LinkedHashMap<EntityHandle, Affine2D>()
     val order = ArrayList<EntityHandle>()
 
-    fun visit(
-        entity: EntityHandle,
-        parent: Affine2D,
-    ) {
+    // Pre-order traversal with an explicit stack, so deep hierarchies cannot overflow the call stack.
+    val pending = ArrayDeque<Pair<EntityHandle, Affine2D>>()
+    for (root in world.entities().asReversed()) if (world.parent(root) == null) pending.addLast(root to Affine2D.IDENTITY)
+    while (pending.isNotEmpty()) {
+        val (entity, parent) = pending.removeLast()
         val local = world.get(entity, transform)?.let(Affine2D::of) ?: Affine2D.IDENTITY
         val combined = parent * local
         transforms[entity] = combined
         order += entity
-        for (child in world.children(entity)) visit(child, combined)
+        for (child in world.children(entity).asReversed()) pending.addLast(child to combined)
     }
-    for (root in world.entities()) if (world.parent(root) == null) visit(root, Affine2D.IDENTITY)
 
     val items = ArrayList<DrawItem>()
     var activeCamera: CameraView? = null
@@ -226,9 +226,15 @@ public fun Graphics2D.renderList(world: World): RenderList {
             items += DrawItem.Sprite(entity, placed, it.layer, it.width, it.height, it.asset, it.tint)
         }
         if (activeCamera == null) {
-            world.get(entity, camera)?.takeIf { it.active }?.let { activeCamera = CameraView(placed.tx, placed.ty, it.zoom) }
+            world.get(entity, camera)?.takeIf { it.active && it.zoom.isFinite() && it.zoom > 0.0 }?.let {
+                // Values set natively bypass descriptor ranges; clamp so a bad zoom cannot break rendering.
+                activeCamera = CameraView(placed.tx, placed.ty, it.zoom.coerceIn(MIN_ZOOM, MAX_ZOOM))
+            }
         }
     }
     // A stable sort keeps scene order within each layer.
     return RenderList(items.sortedBy { it.layer }, activeCamera, transforms)
 }
+
+private const val MIN_ZOOM = 0.01
+private const val MAX_ZOOM = 100.0

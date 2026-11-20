@@ -123,4 +123,28 @@ class Graphics2DTest {
         val restored = fixture.runtime.restore(fixture.world.snapshot())
         assertEquals(fixture.world.stateHash(), restored.stateHash())
     }
+
+    @Test
+    fun invalidCameraZoomIsIgnoredOrClampedAndDeepHierarchiesRender() {
+        val fixture = Fixture()
+        val broken = fixture.world.spawn()
+        fixture.world.set(broken, fixture.graphics.camera, Camera2D(zoom = Double.NaN))
+        val huge = fixture.world.spawn()
+        fixture.world.set(huge, fixture.graphics.camera, Camera2D(zoom = 1e9))
+        assertEquals(
+            100.0,
+            fixture.graphics
+                .renderList(fixture.world)
+                .camera
+                ?.zoom,
+        )
+        var parent = fixture.box(Transform2D(x = 1.0))
+        repeat(5_000) {
+            val child = fixture.box(Transform2D(x = 1.0))
+            fixture.world.setParent(child, parent)
+            parent = child
+        }
+        val list = fixture.graphics.renderList(fixture.world)
+        assertEquals(5_001.0, list.worldTransform(parent).tx)
+    }
 }

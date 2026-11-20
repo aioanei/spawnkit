@@ -33,7 +33,7 @@ class RuntimeCanvasRenderTest {
         world.set(sun, graphics.transform, Transform2D(x = 3.0, y = -2.0))
         world.set(sun, graphics.shape, Shape2D(form = Shape2D.ELLIPSE, width = 1.5, height = 1.5, color = 0xFFFFC107))
         val hero = world.spawn()
-        world.set(hero, graphics.transform, Transform2D(x = 0.0, y = 1.0, rotation = 15.0))
+        world.set(hero, graphics.transform, Transform2D(x = 0.0, y = 1.5, rotation = 15.0))
         world.set(hero, graphics.shape, Shape2D(width = 1.0, height = 1.0, color = 0xFF2196F3, layer = 1))
         val frame = graphics.renderList(world)
 
@@ -52,8 +52,8 @@ class RuntimeCanvasRenderTest {
         val bitmap = Bitmap.makeFromImage(image)
         // World (0, 2) is the ground centre: 320 + 0·40, 180 + 2·40.
         assertEquals(0xFF8D6E63.toInt(), bitmap.getColor(320 - 100, 260))
-        // The hero (layer 1) covers the ground where they overlap at world (0, 1.4).
-        assertEquals(0xFF2196F3.toInt(), bitmap.getColor(320, 236))
+        // World (0, 1.75) lies inside both the ground and the hero; the hero (layer 1) must be drawn on top.
+        assertEquals(0xFF2196F3.toInt(), bitmap.getColor(320, 250))
         // The sun's centre at world (3, -2) → pixel (440, 100).
         assertEquals(0xFFFFC107.toInt(), bitmap.getColor(440, 100))
         val out = File("build/screenshots").apply { mkdirs() }.resolve("runtime-canvas.png")

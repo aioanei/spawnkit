@@ -45,7 +45,9 @@ desktop, iOS, JS and Wasm.
 ![Runtime canvas](media/runtime-canvas.png)
 
 The image above is produced by `RuntimeCanvasRenderTest` (JVM), which renders a runtime scene offscreen with Skia and
-asserts actual pixel colors: the ground, the layered hero over it, and the camera-relative sun position.
+asserts actual pixel colors: the ground, the hero drawn over the ground where both overlap (layer order), and the
+camera-relative sun position. Invalid camera zoom values set natively are ignored or clamped, and the grid spacing
+adapts in powers of ten with a bounded line count.
 
 ## Evidence
 

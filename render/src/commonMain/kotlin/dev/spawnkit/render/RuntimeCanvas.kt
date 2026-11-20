@@ -55,7 +55,7 @@ fun RuntimeCanvas(
     Canvas(modifier) {
         drawRenderList(
             frame,
-            ViewTransform(camera, size.width.toDouble(), size.height.toDouble(), pixelsPerUnit.toDouble()),
+            ViewTransform(safeCamera(camera), size.width.toDouble(), size.height.toDouble(), safeScale(pixelsPerUnit)),
             images,
             selection,
             style,
@@ -129,30 +129,48 @@ private fun DrawScope.drawGrid(
     view: ViewTransform,
     color: Color,
 ) {
+    // Power-of-ten spacing keeps lines at least MIN_GRID_PX apart at any zoom; integer indices and a cap bound the work.
+    var step = 1.0
+    while (step * view.scale < MIN_GRID_PX) step *= 10.0
+    while (step / 10.0 * view.scale >= MIN_GRID_PX && step > 1e-6) step /= 10.0
     val (left, top) = view.toWorld(0.0, 0.0)
-    val (right, bottom) = view.toWorld(size.width.toDouble(), size.height.toDouble())
-    val step = if (view.scale < 8) 10.0 else 1.0
-    var x = floor(left / step) * step
-    while (x <= right) {
+    val (right, bottom) = view.toWorld(view.widthPx, view.heightPx)
+    val firstX = floor(left / step).toLong()
+    val firstY = floor(top / step).toLong()
+    val countX = ((right - left) / step).toLong().coerceIn(0, MAX_GRID_LINES) + 2
+    val countY = ((bottom - top) / step).toLong().coerceIn(0, MAX_GRID_LINES) + 2
+    for (i in 0 until countX) {
         val sx =
             view.worldToScreen
-                .apply(x, 0.0)
+                .apply((firstX + i) * step, 0.0)
                 .first
                 .toFloat()
-        drawLine(color, Offset(sx, 0f), Offset(sx, size.height))
-        x += step
+        drawLine(color, Offset(sx, 0f), Offset(sx, view.heightPx.toFloat()))
     }
-    var y = floor(top / step) * step
-    while (y <= bottom) {
+    for (i in 0 until countY) {
         val sy =
             view.worldToScreen
-                .apply(0.0, y)
+                .apply(0.0, (firstY + i) * step)
                 .second
                 .toFloat()
-        drawLine(color, Offset(0f, sy), Offset(size.width, sy))
-        y += step
+        drawLine(color, Offset(0f, sy), Offset(view.widthPx.toFloat(), sy))
     }
 }
+
+private const val MIN_GRID_PX = 8.0
+private const val MAX_GRID_LINES = 1_000L
+
+/** A camera safe to render: an invalid zoom (non-finite or not positive) falls back to 1. */
+private fun safeCamera(camera: CameraView): CameraView =
+    if (camera.zoom.isFinite() &&
+        camera.zoom > 0.0
+    ) {
+        camera
+    } else {
+        camera.copy(zoom = 1.0)
+    }
+
+private fun safeScale(pixelsPerUnit: Float): Double = if (pixelsPerUnit.isFinite() && pixelsPerUnit > 0f) pixelsPerUnit.toDouble() else 48.0
 
 /** Converts an ARGB long (`0xAARRGGBB`) to a Compose color. */
 fun argb(value: Long): Color = Color(value.toInt())
