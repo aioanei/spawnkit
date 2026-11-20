@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -61,8 +62,52 @@ fun GamePlayer(
             .onKeyEvent { session.handlePlayKey(it) },
     ) {
         PlaySurface(session, engine.graphics, CameraView(zoom = 1.0), pixelsPerUnit, touchControls, focus)
+        RuleProblemBanner(session, engine, pkg, Modifier.align(Alignment.TopCenter))
     }
     LaunchedEffect(session) { focus.requestFocus() }
+}
+
+/** Explains rules that stopped or could not run, so a released game never looks frozen without a reason. */
+@Composable
+private fun RuleProblemBanner(
+    session: PlaySession,
+    engine: StandardEngine,
+    pkg: GamePackage,
+    modifier: Modifier,
+) {
+    // Re-checked after every presented frame: faults happen while playing.
+    session.frame
+    val problem = ruleProblem(session, engine, pkg) ?: return
+    Text(
+        problem,
+        color = Color.White,
+        fontSize = 15.sp,
+        modifier =
+            modifier
+                .padding(12.dp)
+                .background(Color(0xCC8E2B2B), RoundedCornerShape(8.dp))
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .testTag("player-problem"),
+    )
+}
+
+/** The builder's play-status wording without technical details: runtime faults first, then rules that could not run. */
+internal fun ruleProblem(
+    session: PlaySession,
+    engine: StandardEngine,
+    pkg: GamePackage,
+): String? {
+    val world = session.scene.world
+    val objects = pkg.project.scene(pkg.startScene)?.objects.orEmpty().associateBy { it.id }
+    for (entity in world.entities(engine.programs.behavior)) {
+        world.get(entity, engine.programs.behavior)?.fault ?: continue
+        val name = session.scene.objectId(entity)?.let { objects[it]?.name } ?: "An object"
+        return "$name's rules stopped working, so it no longer reacts"
+    }
+    val broken = session.scene.diagnostics.keys.mapNotNull { objects[it]?.name }
+    if (broken.isEmpty()) return null
+    return "${broken.joinToString()} ${if (broken.size == 1) "has rules that can't run" else "have rules that can't run"}, so " +
+        "${if (broken.size == 1) "it plays" else "they play"} without them"
 }
 
 /** A full-screen explanation shown instead of a game, for example when the game file is missing or unsupported. */

@@ -23,9 +23,6 @@ import dev.spawnkit.player.PlaySession
 import dev.spawnkit.program.PrepareResult
 import dev.spawnkit.program.Program
 import dev.spawnkit.program.prepareProgram
-import dev.spawnkit.runtime.InputAction
-import dev.spawnkit.runtime.InputFrame
-import dev.spawnkit.runtime.Pointer
 
 /** A ready-made object the creator can drop into the scene. */
 data class ObjectPreset(

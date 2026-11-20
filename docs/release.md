@@ -21,6 +21,8 @@ Toolchain builds the player; creators never see it.
    may change this internal path.
 3. Copy the bundle and `game.spawnkit.json` into one folder.
 4. Serve the folder with `.mjs` as `text/javascript` and `.wasm` as `application/wasm`, then open `index.html`.
+   The player loads `game.spawnkit.json` relative to the page's directory, so a hosted game must be served from a
+   directory URL with a trailing slash. The Arcade will serve `/play/{slug}/`, not `/play/{slug}`.
 
 Evidence (headless Chrome, 2026-11-20): the [sample game playing](media/web-player-game.png) and the
 [missing-game explanation](media/web-player-missing.png).

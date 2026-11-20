@@ -91,6 +91,31 @@ class GamePackageTest {
     }
 
     @Test
+    fun wronglyTypedFieldsNeverLeakLibraryDetailsOrCreatorAdvice() {
+        val text = GamePackageCodec.encode(GamePackage.of(project))
+        val generic = "This game cannot be played: the package is incomplete or damaged"
+        val components = "\"requiredComponents\":[\"extension:jetpack\",\"graphics:shape\",\"graphics:transform\"]"
+        assertContains(text, components)
+        val cases =
+            listOf(
+                components to "\"requiredComponents\":{}",
+                components to "\"requiredComponents\":[{},{},{}]",
+                "\"title\":\"Coin run\"" to "\"title\":null",
+                "\"title\":\"Coin run\"" to "\"title\":42",
+                "\"startScene\":\"scene-1\"" to "\"startScene\":\"scene-9\"",
+                "\"packageVersion\":1" to "\"packageVersion\":\"1\"",
+            )
+        for ((from, to) in cases) {
+            val tampered = text.replace(from, to)
+            assertTrue(tampered != text, to)
+            val message = assertFailsWith<IllegalArgumentException> { GamePackageCodec.decode(tampered) }.message.orEmpty()
+            assertTrue(message.startsWith("This game cannot be played: "), message)
+            assertTrue("kotlinx" !in message && "Json" !in message && "choose another" !in message, message)
+            assertTrue(message == generic || "damaged" in message || "newer" in message, message)
+        }
+    }
+
+    @Test
     fun missingCapabilitiesAreExplainedAgainstThePlayersRuntime() {
         val builder = RuntimeBuilder()
         Graphics2D(builder)

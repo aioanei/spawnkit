@@ -1,14 +1,10 @@
 package dev.spawnkit.editing
 
 import dev.spawnkit.runtime.Runtime
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 
 /**
@@ -84,34 +80,46 @@ public object GamePackageCodec {
         ).toString()
     }
 
-    /** Decodes and validates a package. Throws [IllegalArgumentException] explaining why it cannot be played. */
+    /** Decodes and validates a package. Throws [IllegalArgumentException] explaining, for players, why it cannot be played. */
     public fun decode(text: String): GamePackage {
-        require(text.length <= MAX_PACKAGE_CHARS) { "This game is too large to open" }
+        if (text.length > MAX_PACKAGE_CHARS) throw unplayable("This game is too large to open")
         return try {
-            val root = Json.parseToJsonElement(text) as? JsonObject ?: error("not an object")
-            val format = (root["format"] as? JsonPrimitive)?.contentOrNull
-            require(format == FORMAT) { "Choose a SpawnKit game package" }
-            val version = (root["packageVersion"] as? JsonPrimitive)?.longOrNull
-            require(version == PACKAGE_VERSION.toLong()) { "This game needs a newer SpawnKit player" }
-            val project = ProjectCodec.decode(root.getValue("project").toString())
-            val declared = root.getValue("requiredComponents").jsonArray.map { it.jsonPrimitive.content }
-            require(declared == project.requiredComponents()) { "The game package is damaged: its contents do not match" }
-            GamePackage.of(
-                project,
-                title = root.getValue("title").jsonPrimitive.content,
-                startScene = root.getValue("startScene").jsonPrimitive.content,
-            )
-        } catch (problem: Exception) {
-            // SerializationException extends IllegalArgumentException, so it must be matched first: parser details are
-            // not useful to players.
-            val detail =
-                when (problem) {
-                    is SerializationException, is IllegalStateException, is NoSuchElementException -> null
-                    else -> problem.message
+            val root = Json.parseToJsonElement(text) as? JsonObject ?: damaged("it is not a game file")
+            if (root.string("format") != FORMAT) throw PackageProblem("Choose a SpawnKit game package")
+            val version = (root["packageVersion"] as? JsonPrimitive)?.takeUnless { it.isString }?.longOrNull
+            if (version != PACKAGE_VERSION.toLong()) throw PackageProblem("This game needs a newer SpawnKit player")
+            val project =
+                try {
+                    ProjectCodec.decode((root["project"] as? JsonObject ?: damaged("its game data is missing")).toString())
+                } catch (_: IllegalArgumentException) {
+                    damaged("its game data could not be read")
                 }
-            throw IllegalArgumentException("This game cannot be played: ${detail ?: "the package is incomplete or damaged"}", problem)
+            val declared =
+                (root["requiredComponents"] as? JsonArray ?: damaged("its capability list is missing"))
+                    .map { (it as? JsonPrimitive)?.takeIf { value -> value.isString }?.content ?: damaged("its capability list is invalid") }
+            if (declared != project.requiredComponents()) damaged("its contents do not match")
+            val title = root.string("title")?.trim()?.takeIf { it.isNotEmpty() && it.length <= GamePackage.MAX_TITLE_LENGTH }
+            val start = root.string("startScene")?.takeIf { project.scene(it) != null }
+            GamePackage(title ?: damaged("its title is invalid"), start ?: damaged("its start scene is missing"), declared, project)
+        } catch (problem: Exception) {
+            // Only this codec's own explanations reach players; parser and library details never do.
+            throw unplayable((problem as? PackageProblem)?.message ?: "the package is incomplete or damaged", problem)
         }
     }
+
+    private fun JsonObject.string(key: String): String? = (this[key] as? JsonPrimitive)?.takeIf { it.isString }?.content
+
+    private fun damaged(detail: String): Nothing = throw PackageProblem("The game package is damaged: $detail")
+
+    private fun unplayable(
+        detail: String,
+        cause: Throwable? = null,
+    ) = IllegalArgumentException("This game cannot be played: $detail", cause)
+
+    /** A player-facing explanation raised while decoding. */
+    private class PackageProblem(
+        message: String,
+    ) : IllegalArgumentException(message)
 }
 
 private fun Project.requiredComponents(): List<String> =

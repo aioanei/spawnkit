@@ -12,6 +12,11 @@ import dev.spawnkit.editing.ObjectDoc
 import dev.spawnkit.editing.Project
 import dev.spawnkit.editing.SceneDoc
 import dev.spawnkit.gameplay.StandardActions
+import dev.spawnkit.program.Expr
+import dev.spawnkit.program.Handler
+import dev.spawnkit.program.SourceRef
+import dev.spawnkit.program.Stmt
+import dev.spawnkit.program.Trigger
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -65,6 +70,22 @@ class GamePlayerUiTest {
             onNodeWithTag("game-player").assertIsDisplayed()
             onNodeWithTag("control:${StandardActions.JUMP}").assertIsDisplayed()
             assertEquals(pkg, GamePackageCodec.decode(File("build/sample-game/game.spawnkit.json").readText()))
+        }
+
+    @Test
+    fun rulesThatCannotRunAreExplainedWhilePlaying() =
+        runComposeUiTest {
+            val source = SourceRef("broken-rule", "A rule using an unknown value")
+            val broken = Handler(Trigger.EveryTick, listOf(Stmt.Evaluate(Expr.Variable("missing", source), source)), source)
+            val scene = demo.scenes.single()
+            val withBrokenRule =
+                demo.copy(scenes = listOf(scene.copy(objects = scene.objects.map { if (it.name == "Box") it.copy(rules = listOf(broken)) else it })))
+            mainClock.autoAdvance = false
+            setContent { GamePlayer(GamePackage.of(withBrokenRule), touchControls = false) }
+            mainClock.advanceTimeBy(100)
+
+            onNodeWithTag("player-problem").assertIsDisplayed()
+            onNodeWithText("Box has rules that can't run, so it plays without them").assertIsDisplayed()
         }
 
     @Test
