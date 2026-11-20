@@ -11,10 +11,16 @@ import dev.spawnkit.editing.Editor
 import dev.spawnkit.editing.OperationResult
 import dev.spawnkit.editing.Project
 import dev.spawnkit.editing.SceneWorld
+import dev.spawnkit.gameplay.BlockLocation
+import dev.spawnkit.gameplay.RuleBlocks
+import dev.spawnkit.gameplay.RuleItem
 import dev.spawnkit.gameplay.StandardEngine
 import dev.spawnkit.graphics.CameraView
 import dev.spawnkit.graphics.RenderList
 import dev.spawnkit.graphics.renderList
+import dev.spawnkit.program.PrepareResult
+import dev.spawnkit.program.Program
+import dev.spawnkit.program.prepareProgram
 import dev.spawnkit.runtime.InputAction
 import dev.spawnkit.runtime.InputFrame
 import dev.spawnkit.runtime.Pointer
@@ -32,11 +38,23 @@ val DefaultPresets: List<ObjectPreset> =
         ObjectPreset("Box", "A colored square") { x, y -> placed(x, y) + shape("rectangle", 1.0, 1.0, 0xFF4CAF50) },
         ObjectPreset("Circle", "A round shape") { x, y -> placed(x, y) + shape("ellipse", 1.0, 1.0, 0xFFFFC107) },
         ObjectPreset("Platform", "A wide floor piece") { x, y -> placed(x, y) + shape("rectangle", 6.0, 0.6, 0xFF8D6E63) },
-        ObjectPreset("Player", "The hero of your game") { x, y -> placed(x, y) + shape("rectangle", 0.9, 0.9, 0xFF2196F3) },
+        ObjectPreset("Player", "The hero of your game") { x, y ->
+            placed(x, y) + shape("rectangle", 0.9, 0.9, 0xFF2196F3) + tag("player")
+        },
+        ObjectPreset("Coin", "Something to collect") { x, y -> placed(x, y) + shape("ellipse", 0.6, 0.6, 0xFFFFC107) + tag("coin") },
+        ObjectPreset("Score", "A number shown on screen") { x, y ->
+            placed(x, y) +
+                listOf(
+                    ComponentDoc("graphics:text", mapOf("text" to "Score: 0")),
+                    ComponentDoc("gameplay:number"),
+                ) + tag("score")
+        },
         ObjectPreset("Camera", "Chooses what players see") { x, y ->
             placed(x, y) + ComponentDoc("graphics:camera")
         },
     )
+
+private fun tag(name: String) = listOf(ComponentDoc("gameplay:tag", mapOf("tag" to name)))
 
 private fun placed(
     x: Double,
@@ -302,6 +320,36 @@ class EditorState(
 
     /** Whether the object can be dragged (it has a placement). */
     fun canMove(objectId: String): Boolean = scene.find(objectId)?.component("graphics:transform") != null
+
+    /** [objectId]'s rules as the rule editor shows them: blocks, or advanced rules kept unchanged. */
+    fun ruleItems(objectId: String): List<RuleItem> = RuleBlocks.decompile(scene.find(objectId)?.rules.orEmpty())
+
+    /** Replaces [objectId]'s rules as one undoable step. */
+    fun setRuleItems(
+        objectId: String,
+        items: List<RuleItem>,
+    ) {
+        val name = scene.find(objectId)?.name ?: return
+        apply(EditOperation.SetRules(sceneId, objectId, RuleBlocks.compileItems(items), "Change rules of $name"))
+    }
+
+    /**
+     * Problems in [objectId]'s rules, checked exactly as Play will check them. Each is keyed by the block it belongs to,
+     * or `null` for problems outside blocks.
+     */
+    fun ruleProblems(objectId: String): List<Pair<BlockLocation?, String>> {
+        val rules = scene.find(objectId)?.rules.orEmpty()
+        if (rules.isEmpty()) return emptyList()
+        val result = prepareProgram(Program("check.$objectId", handlers = rules), engine.host)
+        return (result as? PrepareResult.Invalid)?.diagnostics?.map { RuleBlocks.locate(it.source.nodeId) to it.message }.orEmpty()
+    }
+
+    /** Tags used in the current scene, for pickers. */
+    fun tags(): List<String> =
+        scene.objects
+            .mapNotNull { (it.component("gameplay:tag")?.values?.get("tag") as? String)?.trim() }
+            .filter { it.isNotEmpty() }
+            .distinct()
 }
 
 /** Rounds to 0.01 world units so dragged positions stay tidy in the inspector. */

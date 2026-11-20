@@ -56,7 +56,7 @@ class BuilderUiTest {
             val player = checkNotNull(state.selection)
             assertEquals("Player", scene.find(player)?.name)
 
-            onNodeWithTag("tab:Properties").performClick()
+            onNodeWithTag("tab:Object").performClick()
             onNodeWithTag("swatch:$player/graphics:shape/color:fff44336").performScrollTo().performClick()
             waitForIdle()
             assertEquals(
