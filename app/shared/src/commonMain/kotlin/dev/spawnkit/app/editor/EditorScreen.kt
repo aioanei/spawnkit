@@ -71,9 +71,17 @@ private fun ExpandedLayout(state: EditorState) {
             }
             Viewport(state, Modifier.weight(1f).fillMaxHeight())
             Panel(Modifier.width(340.dp).fillMaxHeight()) {
+                var rules by remember { mutableStateOf(false) }
                 Column {
-                    SectionTitle("Properties")
-                    Inspector(state, Modifier.weight(1f))
+                    Row(Modifier.padding(start = 4.dp, top = 4.dp)) {
+                        TextButton({ rules = false }, Modifier.testTag("panel:Properties")) {
+                            Text("Properties", fontWeight = if (!rules) FontWeight.Bold else FontWeight.Normal)
+                        }
+                        TextButton({ rules = true }, Modifier.testTag("panel:Rules")) {
+                            Text("Rules", fontWeight = if (rules) FontWeight.Bold else FontWeight.Normal)
+                        }
+                    }
+                    if (rules) RulesPanel(state, Modifier.weight(1f)) else Inspector(state, Modifier.weight(1f))
                 }
             }
         }
@@ -94,7 +102,7 @@ private fun CompactLayout(state: EditorState) {
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         TabRow(tab, Modifier.weight(1f)) {
-                            listOf("Add", "Scene", "Properties").forEachIndexed { index, title ->
+                            listOf("Add", "Scene", "Object", "Rules").forEachIndexed { index, title ->
                                 Tab(
                                     tab == index,
                                     {
@@ -113,7 +121,8 @@ private fun CompactLayout(state: EditorState) {
                             when (tab) {
                                 0 -> Palette(state)
                                 1 -> Hierarchy(state, Modifier.fillMaxSize())
-                                else -> Inspector(state, Modifier.fillMaxSize())
+                                2 -> Inspector(state, Modifier.fillMaxSize())
+                                else -> RulesPanel(state, Modifier.fillMaxSize())
                             }
                         }
                     }
@@ -143,6 +152,8 @@ private fun Toolbar(
                 overflow = TextOverflow.Ellipsis,
             )
             val editing = state.play == null
+            // Undo/redo availability lives in the editor, so subscribe to every revision explicitly.
+            state.revision
             ToolButton("↶", "Undo", enabled = editing && state.editor.undoLabel != null, tag = "undo") { state.undo() }
             ToolButton("↷", "Redo", enabled = editing && state.editor.redoLabel != null, tag = "redo") { state.redo() }
             ToolButton("⧉", "Duplicate", enabled = editing && state.selection != null, tag = "duplicate") { state.duplicateSelection() }

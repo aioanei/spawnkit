@@ -1,5 +1,32 @@
 # SpawnKit progress
 
+## Current checkpoint — C4c When / If / Do rule editor (2026-11-20)
+
+- **C4b.** [PR #54](https://github.com/aioanei/spawnkit/pull/54) has green `build` and iOS checks. The automatic
+  permission classifier refused the merge command twice, so it waits for the owner to merge or allow it.
+- **Branch.** `feat/53-rule-editor` ([issue #53](https://github.com/aioanei/spawnkit/issues/53)), stacked on
+  `feat/52-workspace-rules`.
+- **Added.**
+  - `core/gameplay`: `RuleBlocks`, with conditions, actions, compile and exact-recompile decompile, advanced rules
+    kept unchanged, block locations and descriptions. Also corrected tick semantics: the first tick is 1.
+  - `app/shared`: a Rules tab (phone) and panel (desktop), the block dialog with chips and steppers, problems on
+    blocks, and Player/Coin/Score presets.
+  - Fixed: on phones the toolbar's undo/redo enabled state went stale after undo; the toolbar now reads `revision`.
+  - Resume review: added plain-text actions, bounded the timer picker to the supported one-day maximum, disabled
+    steppers at their limits, and made diagnostic lookup tolerate oversized block IDs.
+- **Evidence.**
+  - `RuleBlocksTest` (7) and `RuleEditorUiTest` (3): the phone-size test builds Score + collect with taps only and
+    plays it. Text actions execute and round-trip; the phone UI edits text and respects the timer limit.
+  - A fresh desktop screenshot shows block rules alongside an advanced rule; the UI test preserves the advanced rule.
+  - Resume gates passed: `spotlessApply`, then separately `spotlessCheck allJvmAndWebTests localNativeTests`, plus
+    Android APK, desktop, Wasm UI and JS renderer compilation (`BUILD SUCCESSFUL`, 609 tasks, 2m 30s). Linux native
+    tests are skipped on Windows; remote Linux and iOS checks remain required.
+  - The Android API 36 emulator, driven by `tools/android-rules-smoke.py`, built the same game with real taps and
+    showed "Score: 1" while playing.
+- **Next step.** Owner review and integration of C4b and C4c (C4c stays based on C4b until #54 merges), with green
+  remote build and iOS checks. Then C5, project persistence: save, open, autosave and recovery through a versioned
+  codec. Rules (program handlers) need serialization there.
+
 ## Current checkpoint — C4b rules in the workspace and playable input (2026-11-20)
 
 - **Merged.** PR #51 (C4a gameplay facilities) as `24613af`, after green `build` and iOS checks; issue #49 is closed.
