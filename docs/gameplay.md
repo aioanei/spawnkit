@@ -39,7 +39,7 @@ Colors are not yet available to rules.
 | `countTagged(tag)` | How many objects have the tag. |
 | `textOf(n)` | A whole number as text, for labels such as `"Score: " + textOf(n)`. |
 | `random(min, max)` | A whole number from min to max inclusive, from the seeded generator. Both ends must be within ±10⁹, and min must not exceed max. |
-| `tick()` | Ticks since play started, 60 per second; for example "every second" is `tick() % 60 == 59`. |
+| `tick()` | The current tick, 60 per second. The first tick is 1, so "every second" is `tick() % 60 == 0`. |
 | `isDown`, `wasPressed`, `wasReleased` | The standard actions `input:left`, `input:right`, `input:up`, `input:down` and `input:jump`. |
 
 ### Determinism
