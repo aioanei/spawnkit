@@ -16,6 +16,7 @@ kotlin {
         }
         commonMain.dependencies {
             implementation(project(":core:editing"))
+            implementation(project(":core:gameplay"))
             implementation(project(":render"))
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
