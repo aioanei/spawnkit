@@ -61,7 +61,8 @@ any storage change:
 Because query order feeds private state, any ordering difference changes the hash. The same goldens pass on the
 sparse-set store on every locally runnable target (see [Verification](#verification)).
 [`ComponentStorageTest`](../core/runtime/src/commonTest/kotlin/dev/spawnkit/runtime/ComponentStorageTest.kt)
-covers swap-removal, growth, both ordered-iteration strategies, empty queries and handle caching.
+covers swap-removal, growth, both ordered-iteration strategies, empty queries and handle caching. A randomized
+churn test compares both query strategies with a brute-force filter at densities on both sides of 1/16.
 
 ## Selected implementation
 
@@ -91,6 +92,7 @@ measures the following cases:
 | spawn+attach | One entity plus 1–3 components |
 | dense two-component query | One `entities(position, velocity)` call |
 | sparse query | One `entities(marker)` call; the marker is on about 25% of entities |
+| rare query | One `entities(link)` call; the link is on 2% of entities, below the 1/16 threshold |
 | `get` | One component read |
 | step steady | One tick of the motion system, no structural change |
 | step churn | One tick with size/10 deferred structural edits |
@@ -117,7 +119,9 @@ Environment:
 - Node.js: 22.14.0.
 - Kotlin: 2.4.21, release/production binaries.
 - Baseline: commit `9a49597`, original store.
-- Selected store: the final commit on this branch.
+- Selected store: commit `38fcd3a` for the main tables. The rare-query table was measured at `573d649`, which
+  differs only by tests and that benchmark case. For that table, the baseline harness was run in a temporary
+  worktree at `9a49597` with the updated benchmark file copied in.
 
 Raw outputs: [evidence/runtime-storage](evidence/runtime-storage/).
 
@@ -129,18 +133,21 @@ speedup column shows baseline ÷ selected for both runs. Lower ns and B/op are b
 **Summary.**
 
 - **Queries** are 4.4–23× faster on every target. Dense two-component queries no longer scan every slot with
-  per-type hash lookups. Sparse queries visit only the smallest column.
+  per-type hash lookups. The "sparse" marker case is about 25% dense, so it still takes the ordered slot scan. Only
+  components below 1/16 density use the collect-and-sort path; the rare-query table below measures that path
+  separately, at 3.2–65× faster. These query and tick gains include the per-slot handle cache as well as the columns: the old store
+  allocated a new `EntityHandle` for every query result. The two effects were not measured separately.
 - **Ticks** are 1.9–7.4× faster for steady updates and 1.6–5.8× faster with churn. JVM per-tick allocation fell
   from 1.5 MB to 37 KB at 10,000 entities.
 - **`get`** is 1.6–3.7× faster on Node and native.
-- **Snapshot and restore** are 1.0–4.5× faster outside two inconclusive rows. The gains are smaller than for queries because capture cost is dominated by codecs and copying.
-  Two rows are inconclusive:
-  - JVM snapshot at 1,000 entities. Three baseline runs measured 89k, 106k and 245k ns; the selected store measured
-    148k and 150k ns. Its allocation is lower (409 KB vs 420 KB).
-  - Wasm restore at 10,000 entities: 5.8 ms and 2.6 ms across two runs, against a 3.7 ms baseline.
-
-  Both rows are dominated by GC/JIT variance at this sample size. Neither is a demonstrated regression or a
-  demonstrated improvement.
+- **Snapshot and restore** are 1.0–4.5× faster outside the two rows below. The gains are smaller than for queries
+  because capture cost is dominated by codecs and copying.
+  - **JVM snapshot at 1,000 entities: possible ~1.4–1.7× regression, unconfirmed.** Two of three baseline runs
+    measured 89k and 106k ns; the third measured 245k ns. The selected store measured a steady 148k and 150k ns.
+    Allocation is lower (409 KB vs 420 KB), and the same case is 1.0× at 100 entities and 1.4× faster at 10,000.
+    The cause is not identified. Snapshot runs at checkpoints, not every tick.
+  - **Wasm restore at 10,000 entities: inconclusive.** It measured 5.8 ms and 2.6 ms across two runs, against a
+    3.7 ms baseline.
 
 Run-to-run noise: JVM `get` at 100 entities (single-digit ns) and some 10,000-entity JVM rows vary by more than 2×
 between runs. Read single-run differences under about 1.5× as noise. The baseline JVM reruns
@@ -261,6 +268,26 @@ between runs. Read single-run differences under about 1.5× as noise. The baseli
 | step churn (size/10 edits) | 10000 | 6365500 | 2244700 / 2328100 | 2.7–2.8× |
 | snapshot | 10000 | 13508300 | 6635600 / 6703500 | 2.0–2.0× |
 | restore | 10000 | 8622600 | 5933700 / 6473800 | 1.3–1.5× |
+
+
+### Rare query (collect-and-sort path)
+
+One `entities(link)` call with the link on 2% of entities. Each store was measured once per target.
+
+| target | entities | baseline ns | selected ns | speedup | JVM baseline B/op | JVM selected B/op |
+|---|---:|---:|---:|---:|---:|---:|
+| jvm | 100 | 1458 | 211 | 6.9× | 192 | 120 |
+| jvm | 1000 | 16240 | 250 | 65.0× | 28930 | 266 |
+| jvm | 10000 | 192650 | 5450 | 35.3× | 326232 | 1728 |
+| js | 100 | 3729 | 1166 | 3.2× | n/a | n/a |
+| js | 1000 | 39810 | 1260 | 31.6× | n/a | n/a |
+| js | 10000 | 469100 | 11200 | 41.9× | n/a | n/a |
+| wasm | 100 | 2033 | 100 | 20.3× | n/a | n/a |
+| wasm | 1000 | 21320 | 895 | 23.8× | n/a | n/a |
+| wasm | 10000 | 271850 | 10300 | 26.4× | n/a | n/a |
+| mingw | 100 | 4983 | 159 | 31.3× | n/a | n/a |
+| mingw | 1000 | 53700 | 1150 | 46.7× | n/a | n/a |
+| mingw | 10000 | 586200 | 11550 | 50.8× | n/a | n/a |
 
 
 ## Evidence gaps
