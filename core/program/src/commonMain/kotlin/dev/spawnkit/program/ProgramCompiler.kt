@@ -75,7 +75,8 @@ internal class CodeUnit(
     val sources: List<SourceRef>,
     val returnsValue: Boolean,
 ) {
-    fun describe(): String = "$name/$parameterCount/$localCount/$returnsValue:" + code.joinToString(";")
+    /** Canonical text for fingerprints; avoids platform-specific number formatting. */
+    fun describe(): String = "$name/$parameterCount/$localCount/$returnsValue:" + code.joinToString(";") { canonical(it) }
 }
 
 /** Bytecode instructions. A stack machine keeps continuations as plain data. */
@@ -730,4 +731,19 @@ internal fun describe(type: ProgramType): String =
         EntityType -> "object"
         NothingType -> "nothing"
         is ListType -> "list of ${describe(type.element)}"
+    }
+
+/** Platform-independent instruction text: decimals are written as raw IEEE-754 bits. */
+private fun canonical(op: Op): String =
+    when (op) {
+        is Op.Push -> "Push(${canonical(op.value)})"
+        else -> op.toString()
+    }
+
+private fun canonical(value: ProgramValue): String =
+    when (value) {
+        is DecimalValue -> "d:${value.value.toRawBits()}"
+        is ListValue -> "l:${value.element}[${value.items.joinToString(",") { canonical(it) }}]"
+        is TextValue -> "t:${value.value.length}:${value.value}"
+        else -> value.toString()
     }

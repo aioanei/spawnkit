@@ -67,7 +67,9 @@ public data class EffectRequest(
 
 /**
  * Per-entity execution state of a [PreparedProgram]: committed state fields, suspended threads, the event inbox
- * and committed effect requests. Attach through [ProgramFeature.behavior]. Fully checkpointed by its codec.
+ * and committed effect requests. Attach through [ProgramFeature.behavior], one fresh instance per entity
+ * (create each with [ProgramFeature.instantiate]); sharing an instance would share its mutable state. Fully
+ * checkpointed by its codec.
  */
 public class ProgramInstance internal constructor(
     /** Program being executed. */
