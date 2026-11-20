@@ -142,6 +142,16 @@ public sealed interface ValueKind<V : Any> {
         override fun coerce(value: Any): String? = value as? String
     }
 
+    /** A color stored as 32-bit ARGB (`0xAARRGGBB`) in a [Long]; editors show a color picker. */
+    public data object Color : ValueKind<Long> {
+        override fun problem(
+            value: Long,
+            world: World?,
+        ): String? = if (value < 0L || value > 0xFFFFFFFFL) "Choose a valid color" else null
+
+        override fun coerce(value: Any): Long? = value as? Long
+    }
+
     /**
      * An optional object reference. Pickers offer live objects having every component in [requires].
      * Validation needs the world; without one, only "not set" is checked.

@@ -315,6 +315,7 @@ private fun <V : Any> descriptorMapping(kind: ValueKind<V>): KindMapping<V>? =
         is ValueKind.Decimal -> KindMapping<Double>(DecimalType, { DecimalValue(it) }, { (it as DecimalValue).value })
         ValueKind.YesNo -> KindMapping<Boolean>(BoolType, { BoolValue(it) }, { (it as BoolValue).value })
         is ValueKind.Text, is ValueKind.Choice -> KindMapping<String>(TextType, { TextValue(it) }, { (it as TextValue).value })
+        ValueKind.Color -> null
         is ValueKind.ObjectReference -> null
     } as KindMapping<V>?
 
