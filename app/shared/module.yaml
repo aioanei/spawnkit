@@ -1,0 +1,31 @@
+product:
+  type: kmp/lib
+  platforms: [ jvm, android, iosArm64, iosSimulatorArm64, js, wasmJs ]
+
+apply:
+  - //toolchain/kotlin.module-template.yaml
+  - //toolchain/android.module-template.yaml
+  - //toolchain/compose.module-template.yaml
+  - //toolchain/compose-library.module-template.yaml
+  - //toolchain/lint.module-template.yaml
+
+dependencies:
+  - //core/editing
+  - //core/gameplay
+  - //render
+  - $libs.compose.uiToolingPreview
+  - $libs.androidx.lifecycle.viewmodelCompose
+  - $libs.androidx.lifecycle.runtimeCompose
+
+dependencies@android:
+  - $libs.androidx.activity.compose
+  - $libs.compose.uiTooling
+
+# Compose UI tests and offscreen screenshots of the builder at phone and desktop sizes.
+test-dependencies@jvm:
+  - $libs.compose.uiTest
+  - $compose.desktop.currentOs
+
+settings:
+  android:
+    namespace: dev.spawnkit.app.shared

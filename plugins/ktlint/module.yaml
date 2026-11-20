@@ -1,0 +1,18 @@
+# Kotlin Toolchain local plugin replacing Spotless + ktlint (issue #58). Same ktlint version and .editorconfig.
+product: jvm/amper-plugin
+
+description: Lints and formats Kotlin sources and scripts of a module with ktlint (official code style).
+
+apply:
+  - //toolchain/kotlin.module-template.yaml
+
+dependencies:
+  - $libs.ktlint.ruleEngine
+  - $libs.ktlint.rulesetStandard
+  # ktlint logs through kotlin-logging, which needs an SLF4J API and binding at runtime.
+  - $libs.slf4j.api: runtime-only
+  - $libs.slf4j.nop: runtime-only
+
+pluginInfo:
+  id: ktlint
+  settingsClass: dev.spawnkit.build.ktlint.Settings

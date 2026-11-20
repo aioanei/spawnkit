@@ -1,0 +1,43 @@
+{
+  "version": 2,
+  "skills": {
+    "kotlin-tooling-gradle-to-kotlin-toolchain-plugin": {
+      "source": "kotlin/kotlin-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/kotlin-tooling-gradle-to-kotlin-toolchain-plugin/SKILL.md",
+      "computedHash": "cbf37b49faac95021ed1885cf438d63967d3807b969cbb4b04a8d65f99f0bf47"
+    },
+    "kotlin-tooling-gradle-to-kotlin-toolchain-project": {
+      "source": "kotlin/kotlin-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/kotlin-tooling-gradle-to-kotlin-toolchain-project/SKILL.md",
+      "computedHash": "8ee7b8498b8899ff1b2546535e5505528b084ac145e56cc33dcca4e96fe83a26"
+    },
+    "kotlin-tooling-java-to-kotlin": {
+      "source": "kotlin/kotlin-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/kotlin-tooling-java-to-kotlin/SKILL.md",
+      "computedHash": "b3d737fa5ac816428e240a84cc2ac2b19d406ffece09ece8e7cf0618881de466"
+    },
+    "kotlin-tooling-kotlin-toolchain": {
+      "source": "Kotlin/kotlin-agent-skills",
+      "commit": "087f5689c1934135ed58718cdf524525e452b7e9",
+      "sourceType": "github",
+      "skillPath": "skills/kotlin-tooling-kotlin-toolchain/SKILL.md",
+      "computedHash": "4a7a86b17bbc19c0e8d4a1e8060e465ae29cf2fda38e2876237e6fe37d1ba2fe",
+      "installMode": "copy"
+    },
+    "kotlin-tooling-kotlin-toolchain-plugin-authoring": {
+      "source": "kotlin/kotlin-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/kotlin-tooling-kotlin-toolchain-plugin-authoring/SKILL.md",
+      "computedHash": "d3c02b1b5ccb8ba437abb609f1e1826206cd42b03bf54e144eba5c7dbf26743b"
+    },
+    "kotlin-tooling-native-build-performance": {
+      "source": "kotlin/kotlin-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/kotlin-tooling-native-build-performance/SKILL.md",
+      "computedHash": "1dda3f7c49311cef92e3a16df3d0592649c6ed72d0754c8dc7aa57fd0f8e77c1"
+    }
+  }
+}

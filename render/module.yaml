@@ -1,0 +1,30 @@
+product:
+  type: kmp/lib
+  platforms: [ jvm, android, iosArm64, iosSimulatorArm64, js, wasmJs ]
+
+apply:
+  - //toolchain/kotlin.module-template.yaml
+  - //toolchain/android.module-template.yaml
+  - //toolchain/compose.module-template.yaml
+  - //toolchain/compose-library.module-template.yaml
+  - //toolchain/lint.module-template.yaml
+
+dependencies:
+  - //core/engine: exported
+  - //core/graphics: exported
+  - $libs.androidx.lifecycle.runtimeCompose
+
+test-dependencies:
+  - //core/templates
+
+# Offscreen Skia rendering for pixel-level renderer tests and screenshots.
+test-dependencies@jvm:
+  - $compose.desktop.currentOs
+
+settings:
+  android:
+    namespace: dev.spawnkit.render
+  compose:
+    resources:
+      # Same package as the Compose Gradle plugin generated (root project "SpawnKit", module ":render").
+      packageName: spawnkit.render.generated.resources

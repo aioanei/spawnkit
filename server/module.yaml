@@ -1,0 +1,23 @@
+product: jvm/app
+
+# Keeps Gradle's src/main/kotlin layout while both builds coexist (issue #58).
+layout: maven-like
+
+apply:
+  - //toolchain/kotlin.module-template.yaml
+  - //toolchain/lint.module-template.yaml
+
+dependencies:
+  - $libs.logback
+  - $libs.ktor.serverCore
+  - $libs.ktor.serverNetty
+
+test-dependencies:
+  - $libs.ktor.serverTestHost
+
+settings:
+  jvm:
+    mainClass: dev.spawnkit.ApplicationKt
+  ktor:
+    enabled: true
+    version: 3.6.1 # keep aligned with ktor in gradle/libs.versions.toml

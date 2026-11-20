@@ -13,6 +13,7 @@ This revises the approved plan in response to the owner's explicit architecture 
 - Paused Task 11 / issue #6: local branch `feat/6-player-shells`, checkpoint `b2bf830`. Six JVM player-state tests and `spotlessApply` passed. The full gate was interrupted and platform acceptance remains unfinished. Preserve this work; adapt it at R6 instead of discarding it or treating it as a generic engine API.
 - Documentation branch: `docs/19-own-engine-no-code-plan`, based on main, containing documentation changes only; tracked by [issue #19](https://github.com/aioanei/spawnkit/issues/19).
 - Kotlin Multiplatform, Compose Multiplatform, Koog and Ktor remain mandatory. Retain current pinned build/toolchain versions unless a separately justified compatibility change is necessary.
+- The Kotlin Toolchain is mandatory as of 2026-11-20 ([ADR-0008](../adr/0008-kotlin-toolchain.md)). It is SpawnKit's primary build/test/packaging system and the Release Manager's build engine. Migration follows the [Kotlin Toolchain track](#kotlin-toolchain-track-k); Gradle stays only for recorded exceptions.
 - Keep all current core targets: JVM, Android, JS, Wasm, iOS arm64/simulator, mingwX64 and linuxX64; Compose UI omits native desktop targets. Preserve headless engine execution.
 - R0 reconciliation is complete. Continue R1 evidence under the established issue/PR workflow; the R1a code remains provisional. No specific library or production backend is approved without the complete gate's evidence.
 - Engine ownership and creation without programming knowledge are equal requirements. Guided visual creation is the default, with optional examples and AI assistance. The contest deadline is not an architectural or product-scope constraint.
@@ -155,6 +156,7 @@ Exit: the AI interacts with the engine/editor, authors executable behavior and v
 - [ ] Resume issue #7 Pages deployment only when generic players and required demos are ready; preserve static arcade and no-key replay accessibility.
 - [ ] Ktor publish/list/get and validation use installed/approved package versions, program validation and resource limits. Separate build/execution workers from the public API process before accepting untrusted native packages.
 - [ ] Publish/export resolves content, programs and exact runtime dependencies. Default packages reuse players; compiled extensions trigger compatible platform builds. Per-game Android identity, desktop distribution, iOS framework and release/cloud-build workflow remain.
+- [ ] Compiled releases use Kotlin Toolchain release workspaces built by the Ktor build service in isolated remote workers ([Release Manager build architecture](../design/2026-11-20-release-manager-kotlin-toolchain.md)): Android APK/AAB, iOS IPA/TestFlight, desktop distributions and web bundles, with per-game identity, versioning, branding, native SDKs (AdMob) and signing secrets kept out of projects, logs and exports. Creators never install or operate the toolchain.
 - [ ] Guided export/publishing flows explain destination requirements, validate setup and show progress/actionable failures. External accounts/signing/consent may be required for a destination; preserve progress and do not require them for ordinary local creation or play.
 - [ ] Package manifests/locks cover content, portable logic, compiled runtime and editor extensions separately. Preserve licensing, AI provenance, migrations, moderation and compatibility semantics.
 - [ ] Define asynchronous monetization/publishing/analytics host-service interfaces with explicit results; no fabricated revenue, purchases or ad completion. Keep test modes labelled.
@@ -191,7 +193,7 @@ not replace them: each item delivers part of the named R-step, and unfinished pa
 | C3 | Responsive builder shell (R4) | Compose editor on Android and desktop: viewport with tap or click select, drag move, pinch or wheel zoom, and pan; a palette of objects; a hierarchy; a descriptor-generated inspector; Play/Stop. Compact and expanded layouts. Verified with Android emulator and desktop screenshots. |
 | C4 | Visual rules (R4) | When/If/Do rule editor that edits `core/program` programs, with friendly blocks and diagnostics shown on the object or rule, and touch-friendly. Creating a Score + collect rule without code works on Android. C4a ([issue #49](https://github.com/aioanei/spawnkit/issues/49), [gameplay](../gameplay.md)) adds the rule-ready facilities: removal, text, tags, numbers, touching, tapping, random and `StandardEngine`. C4b ([issue #52](https://github.com/aioanei/spawnkit/issues/52)) runs workspace rules with keyboard, tap and touch input. C4c ([issue #53](https://github.com/aioanei/spawnkit/issues/53)) adds the block editor; Score + collect is built and played with taps on the Android emulator. |
 | C5 | Project persistence (R5) | Save, open and autosave the workspace through a versioned codec (storage detail), with recovery, and import/export of a project file on Android and desktop. Covered by round-trip tests. |
-| C6 | Release and Arcade (R8, R6) | Release Manager screen: web export (standalone player plus package) from the builder, and publishing to the Ktor Arcade with a public play URL. The player runs exported games without the creator. Android APK export follows if time allows. |
+| C6 | Release and Arcade (R8, R6), [#64](https://github.com/aioanei/spawnkit/issues/64) | Release Manager screen: web export (standalone player plus package) from the builder, and publishing to the Ktor Arcade with a public play URL. The player runs exported games without the creator. The player's Wasm bundle is built by the Kotlin Toolchain (`wasm-js/app`) in CI and shipped with the creator. Destinations that need a compiled build (Android AAB, iOS, desktop installers) are shown with their requirements and labelled as needing the build service (K5); none are faked. Android APK export follows if time allows. |
 | C7 | Koog AI Studio (R7) | Character Forge and level assistant agents using editor operations and validation, with progress, cancel, cost and accept/reject. Labelled replay without keys. |
 | C8 | Demos and submission (R6, R9) | At least two mechanically different games built in the builder on the same engine. README with run instructions for all targets, screencast script, essay. |
 
@@ -213,6 +215,32 @@ The deadline orders the slice only. R-step gates, capability and usability requi
 leaves the roadmap. Each increment gets its
 own issue and PR. If time runs short, cut depth within an increment (fewer drawables, fewer rule blocks) before
 cutting increments. The Android-plus-desktop builder, the in-builder release and Koog use are not cut.
+
+## Kotlin Toolchain track (K)
+
+Owner decision 2026-11-20, [ADR-0008](../adr/0008-kotlin-toolchain.md), [issue #58](https://github.com/aioanei/spawnkit/issues/58).
+Status and exceptions: [Kotlin Toolchain](../kotlin-toolchain.md). The track runs alongside C5–C8. It changes how
+SpawnKit is built and released, not what the product must do. Every requirement above is retained.
+
+| # | Increment | Acceptance |
+|---|---|---|
+| K1 ([#58](https://github.com/aioanei/spawnkit/issues/58)) | Dual build and tooling | Pinned wrappers. Every module except the benchmark harness has a `module.yaml`, and sources are in the Toolchain layout, read by both builds. Templates replace convention plugins. Local plugins replace embedded-template generation and Spotless/ktlint. Toolchain tests match Gradle counts on JVM, Android host and mingwX64. APK, AAB, desktop JAR, Wasm bundle and server JAR build and run. A CI `kotlin-toolchain` job is added. Skills and MCP are configured for Claude Code and Codex. Docs and ADR are in place. |
+| K2 ([#59](https://github.com/aioanei/spawnkit/issues/59)) | Toolchain is the CI authority | The `kotlin-toolchain` job (ktlint, JVM/Android/linuxX64/Wasm tests, app builds and packages) and the macOS iOS Toolchain step are green on `main` for five consecutive runs. Branch protection then requires `kotlin-toolchain`. Gradle steps already covered are removed. AGENTS.md gates switch to `./kotlin`. Exceptions G1–G2 are resolved or re-justified with evidence. |
+| K3 ([#60](https://github.com/aioanei/spawnkit/issues/60)) | iOS app module | `app/iosApp` becomes an `ios/app` module with a self-contained `Info.plist`, built and run on the simulator by the Toolchain on macOS CI (resolves G5). |
+| K4 ([#61](https://github.com/aioanei/spawnkit/issues/61)) | Gradle retirement | Remove `build-logic`, Gradle wrappers and scripts, except a documented Dependabot stub and the remaining exceptions. The catalog moves to the root, and templates become the single version source. |
+| K5 ([#62](https://github.com/aioanei/spawnkit/issues/62)) | Release build service MVP (R8) | Ktor job API, release-workspace generator, a `spawnkit-release` validation and branding plugin, and an isolated Linux worker. A phone-built game is released as an Android APK/AAB without any toolchain on the device. Emulator evidence. |
+| K6 ([#63](https://github.com/aioanei/spawnkit/issues/63)) | Store and desktop releases (R8) | macOS workers for iOS IPA and TestFlight. A `jpackage` installer plugin for Windows, macOS and Linux (resolves G4). AdMob in labelled test mode behind the monetization host interface. Managed publishing behind owner-approved accounts. |
+
+Dependencies:
+
+- K2 needs K1 green on `main`.
+- K3 needs macOS CI.
+- K4 needs K2, K3 and a decision on each remaining exception.
+- K5 needs C6's package format and the R8 publishing slice.
+- K6 needs K5.
+
+The contest deadline orders K1 and K2 after C5 and alongside C6. K5 and K6 do not block the contest slice; until
+they exist, the Release Manager states that they are planned instead of simulating them.
 
 ## 4. Existing GitHub work mapping
 
@@ -252,6 +280,17 @@ Before pushing implementation, run formatting separately from tests:
 ./gradlew localNativeTests
 ```
 
-The last command is required on Windows when `core/*` changes. Add focused platform compilation/framework/UI checks appropriate to each gate. Do not use local `build` or `allTests`. Documentation-only review verifies links, status consistency and whitespace; do not report an interrupted implementation run as a passed gate.
+The last command is required on Windows when `core/*` changes. While Gradle and the Kotlin Toolchain coexist (until
+K2), also run the Toolchain gates:
+
+```text
+./kotlin do ktlintFormat
+./kotlin check ktlint
+./kotlin test -p jvm -p android
+./kotlin test -p mingwX64        # Windows, when core/* changes
+```
+
+Use `kotlin.bat` on Windows. Do not run `kotlin test -p wasmJs` locally where an ancestor directory contains a
+`package.json` (see [known issue 1](../kotlin-toolchain.md#known-issues)); CI covers Wasm and linuxX64. Add focused platform compilation/framework/UI checks appropriate to each gate. Do not use local `build` or `allTests`. Documentation-only review verifies links, status consistency and whitespace; do not report an interrupted implementation run as a passed gate.
 
 Definition of done: the six architecture proofs and usability release gate in [design §10](../design/2026-11-20-general-purpose-engine.md#10-proof-of-the-architecture) are demonstrated, new APIs documented, no genre assumptions in generic contracts, and existing valid work preserved. This documentation checkpoint does not mark runtime, editor or user-study gates complete.

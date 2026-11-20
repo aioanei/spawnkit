@@ -30,7 +30,7 @@ pointers, so existing goldens are unchanged.
 
 ## Evidence
 
-[`InputTest`](../core/runtime/src/commonTest/kotlin/dev/spawnkit/runtime/InputTest.kt) runs on JVM, Android host, JS,
+[`InputTest`](../core/runtime/test/dev/spawnkit/runtime/InputTest.kt) runs on JVM, Android host, JS,
 Wasm and mingwX64. It covers:
 
 - press/release edges and held carry-over;

@@ -64,3 +64,8 @@ decisions that change the plan. The full requirement list lives in the owner's c
    later. Agents act only through editor operations.
 5. **Contest priority is a vertical slice on the general engine** (see the plan's contest track). Long-term features
    remain on the roadmap and are not removed.
+6. **Kotlin Toolchain (later the same day).** The owner made the Kotlin Toolchain mandatory, both for SpawnKit's build
+   and as the Release Manager's engine for compiled releases on remote workers. Decision 3 stands: the universal
+   player serves web, Arcade and the Android repack path, and creators never see a build tool. See
+   [ADR-0008](../adr/0008-kotlin-toolchain.md) and the
+   [Release Manager build architecture](2026-11-20-release-manager-kotlin-toolchain.md).

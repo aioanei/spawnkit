@@ -1,0 +1,4 @@
+# ktlint for every product module (replaces Spotless's kotlin/kotlinGradle targets): `kotlin check ktlint`,
+# `kotlin do ktlintFormat`. Not applied to the plugin modules themselves.
+plugins:
+  ktlint: enabled

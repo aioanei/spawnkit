@@ -1,0 +1,11 @@
+# Kotlin Toolchain local plugin replacing build-logic's GenerateEmbeddedTemplatesTask (issue #58, ADR-0003).
+product: jvm/amper-plugin
+
+description: Embeds every template project.json under templates/ into a generated EmbeddedTemplates Kotlin object.
+
+apply:
+  - //toolchain/kotlin.module-template.yaml
+
+pluginInfo:
+  id: embedded-templates
+  settingsClass: dev.spawnkit.build.templates.Settings

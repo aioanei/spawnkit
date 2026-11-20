@@ -38,14 +38,27 @@ provide reproducible evidence of the current runtime and UI.
 
 ## Build
 
-Requirements: JDK 21, Android SDK (for Android targets). iOS builds require macOS with Xcode.
+SpawnKit builds with the [Kotlin Toolchain](https://kotlin-toolchain.org/) ([ADR-0008](docs/adr/0008-kotlin-toolchain.md)).
+The committed `kotlin` wrapper (`kotlin.bat` on Windows) downloads the pinned CLI and provisions the JDK,
+Kotlin/Native, Node and Skiko on first use. An Android SDK (`ANDROID_HOME`) is needed for Android targets. iOS
+requires macOS with Xcode.
 
 | Target | Command |
 |---|---|
-| Creator app (desktop) | `./gradlew :app:desktopApp:run` |
-| Creator app (web, Wasm) | `./gradlew :app:webApp:wasmJsBrowserDevelopmentRun` |
-| Creator app (Android) | `./gradlew :app:androidApp:installDebug` |
-| Server | `./gradlew :server:run` |
+| Creator app (desktop) | `./kotlin run -m desktopApp` |
+| Creator app (web, Wasm) | `./kotlin run -m webApp` |
+| Creator app (Android) | `./kotlin run -m androidApp` (emulator or device) · APK: `./kotlin build -m androidApp` |
+| Server | `./kotlin run -m server` |
+| Tests | `./kotlin test -p jvm -p android` |
+| Lint / format | `./kotlin check ktlint` · `./kotlin do ktlintFormat` |
+
+During the migration, Gradle (`./gradlew`) still runs the required CI check and the few targets the Toolchain does
+not cover yet (Kotlin/JS tests, desktop installers, the existing iOS Xcode app). See
+[Kotlin Toolchain](docs/kotlin-toolchain.md) for the status, verified evidence and Gradle exceptions.
+
+SpawnKit's Release Manager will use the same toolchain on remote build workers, so creators can release standalone
+games without installing anything ([design](docs/design/2026-11-20-release-manager-kotlin-toolchain.md)). That build
+service is planned, not yet implemented.
 
 ## License
 

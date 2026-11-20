@@ -18,6 +18,12 @@ Current work is the
 (PR #25). All product features and mandatory technologies
 remain on the roadmap.
 
+On 2026-11-20 the owner also made the Kotlin Toolchain mandatory, for SpawnKit's own build and as the Release
+Manager's build engine. That work is the plan's
+[Kotlin Toolchain track (K)](docs/plans/2026-11-20-engine-foundation-revision.md#kotlin-toolchain-track-k). See
+[ADR-0008](docs/adr/0008-kotlin-toolchain.md), [migration status](docs/kotlin-toolchain.md) and the
+[Release Manager build architecture](docs/design/2026-11-20-release-manager-kotlin-toolchain.md).
+
 - Engine ownership, guided creation and usability requirements: [General-purpose engine design](docs/design/2026-11-20-general-purpose-engine.md).
 - Revised implementation sequence: [Engine foundation revision](docs/plans/2026-11-20-engine-foundation-revision.md).
 - Decision record: [ADR-0006](docs/adr/0006-general-purpose-engine-and-editor.md).

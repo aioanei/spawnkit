@@ -3,6 +3,8 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.kotlin.dsl.configure
+import org.jetbrains.compose.ComposeExtension
+import org.jetbrains.compose.resources.ResourcesExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 /** Compose Multiplatform library: Android, iOS, JVM desktop, JS and Wasm with the common Compose dependencies. */
@@ -27,6 +29,13 @@ class SpawnkitComposePlugin : Plugin<Project> {
                         "compose-material3",
                         "compose-components-resources",
                     ).forEach { implementation(libs.findLibrary(it).get()) }
+                }
+            }
+            if (usesKotlinToolchainLayout) {
+                // Kotlin Toolchain layout keeps Compose resources in `<module>/composeResources` (issue #58).
+                val compose = extensions.getByType(ComposeExtension::class.java) as ExtensionAware
+                compose.extensions.configure<ResourcesExtension>("resources") {
+                    customDirectory("commonMain", provider { layout.projectDirectory.dir("composeResources") })
                 }
             }
         }

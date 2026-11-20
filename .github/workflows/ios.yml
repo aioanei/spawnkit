@@ -12,6 +12,12 @@ on:
       - "app/shared/**"
       - "build-logic/**"
       - "gradle/**"
+      - "toolchain/**"
+      - "plugins/**"
+      - "templates/**"
+      - "**/module.yaml"
+      - "project.yaml"
+      - "kotlin"
       - ".github/workflows/ios.yml"
   push:
     branches: [main]
@@ -51,3 +57,8 @@ jobs:
 
       - name: Link iOS frameworks
         run: ./gradlew --console=plain :app:shared:linkDebugFrameworkIosSimulatorArm64
+
+      - name: iOS simulator tests (Kotlin Toolchain, issue #58)
+        env:
+          KOTLIN_CLI_NO_WELCOME_BANNER: "1"
+        run: ./kotlin test -p iosSimulatorArm64

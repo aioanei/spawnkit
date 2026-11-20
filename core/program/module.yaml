@@ -1,0 +1,16 @@
+product:
+  type: kmp/lib
+  platforms: [ jvm, android, iosArm64, iosSimulatorArm64, js, wasmJs, mingwX64, linuxX64 ]
+
+apply:
+  - //toolchain/kotlin.module-template.yaml
+  - //toolchain/android.module-template.yaml
+  - //toolchain/core-library.module-template.yaml
+  - //toolchain/lint.module-template.yaml
+
+dependencies:
+  - //core/runtime: exported
+
+settings:
+  android:
+    namespace: dev.spawnkit.core.program

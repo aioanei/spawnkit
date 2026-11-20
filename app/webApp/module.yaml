@@ -1,0 +1,12 @@
+# Wasm creator. The Kotlin/JS creator build stays on Gradle: the Toolchain's js/app product is an incomplete
+# preview that cannot run or package a browser app (docs/kotlin-toolchain.md, exception G3).
+product: wasm-js/app
+
+apply:
+  - //toolchain/kotlin.module-template.yaml
+  - //toolchain/compose.module-template.yaml
+  - //toolchain/lint.module-template.yaml
+
+dependencies:
+  - //app/shared
+  - $libs.compose.ui

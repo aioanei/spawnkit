@@ -1,0 +1,23 @@
+product: android/app
+
+apply:
+  - //toolchain/kotlin.module-template.yaml
+  - //toolchain/android.module-template.yaml
+  - //toolchain/compose.module-template.yaml
+  - //toolchain/lint.module-template.yaml
+
+dependencies:
+  - //app/shared
+  - $libs.androidx.activity.compose
+  - $libs.compose.uiToolingPreview
+
+settings:
+  android:
+    applicationId: dev.spawnkit
+    namespace: dev.spawnkit
+    targetSdk: 37 # same as android-targetSdk in the catalog
+    versionCode: 1
+    versionName: "1.0"
+    resourcePackaging:
+      excludes:
+        - "/META-INF/{AL2.0,LGPL2.1}"

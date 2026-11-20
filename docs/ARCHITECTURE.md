@@ -66,6 +66,24 @@ World handles, platform permission handles and play state are not stored in port
 This is still a subset of R4–R5. Per-resource storage, dependency locks, broader extension proof, complete language
 authoring and the novice usability studies remain acceptance gates in the revised plan.
 
+## Build system and release pipeline (Kotlin Toolchain)
+
+[ADR-0008](adr/0008-kotlin-toolchain.md) makes the Kotlin Toolchain SpawnKit's primary build system.
+
+- `project.yaml` lists the modules. Each module's `module.yaml` declares its product (`kmp/lib`, `android/app`,
+  `jvm/app`, `wasm-js/app`) and applies templates from `toolchain/`.
+- Local plugins in `plugins/` generate the embedded templates and run ktlint.
+- Sources use the Toolchain layout, which Gradle also reads while the two builds coexist.
+- Gradle remains the required CI check, plus numbered exceptions, until the K2 gate. See
+  [Kotlin Toolchain](kotlin-toolchain.md) for verified evidence per target.
+
+The same toolchain is the Release Manager's build engine for compiled releases. A Ktor build service generates a
+release workspace (player template, validated game package, release profile, vetted release plugins) and builds it in
+isolated remote workers. Creators, including phone-only creators, never install or operate it. Web export and
+Arcade publishing keep using the prebuilt universal player. See the
+[Release Manager build architecture](design/2026-11-20-release-manager-kotlin-toolchain.md). The build service is
+planned (K5–K6), not implemented.
+
 ## Big picture
 
 ```
@@ -114,7 +132,7 @@ JS, Wasm, mingwX64, linuxX64 and the iOS simulator. See [ADR-0004](adr/0004-dete
 
 | Area | State |
 |---|---|
-| Build, CI, conventions | done (M0) |
+| Build, CI, conventions | done (M0); Kotlin Toolchain dual build K1 (all modules but benchmarks; Gradle still required in CI) |
 | Document model, platformer engine, determinism clock and golden test | merged (M1, PRs #14–#17) |
 | Renderer: viewport, camera, keyboard/touch, interpolation, HUD | merged [PR #18](https://github.com/aioanei/spawnkit/pull/18); browser smoke and visual evidence retained |
 | Exported-game shells | unfinished checkpoint `b2bf830`, preserved for R6 adaptation |
