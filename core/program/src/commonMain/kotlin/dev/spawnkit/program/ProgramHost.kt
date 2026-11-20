@@ -4,6 +4,9 @@ import dev.spawnkit.runtime.AuthoringInfo
 import dev.spawnkit.runtime.ComponentDescriptor
 import dev.spawnkit.runtime.ComponentType
 import dev.spawnkit.runtime.EntityHandle
+import dev.spawnkit.runtime.InputAction
+import dev.spawnkit.runtime.InputAxis
+import dev.spawnkit.runtime.InputView
 import dev.spawnkit.runtime.PropertyDescriptor
 import dev.spawnkit.runtime.ValueKind
 import dev.spawnkit.runtime.World
@@ -23,6 +26,9 @@ public interface HostCallContext {
 
     /** Current fixed tick. */
     public val tick: Long
+
+    /** Read-only input for the current tick (R2d). */
+    public val input: InputView
 
     /** Reads a registered property, or `null` when the entity is stale or lacks the component. */
     public fun read(
@@ -202,6 +208,52 @@ public class ProgramHostBuilder(
         )
     }
 
+    /**
+     * Registers input functions for [actions] and [axes], addressed by their IDs: `isDown`, `wasPressed` and
+     * `wasReleased` return yes/no, and `axis` returns a decimal. An unknown name faults the calling segment.
+     */
+    public fun inputs(
+        actions: List<InputAction>,
+        axes: List<InputAxis> = emptyList(),
+    ): ProgramHostBuilder =
+        apply {
+            require(actions.map { it.id }.toSet().size == actions.size) { "Duplicate input action IDs" }
+            require(axes.map { it.id }.toSet().size == axes.size) { "Duplicate input axis IDs" }
+            val taken = listOf("isDown", "wasPressed", "wasReleased", "axis").filter { name -> functions.any { it.name == name } }
+            require(taken.isEmpty()) { "Input functions are already registered: ${taken.joinToString()}" }
+            val byId = actions.associateBy { it.id }
+            val axesById = axes.associateBy { it.id }
+
+            fun action(call: HostCallContext): InputAction {
+                val name = (call.arguments[0] as TextValue).value
+                return byId[name] ?: throw ProgramHostException("there is no action called '$name'")
+            }
+            val info = AuthoringInfo("Input", "Reads player input", "Input")
+            function(
+                "isDown",
+                listOf(TextType),
+                BoolType,
+                info.copy(name = "Is held"),
+            ) { foreignSafe { BoolValue(it.input.isDown(action(it))) } }
+            function(
+                "wasPressed",
+                listOf(TextType),
+                BoolType,
+                info.copy(name = "Was pressed"),
+            ) { foreignSafe { BoolValue(it.input.wasPressed(action(it))) } }
+            function(
+                "wasReleased",
+                listOf(TextType),
+                BoolType,
+                info.copy(name = "Was released"),
+            ) { foreignSafe { BoolValue(it.input.wasReleased(action(it))) } }
+            function("axis", listOf(TextType), DecimalType, info.copy(name = "Axis value")) { call ->
+                val name = (call.arguments[0] as TextValue).value
+                val axis = axesById[name] ?: throw ProgramHostException("there is no axis called '$name'")
+                foreignSafe { DecimalValue(call.input.axis(axis)) }
+            }
+        }
+
     /** Registers a host function. [implementation] must be deterministic and bounded; throw [ProgramHostException] to fail. */
     public fun function(
         name: String,
@@ -265,3 +317,11 @@ private fun <V : Any> descriptorMapping(kind: ValueKind<V>): KindMapping<V>? =
         is ValueKind.Text, is ValueKind.Choice -> KindMapping<String>(TextType, { TextValue(it) }, { (it as TextValue).value })
         is ValueKind.ObjectReference -> null
     } as KindMapping<V>?
+
+/** Inputs registered by a different runtime than the one running the rule fault the rule, not the world. */
+private inline fun foreignSafe(read: () -> ProgramValue): ProgramValue =
+    try {
+        read()
+    } catch (failure: IllegalArgumentException) {
+        throw ProgramHostException("this input belongs to a different game: ${failure.message}")
+    }
