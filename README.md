@@ -23,7 +23,8 @@ demo baseline, not the target engine's universal gameplay contract.
 
 The first [headless runtime foundation](docs/runtime-foundation.md) now runs empty/player-free worlds and custom
 components/systems through public APIs, with a separately compiled extension consumer. It is an initial R1 evidence
-increment; backend selection, portable behaviors and the visual editor remain future work.
+increment. [Native checkpoints and replay](docs/runtime-checkpoints.md) add explicit capture of component/private
+system state and deterministic fingerprints; backend selection, portable behaviors and the visual editor remain future work.
 
 See [PROGRESS.md](PROGRESS.md) for the latest checkpoint and [PLANS.md](PLANS.md) for the approved plan location.
 The renderer's [browser smoke check](tools/render-smoke/README.md) and [Wasm captures](docs/media/README.md)

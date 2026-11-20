@@ -51,6 +51,10 @@ First increment: [issue #21](https://github.com/aioanei/spawnkit/issues/21), [he
 It introduces provisional lifecycle/scheduling APIs and an independently compiled consumer; the whole R1 gate
 remains open until storage, state-capture and program comparisons are demonstrated.
 
+R1b / [issue #23](https://github.com/aioanei/spawnkit/issues/23) adds [declared native checkpoints/replay](../runtime-checkpoints.md):
+component codecs, explicit private system state, allocator capture, fresh-world entity remapping and a single
+cross-target fingerprint golden. Storage/program comparison and effect/budget proofs still keep R1 open.
+
 Use bounded, disposable spikes on an approved feature branch. Produce a decision note with actual commands/results; do not create an alternative production runtime alongside the selected one.
 
 Bound the evaluation by explicit evidence rather than elapsed days. Reject candidates first on required target/headless support, engine ownership, open registration, state capture/order and execution interruption; only survivors need integration/performance measurements. Use tiny common fixtures, not multiple production-ready prototypes. End with one selected implementation path and explicit evidence gaps. Do not shorten capability or usability requirements to meet a contest date.
