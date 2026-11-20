@@ -53,7 +53,7 @@ Facts established with Toolchain 0.14.1 are in [Kotlin Toolchain](../kotlin-tool
 
 - Source directories changed (`src/`, `src@jvm/`, `test/`, …). Content did not change. Older branches need rename
   detection when rebased.
-- Version pins for Kotlin, Compose, serialization and Ktor live in both the catalog and templates until Gradle is
+- Version pins for Kotlin, Compose, serialization and Ktor live in both the catalog and Toolchain settings until Gradle is
   removed. A version change must update both.
 - The Toolchain is Alpha, so upgrades are deliberate PRs with the full gate. Output paths are internal; CI and the
   build service read the paths that `package` prints.

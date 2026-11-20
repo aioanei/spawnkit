@@ -15,6 +15,7 @@ settings:
   android:
     applicationId: dev.spawnkit
     namespace: dev.spawnkit
+    targetSdk: 37 # same as android-targetSdk in the catalog
     versionCode: 1
     versionName: "1.0"
     resourcePackaging:

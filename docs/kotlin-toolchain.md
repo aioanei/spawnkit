@@ -52,9 +52,10 @@ which have the environment requirements described below.
 - `app/androidApp` follows the `android/app` layout: `src/AndroidManifest.xml`, `src/`, `res/`.
 - `app/webApp` follows the `wasm-js/app` layout. Its `index.html` uses the Toolchain's `{{kotlin.scripts}}`
   placeholder; a Gradle-only resource filter substitutes `webApp.js` until Gradle is retired.
-- Versions live in `gradle/libs.versions.toml` (`$libs.*`). Kotlin, Compose, serialization and Ktor are also pinned
-  in templates and module files because the Toolchain configures them as settings. Keep both in step until Gradle is
-  removed; a version bump PR must change both.
+- Versions live in `gradle/libs.versions.toml` (`$libs.*`). Settings-level versions are pinned outside it: Kotlin and
+  Compose in `toolchain/` templates, serialization in `core/model/module.yaml`, Ktor in `server/module.yaml`, and the
+  Android target SDK in `app/androidApp/module.yaml`. Keep them in step with the catalog until Gradle is removed; a
+  version bump PR must change both.
 
 ## Verified compatibility (Windows 11 host, 2026-11-20)
 
@@ -92,7 +93,7 @@ which have the environment requirements described below.
 | G5 | iOS framework for `app/iosApp` (`linkDebugFrameworkIosSimulatorArm64`) | Toolchain iOS apps use an `ios/app` module with a generated Xcode project | K3, on macOS, with a self-contained `Info.plist` |
 | G6 | `benchmarks/runtimeStorage` multi-target executables | Single-platform app products; JS apps cannot run | When restructured into per-platform app modules, or when the Toolchain adds multi-platform runnable products |
 | G7 | Required CI check `build` | Toolchain parity must be proven on `main` first | K2 exit criteria in the [plan](plans/2026-11-20-engine-foundation-revision.md#kotlin-toolchain-track-k) |
-| G8 | Spotless for `build-logic` and `*.gradle.kts` | These files exist only for Gradle | Deleted together with Gradle (K4) |
+| G8 | Spotless for `build-logic`, `*.gradle.kts` and the local plugin sources (`plugins/*`) | Gradle-only files; the `lint` template is not applied to plugin modules themselves | K4: delete the Gradle files and lint `plugins/*` from the Toolchain (for example an aggregate ktlint task) before removing Spotless |
 
 ## Known issues
 

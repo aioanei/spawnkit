@@ -19,6 +19,17 @@ internal val Project.usesKotlinToolchainLayout: Boolean
  */
 internal fun Project.configureKotlinToolchainLayout(kmp: KotlinMultiplatformExtension) {
     if (!usesKotlinToolchainLayout) return
+    // `src` is the common root here, so a leftover Gradle-layout directory (for example from rebasing an older branch)
+    // would be compiled twice: as common code and in its own source set. Fail with an explanation instead.
+    val stale =
+        file("src")
+            .listFiles()
+            .orEmpty()
+            .filter { it.isDirectory && toolchainDirectories(it.name) != null && it.walkTopDown().any { f -> f.isFile } }
+    check(stale.isEmpty()) {
+        "$path uses the Kotlin Toolchain layout, but ${stale.joinToString { "src/${it.name}" }} still uses the Gradle " +
+            "layout. Move its files to the matching src@<platform>/ or test@<platform>/ directory (docs/kotlin-toolchain.md)."
+    }
     kmp.sourceSets.configureEach {
         val dirs = toolchainDirectories(name) ?: return@configureEach
         kotlin.srcDir(dirs.sources)

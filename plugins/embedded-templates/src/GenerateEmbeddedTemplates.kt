@@ -22,12 +22,14 @@ fun generateEmbeddedTemplates(
     @Output outputDir: Path,
     packageName: String,
 ) {
+    // Like the former Gradle task: a missing templates directory yields an empty map, and stale output is removed.
+    val entries = if (templatesDir.isDirectory()) templatesDir.listDirectoryEntries() else emptyList()
     val templates =
-        templatesDir
-            .listDirectoryEntries()
+        entries
             .filter { it.isDirectory() && it.resolve("project.json").isRegularFile() }
             .sortedBy { it.name }
             .map { EmbeddedTemplate(it.name, it.resolve("project.json").readText()) }
+    outputDir.toFile().listFiles()?.forEach { it.deleteRecursively() }
     val packageDir = outputDir.resolve(packageName.replace('.', '/')).createDirectories()
     packageDir.resolve("EmbeddedTemplates.kt").writeText(renderEmbeddedTemplates(packageName, templates))
 }
