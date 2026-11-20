@@ -129,8 +129,8 @@ unavailable on most machines. Use the aggregates above.
 - Both builds use the Kotlin Toolchain source layout: `src/`, `src@jvm/`, `src@android/`, `src@ios/`,
   `src@web/`, `test/`, `test@jvm/`, `composeResources/`. `app/desktopApp` and `server` use `layout: maven-like`.
   Shared configuration goes in `toolchain/*.module-template.yaml`, and build logic goes in local plugins under
-  `plugins/`. Kotlin, Compose, serialization and Ktor versions are pinned in both the catalog and the templates;
-  change both together.
+  `plugins/`. Versions pinned outside the catalog must change together with it: Kotlin and Compose in
+  `toolchain/` templates, serialization in `core/model/module.yaml`, Ktor in `server/module.yaml`.
 - `core/*` modules use `explicitApi()` and `allWarningsAsErrors`; every public declaration has KDoc.
 - Existing simulation code (`core/engine`) is deterministic: fixed 60 Hz ticks, only `+ - * /`, `sqrt`, `floor`, `abs`,
   `min`, `max` on `Double`; no `pow`, trigonometry, `exp`, `ln`, wall-clock time, randomness without the seeded RNG,
