@@ -234,6 +234,7 @@ private val ActionKinds: List<Pair<String, String>> =
         "Move" to "Move",
         "ChangeNumber" to "Add to a number",
         "SetNumber" to "Set a number",
+        "SetText" to "Set text",
         "ShowNumber" to "Show a number",
         "RemoveSelf" to "Remove this object",
     )
@@ -253,6 +254,7 @@ private fun kindOf(block: Any): String =
         is Action.Move -> "Move"
         is Action.ChangeNumber -> "ChangeNumber"
         is Action.SetNumber -> "SetNumber"
+        is Action.SetText -> "SetText"
         is Action.ShowNumber -> "ShowNumber"
         Action.RemoveSelf -> "RemoveSelf"
         else -> ""
@@ -383,6 +385,7 @@ private fun defaultBlock(
         "Move" -> Action.Move(Direction.Right, 3.0)
         "ChangeNumber" -> Action.ChangeNumber(Target.Self, 1)
         "SetNumber" -> Action.SetNumber(Target.Self, 0)
+        "SetText" -> Action.SetText(Target.Self, "")
         "ShowNumber" -> Action.ShowNumber(Target.Self, "Score: ")
         else -> Action.RemoveSelf
     }
@@ -395,7 +398,7 @@ private fun ConditionFields(
 ) {
     when (block) {
         is Condition.EverySeconds -> {
-            Stepper("Seconds", block.seconds, "seconds", min = 1) { onChange(Condition.EverySeconds(it)) }
+            Stepper("Seconds", block.seconds, "seconds", min = 1, max = 86_400) { onChange(Condition.EverySeconds(it)) }
         }
 
         is Condition.Touching -> {
@@ -461,6 +464,16 @@ private fun ActionFields(
         is Action.SetNumber -> {
             TargetPicker(block.target, tags) { onChange(block.copy(target = it)) }
             Stepper("Value", block.to, "value") { onChange(block.copy(to = it)) }
+        }
+
+        is Action.SetText -> {
+            TargetPicker(block.target, tags) { onChange(block.copy(target = it)) }
+            OutlinedTextField(
+                block.text,
+                { onChange(block.copy(text = it)) },
+                Modifier.fillMaxWidth().testTag("text"),
+                label = { Text("Text") },
+            )
         }
 
         is Action.ShowNumber -> {
@@ -558,9 +571,9 @@ private fun Stepper(
 ) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(label, Modifier.weight(1f))
-        OutlinedButton({ onChange((value - 1).coerceIn(min, max)) }, Modifier.testTag("dec:$tag")) { Text("−") }
+        OutlinedButton({ onChange((value - 1).coerceIn(min, max)) }, Modifier.testTag("dec:$tag"), enabled = value > min) { Text("−") }
         Text(value.toString(), Modifier.width(48.dp).testTag("value:$tag"), style = MaterialTheme.typography.titleMedium)
-        OutlinedButton({ onChange((value + 1).coerceIn(min, max)) }, Modifier.testTag("inc:$tag")) { Text("+") }
+        OutlinedButton({ onChange((value + 1).coerceIn(min, max)) }, Modifier.testTag("inc:$tag"), enabled = value < max) { Text("+") }
     }
 }
 

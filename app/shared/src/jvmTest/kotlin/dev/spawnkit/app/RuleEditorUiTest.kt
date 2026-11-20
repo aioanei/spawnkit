@@ -5,12 +5,14 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.ui.graphics.toAwtImage
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import dev.spawnkit.app.editor.EditorScreen
@@ -153,6 +155,32 @@ class RuleEditorUiTest {
         }
 
     @Test
+    fun textBlocksCanBeEditedAndTimerControlsRespectTheEngineLimit() =
+        runDesktopComposeUiTest(width = 412, height = 915) {
+            val state = EditorState()
+            setContent { MaterialTheme(colorScheme = darkColorScheme()) { EditorScreen(state) } }
+            tap("add:Score")
+            val score = checkNotNull(state.selection)
+            state.setRuleItems(score, listOf(RuleItem.Blocks(Rule(Condition.EverySeconds(86_400)))))
+            waitForIdle()
+            tap("tab:Rules")
+            tap("rule:0:if:0")
+            onNodeWithTag("inc:seconds").assertIsNotEnabled()
+            tapInDialog("dec:seconds")
+            onNodeWithTag("value:seconds").assertTextContains("86399")
+            tapInDialog("inc:seconds")
+            tapInDialog("block-done")
+            tap("rule:0:add-do")
+            tapInDialog("kind:SetText")
+            onNodeWithTag("text").performTextReplacement("Game over")
+            tapInDialog("block-done")
+            assertEquals(
+                listOf(RuleItem.Blocks(Rule(Condition.EverySeconds(86_400), actions = listOf(Action.SetText(Target.Self, "Game over"))))),
+                state.ruleItems(score),
+            )
+        }
+
+    @Test
     fun blocksCanBeChangedAndRemovedAndAdvancedRulesAreKept() =
         runDesktopComposeUiTest(width = 1440, height = 900) {
             val state = EditorState()
@@ -172,6 +200,7 @@ class RuleEditorUiTest {
             waitForIdle()
             tap("panel:Rules")
             onNodeWithTag("rule:0:advanced").assertTextContains("Made by an agent", substring = true)
+            screenshot("builder-rules-desktop")
             // Change the When block of the block rule from Tapped to Every 2 seconds.
             tap("rule:1:if:0")
             tapInDialog("kind:EverySeconds")

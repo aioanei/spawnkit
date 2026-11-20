@@ -158,6 +158,14 @@ public sealed interface Action {
         public val to: Long,
     ) : Action
 
+    /** Sets the [target]'s text to [text]. */
+    public data class SetText(
+        /** Object with text. */
+        public val target: Target,
+        /** New text. */
+        public val text: String,
+    ) : Action
+
     /** Sets the [target]'s text to [prefix] followed by its number, for labels such as "Score: 3". */
     public data class ShowNumber(
         /** Object with both a number and a text. */
@@ -257,7 +265,11 @@ public object RuleBlocks {
     public fun locate(nodeId: String): BlockLocation? {
         val match = BLOCK_ID.matchEntire(nodeId) ?: return null
         val (rule, part, index) = match.destructured
-        return BlockLocation(rule.toInt(), if (part == "if") BlockPart.Condition else BlockPart.Action, index.toInt())
+        return BlockLocation(
+            rule.toIntOrNull() ?: return null,
+            if (part == "if") BlockPart.Condition else BlockPart.Action,
+            index.toIntOrNull() ?: return null,
+        )
     }
 
     /** Plain-language description of a condition block. */
@@ -287,6 +299,10 @@ public object RuleBlocks {
 
             is Action.SetNumber -> {
                 "Set ${possessive(action.target)} number to ${action.to}"
+            }
+
+            is Action.SetText -> {
+                "Set ${possessive(action.target)} text to \"${action.text}\""
             }
 
             is Action.ShowNumber -> {
@@ -387,6 +403,10 @@ public object RuleBlocks {
                 Stmt.SetProperty(target(action.target, s), NUMBER, int(action.to, s), s)
             }
 
+            is Action.SetText -> {
+                Stmt.SetProperty(target(action.target, s), TEXT, text(action.text, s), s)
+            }
+
             is Action.ShowNumber -> {
                 Stmt.SetProperty(
                     target(action.target, s),
@@ -470,6 +490,14 @@ public object RuleBlocks {
                         value is Expr.Binary -> Action.ChangeNumber(target, ((value.right as Expr.Literal).value as IntegerValue).value)
                         else -> null
                     }
+                }
+
+                stmt is Stmt.SetProperty && stmt.property == TEXT && stmt.value is Expr.Literal -> {
+                    val value = stmt.value as Expr.Literal
+                    Action.SetText(
+                        recogniseTarget(stmt.entity) ?: return@runCatching null,
+                        (value.value as TextValue).value,
+                    )
                 }
 
                 stmt is Stmt.SetProperty && stmt.property == TEXT -> {

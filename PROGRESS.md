@@ -12,13 +12,20 @@
   - `app/shared`: a Rules tab (phone) and panel (desktop), the block dialog with chips and steppers, problems on
     blocks, and Player/Coin/Score presets.
   - Fixed: on phones the toolbar's undo/redo enabled state went stale after undo; the toolbar now reads `revision`.
+  - Resume review: added plain-text actions, bounded the timer picker to the supported one-day maximum, disabled
+    steppers at their limits, and made diagnostic lookup tolerate oversized block IDs.
 - **Evidence.**
-  - `RuleBlocksTest` (6) and `RuleEditorUiTest` (2): the phone-size test builds Score + collect with taps only and
-    plays it.
+  - `RuleBlocksTest` (7) and `RuleEditorUiTest` (3): the phone-size test builds Score + collect with taps only and
+    plays it. Text actions execute and round-trip; the phone UI edits text and respects the timer limit.
+  - A fresh desktop screenshot shows block rules alongside an advanced rule; the UI test preserves the advanced rule.
+  - Resume gates passed: `spotlessApply`, then separately `spotlessCheck allJvmAndWebTests localNativeTests`, plus
+    Android APK, desktop, Wasm UI and JS renderer compilation (`BUILD SUCCESSFUL`, 609 tasks, 2m 30s). Linux native
+    tests are skipped on Windows; remote Linux and iOS checks remain required.
   - The Android API 36 emulator, driven by `tools/android-rules-smoke.py`, built the same game with real taps and
     showed "Score: 1" while playing.
-- **Next step.** Gates, PR (based on C4b until #54 merges), merge. Then C5, project persistence: save, open,
-  autosave and recovery through a versioned codec. Rules (program handlers) need serialization there.
+- **Next step.** Owner review and integration of C4b and C4c (C4c stays based on C4b until #54 merges), with green
+  remote build and iOS checks. Then C5, project persistence: save, open, autosave and recovery through a versioned
+  codec. Rules (program handlers) need serialization there.
 
 ## Current checkpoint — C4b rules in the workspace and playable input (2026-11-20)
 

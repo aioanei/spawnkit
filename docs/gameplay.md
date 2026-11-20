@@ -61,6 +61,7 @@ to agents. A `Rule` is a When block, optional And-if blocks and Do blocks; it is
 | Holding / pressing a standard action | Set a number |
 | A number compared with a value | Show a number in a text, after a prefix ("Score: n") |
 | How many objects have a tag, compared with a value | Remove this object |
+| | Set plain text on this object or a tagged one |
 
 - **One executable model.** `RuleBlocks.compile` turns rules into ordinary every-tick handlers (one `if` each). Every
   node of a block carries the block's node ID (`rule<i>.if<k>` or `rule<i>.do<k>`) and its plain description, so
@@ -89,8 +90,9 @@ to agents. A `Rule` is a When block, optional And-if blocks and Do blocks; it is
 - **Catalog:** the standard engine exposes these properties, functions, actions and components.
 
 `RuleBlocksTest` (common, all core targets): every block round-trips; every block prepares against the standard
-engine; non-block and re-identified handlers stay advanced and unchanged; block locations and descriptions; a
-Score + collect game built only from blocks plays; timed conditions fire on schedule.
+engine; non-block and re-identified handlers stay advanced and unchanged; block locations and descriptions (including
+oversized IDs); a Score + collect game built only from blocks plays; text blocks update labels; timed conditions fire
+on schedule.
 
 ## Not yet
 

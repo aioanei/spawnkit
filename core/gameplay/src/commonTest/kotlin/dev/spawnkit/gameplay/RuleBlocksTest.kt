@@ -44,6 +44,8 @@ class RuleBlocksTest {
             Action.ChangeNumber(Target.Tagged("score"), 1),
             Action.ChangeNumber(Target.Self, -2),
             Action.SetNumber(Target.Self, 0),
+            Action.SetText(Target.Self, "Ready!"),
+            Action.SetText(Target.Tagged("score"), "Game over"),
             Action.ShowNumber(Target.Tagged("score"), "Score: "),
             Action.RemoveSelf,
         )
@@ -93,6 +95,8 @@ class RuleBlocksTest {
         assertEquals(BlockLocation(rule = 1, part = BlockPart.Action, index = 0), location)
         assertEquals(BlockLocation(1, BlockPart.Condition, 1), RuleBlocks.locate("rule1.if1"))
         assertNull(RuleBlocks.locate("custom"))
+        assertNull(RuleBlocks.locate("rule2147483648.do0"))
+        assertNull(RuleBlocks.locate("rule0.if2147483648"))
         assertEquals("Touching player", RuleBlocks.describe(rule.condition))
         assertEquals("Add 1 to score", RuleBlocks.describe(rule.actions.single()))
         assertEquals("rule1", handler.source.nodeId)
@@ -147,6 +151,21 @@ class RuleBlocksTest {
         assertEquals("Score: 2", world.get(score, engine.graphics.text)?.text)
         assertTrue(checkNotNull(world.get(player, engine.graphics.transform)).x > 3.0, "Moved at 30 units per second")
         assertNull(world.get(player, engine.programs.behavior)?.fault)
+    }
+
+    @Test
+    fun aTextBlockUpdatesTheTargetLabel() {
+        val world = engine.runtime.createWorld()
+        val label = world.spawn()
+        world.set(label, engine.gameplay.tag, Tag("label"))
+        world.set(label, engine.graphics.text, Text2D("Ready"))
+        world.thing(
+            0.0,
+            "button",
+            Rule(Condition.GameStarts, actions = listOf(Action.SetText(Target.Tagged("label"), "Go!"))),
+        )
+        world.step()
+        assertEquals("Go!", world.get(label, engine.graphics.text)?.text)
     }
 
     @Test

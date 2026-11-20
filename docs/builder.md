@@ -61,6 +61,8 @@ on Android and desktop.
   - **Editing blocks.** Tap a block to change it, or tap **+ Add rule**, **+ And if** or **+ Do** to add one. A dialog
     offers large chips for the kind of block and its choices: tags that exist in the scene, keys, directions,
     comparisons, "this object" or a tagged object. Numbers use −/+ steppers, so rules can be built without a keyboard.
+    Actions can set plain text or show a number after a prefix, such as "Score: ". Timer periods range from one
+    second to one day; controls stop at the supported limits.
   - **Undo, problems and advanced rules.** Every change is one undoable step. Problems found when checking the rules
     appear in red under the block they belong to. Rules made by agents or other tools that are not blocks appear as
     advanced rules and are never changed.
@@ -70,6 +72,10 @@ on Android and desktop.
   | Android emulator: rules built with taps | Android emulator: playing |
   |---|---|
   | ![Rules](media/android-rules-edit.png) | ![Playing](media/android-rules-play.png) |
+
+  Expanded desktop layout, including an advanced rule preserved alongside a block rule:
+
+  ![Desktop rule editor](media/builder-rules-desktop.png)
 - **Play and Stop.** Play builds an isolated world from the scene and steps it at a fixed 60 Hz. Stop returns to
   editing, and the project is never changed by playing.
 
@@ -78,7 +84,7 @@ on Android and desktop.
 `EditorScreen` chooses a layout by available width, not by platform:
 
 - **Compact** (under 720 dp, phones): the toolbar, a full-width viewport, a status line, and a collapsible bottom
-  panel with **Add / Scene / Properties** tabs.
+  panel with **Add / Scene / Object / Rules** tabs.
 - **Expanded** (tablets, desktops): the palette and hierarchy on the left, the viewport in the centre and the
   inspector on the right.
 
@@ -107,6 +113,7 @@ keeps lines at least 32 px apart. The selection outline is 2.5 dp white, which c
       Right control until the label reads "Score: 1".
     - At desktop size, it changes a When block, adds an And if, removes a Do block and deletes a block rule, while
       an advanced rule is kept.
+    - At phone size, it edits a plain-text action and checks that a timer at one day cannot be increased.
   - **Keyboard (desktop size):** arrow and Shift+arrow nudges, Ctrl+D, Delete, Ctrl+Z, Ctrl+Shift+Z, Ctrl+Y,
     Escape to deselect and Escape to stop play.
 - **Android emulator** (API 36, 1080×2400): `assembleDebug`, install, launch, then real `adb input` taps and a swipe
