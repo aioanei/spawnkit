@@ -70,6 +70,32 @@ public data class Sprite2D(
     public val visible: Boolean = true,
 )
 
+/** A line of text centred on the object's origin, such as a score or a label. */
+public data class Text2D(
+    /** Text shown. */
+    public val text: String = "",
+    /** Line height in world units (capital letters are roughly two thirds of it). */
+    public val size: Double = 1.0,
+    /** Text color, ARGB. */
+    public val color: Long = 0xFFFFFFFF,
+    /** Draw layer; higher layers draw on top. */
+    public val layer: Long = 0,
+    /** Whether it is drawn. */
+    public val visible: Boolean = true,
+) {
+    /** Text limits. */
+    public companion object {
+        /** Longest text accepted by the inspector and rules. */
+        public const val MAX_LENGTH: Int = 500
+
+        /**
+         * Average letter width as a fraction of [size], used for hit testing and layout before a renderer measures the
+         * real font. Renderers may draw slightly wider or narrower text.
+         */
+        public const val ESTIMATED_ADVANCE: Double = 0.6
+    }
+}
+
 /** A camera looking at its object's world position. The first active camera in scene order is used. */
 public data class Camera2D(
     /** Magnification; 2 shows half as much of the world. */
@@ -100,6 +126,10 @@ public class Graphics2D(
     /** Images. */
     public val sprite: ComponentType<Sprite2D> =
         builder.component("graphics:sprite", AuthoringInfo("Sprite", "An image from the project", "Appearance"), SpriteCodec)
+
+    /** Text labels. */
+    public val text: ComponentType<Text2D> =
+        builder.component("graphics:text", AuthoringInfo("Text", "Words or numbers shown in the scene", "Appearance"), TextCodec)
 
     /** Cameras. */
     public val camera: ComponentType<Camera2D> =
@@ -182,6 +212,38 @@ public class Graphics2D(
                 { s, v -> s.copy(layer = v) },
             )
             property("visible", ValueKind.YesNo, AuthoringInfo("Visible"), true, { it.visible }, { s, v -> s.copy(visible = v) })
+        }
+
+    /** Descriptor of [text]. */
+    public val textDescriptor: ComponentDescriptor<Text2D> =
+        builder.describe(text) {
+            create { Text2D() }
+            property(
+                "text",
+                ValueKind.Text(maxLength = Text2D.MAX_LENGTH),
+                AuthoringInfo("Text", "What the label says"),
+                "",
+                { it.text },
+                { t, v -> t.copy(text = v) },
+            )
+            property(
+                "size",
+                ValueKind.Decimal(0.05, 1_000.0),
+                AuthoringInfo("Size", "Height of a line of text"),
+                1.0,
+                { it.size },
+                { t, v -> t.copy(size = v) },
+            )
+            property("color", ValueKind.Color, AuthoringInfo("Color"), 0xFFFFFFFF, { it.color }, { t, v -> t.copy(color = v) })
+            property(
+                "layer",
+                LAYER,
+                AuthoringInfo("Layer", "Higher layers are drawn on top"),
+                0L,
+                { it.layer },
+                { t, v -> t.copy(layer = v) },
+            )
+            property("visible", ValueKind.YesNo, AuthoringInfo("Visible"), true, { it.visible }, { t, v -> t.copy(visible = v) })
         }
 
     /** Descriptor of [camera]. */
@@ -276,6 +338,30 @@ private object SpriteCodec : StateCodec<Sprite2D> {
             integer(f, "layer"),
             flag(f, "visible"),
         )
+    }
+}
+
+private object TextCodec : StateCodec<Text2D> {
+    override fun capture(
+        value: Text2D,
+        context: StateCaptureContext,
+    ): StateValue =
+        StateValue.Record(
+            mapOf(
+                "text" to StateValue.Text(value.text),
+                "size" to StateValue.Decimal(value.size),
+                "color" to StateValue.Integer(value.color),
+                "layer" to StateValue.Integer(value.layer),
+                "visible" to StateValue.Flag(value.visible),
+            ),
+        )
+
+    override fun restore(
+        state: StateValue,
+        context: StateRestoreContext,
+    ): Text2D {
+        val f = (state as StateValue.Record).fields
+        return Text2D(text(f, "text"), decimal(f, "size"), integer(f, "color"), integer(f, "layer"), flag(f, "visible"))
     }
 }
 

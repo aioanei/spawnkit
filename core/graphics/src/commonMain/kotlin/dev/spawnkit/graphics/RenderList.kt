@@ -117,6 +117,19 @@ public sealed interface DrawItem {
         /** Tint, ARGB. */
         public val tint: Long,
     ) : DrawItem
+
+    /** A line of text; [width] is estimated from its length (see [Text2D.ESTIMATED_ADVANCE]) and [height] is its size. */
+    public data class Text(
+        override val entity: EntityHandle,
+        override val transform: Affine2D,
+        override val layer: Long,
+        override val width: Double,
+        override val height: Double,
+        /** Text shown. */
+        public val text: String,
+        /** Color, ARGB. */
+        public val color: Long,
+    ) : DrawItem
 }
 
 /** The camera used to view a scene: its world centre and zoom. */
@@ -224,6 +237,10 @@ public fun Graphics2D.renderList(world: World): RenderList {
         }
         world.get(entity, sprite)?.takeIf { it.visible }?.let {
             items += DrawItem.Sprite(entity, placed, it.layer, it.width, it.height, it.asset, it.tint)
+        }
+        world.get(entity, text)?.takeIf { it.visible && it.text.isNotEmpty() }?.let {
+            val width = it.size * Text2D.ESTIMATED_ADVANCE * it.text.length
+            items += DrawItem.Text(entity, placed, it.layer, width, it.size, it.text, it.color)
         }
         if (activeCamera == null) {
             world.get(entity, camera)?.takeIf { it.active && it.zoom.isFinite() && it.zoom > 0.0 }?.let {
