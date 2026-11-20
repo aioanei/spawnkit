@@ -17,6 +17,8 @@ public class World internal constructor(
     private val registeredComponents: List<ComponentType<*>>,
     private val systems: List<Pair<String, WorldSystem>>,
     private val registeredResources: List<ResourceType<*>> = emptyList(),
+    private val registeredActions: List<InputAction> = emptyList(),
+    private val registeredAxes: List<InputAxis> = emptyList(),
 ) {
     private val owner = Any()
     private val resources: Array<Any> = Array(registeredResources.size) { registeredResources[it].create() }
@@ -45,6 +47,28 @@ public class World internal constructor(
     internal val checkpointIdentity: Any get() = owner
 
     internal val registryIdentity: Any get() = registry
+
+    internal var currentInput: InputFrame = InputFrame.EMPTY
+    internal var previousInput: InputFrame = InputFrame.EMPTY
+    private var pendingInput: InputFrame? = null
+
+    /** Input for the current tick; see [submitInput]. */
+    public val input: InputView = InputView(this)
+
+    /**
+     * Supplies the input frame for the next [step]. Only allowed between ticks on a healthy world. Without a new
+     * submission, the previous frame stays in effect, so held input persists across ticks.
+     */
+    public fun submitInput(frame: InputFrame) {
+        check(stage == Stage.Idle && !isFaulted) { "Input can only be submitted between ticks on a healthy world" }
+        frame.requireValid(registry)
+        pendingInput = frame
+    }
+
+    internal fun checkedInput(action: InputAction): InputAction {
+        require(action.registry === registry) { "Input action '${action.id}' belongs to another runtime" }
+        return action
+    }
 
     /** Whether authoring edits may apply now: a healthy world between ticks. */
     internal val acceptsAuthoringEdits: Boolean get() = !isFaulted && stage == Stage.Idle
@@ -234,6 +258,9 @@ public class World internal constructor(
     public fun step() {
         check(stage == Stage.Idle && !isFaulted) { "World is already stepping or faulted" }
         check(tick < Long.MAX_VALUE) { "Tick counter exhausted" }
+        previousInput = currentInput
+        currentInput = pendingInput ?: currentInput
+        pendingInput = null
         val commands = WorldCommands(this) { currentSystem }
         stage = Stage.Updating
         tick++
@@ -299,6 +326,11 @@ public class World internal constructor(
                     capturedSystems,
                     slots.indices.mapNotNull { index -> slots[index].children?.let { index to it.toList() } },
                     registeredResources.sortedBy { it.id }.map { it.id to freezer.copy(it.capture(resources[it.ordinal], context)) },
+                    if (registeredActions.isEmpty() && registeredAxes.isEmpty() && !hasPointerInput()) {
+                        null
+                    } else {
+                        CapturedInput(capture(currentInput), capture(previousInput), pendingInput?.let(::capture))
+                    },
                 ),
             )
         } finally {
@@ -333,6 +365,11 @@ public class World internal constructor(
                 slots[parent].children = children.toMutableList()
                 children.forEach { slots[it].parent = parent }
             }
+            state.input?.let {
+                currentInput = restoreFrame(it.current)
+                previousInput = restoreFrame(it.previous)
+                pendingInput = it.pending?.let(::restoreFrame)
+            }
             for ((id, value) in state.resources) {
                 val type = registeredResources.first { it.id == id }
                 resources[type.ordinal] = type.restore(copyCapturedState(value), context)
@@ -342,6 +379,16 @@ public class World internal constructor(
             stage = Stage.Idle
         }
     }
+
+    private fun hasPointerInput(): Boolean =
+        currentInput.pointers.isNotEmpty() || previousInput.pointers.isNotEmpty() || pendingInput?.pointers?.isNotEmpty() == true
+
+    internal fun restoreInputFrame(frame: CapturedFrame): InputFrame =
+        InputFrame(
+            frame.down.map { id -> registeredActions.first { it.id == id } }.toSet(),
+            frame.axes.associate { (id, value) -> registeredAxes.first { it.id == id } to value },
+            frame.pointers,
+        )
 
     internal fun requireOwnedReference(entity: EntityHandle) {
         require(entity.owner === owner && entity.index in slots.indices && entity.generation in 0..slots[entity.index].generation) {
@@ -390,3 +437,14 @@ public class World internal constructor(
         const val NO_PARENT = -1
     }
 }
+
+private fun capture(frame: InputFrame): CapturedFrame =
+    CapturedFrame(
+        frame.down.map { it.id }.sorted(),
+        frame.axes.entries
+            .map { it.key.id to it.value }
+            .sortedBy { it.first },
+        frame.pointers.toList(),
+    )
+
+private fun World.restoreFrame(frame: CapturedFrame): InputFrame = restoreInputFrame(frame)
