@@ -16,10 +16,10 @@ Plan/status: [PLANS.md](PLANS.md), [PROGRESS.md](PROGRESS.md).
 
 The owner confirmed engine ownership and guided creation for non-programmers, removed time pressure as an
 architectural constraint, then authorized merging plan PR #20 and starting implementation. R0 reconciliation is
-complete. R1a / issue #21 and R1b / issue #23 are merged. Current work is R1c / issue #26: the storage
-comparison and selected sparse-set store in `core/runtime` ([decision](docs/runtime-storage.md)). The architecture
-reassessment is open for owner review in PR #25 and is not merged autonomously. The R1 program/host-effect proof
-and the visual editor remain unfinished. Do not resume old Tasks 11–12 or treat unselected libraries as approved.
+complete. R1a / issue #21 and R1b / issue #23 are merged. R1c / issue #26 (storage decision) is merged.
+Current work is R1d / issue #28: the portable program executor in `core/program` ([decision](docs/runtime-programs.md)).
+The architecture reassessment is open for owner review in PR #25 and is not merged autonomously. The visual
+editor remains unfinished. Do not resume old Tasks 11–12 or treat unselected libraries as approved.
 Preserve completed work and player checkpoint `b2bf830` on `feat/6-player-shells`. JSON remains allowed for
 storage/transport; its schema and a closed list of gameplay mechanics cannot define engine capability.
 
@@ -43,6 +43,7 @@ storage/transport; its schema and a closed list of gameplay mechanics cannot def
 | `core/templates` | KMP, all targets | existing embedded template fixtures; preserve during migration |
 | `core/engine` | KMP, all targets | preserved tested platformer runtime and compatibility regression baseline |
 | `core/runtime` | KMP, all targets | provisional headless world/component/scheduler and explicit checkpoint/replay APIs; no legacy model dependency |
+| `core/program` | KMP, all targets | portable program executor: typed programs, type checking, resumable bytecode VM, atomic segments, checkpointed waits |
 | `samples/runtimeProbe` | KMP, all targets | separately compiled public-API consumer and cross-target extension evidence |
 | `benchmarks/runtimeStorage` | KMP executable (jvm, js, wasmJs, mingwX64, linuxX64) | unshipped runtime storage benchmark harness; public `World` API only |
 | `core/validation` | KMP, all targets | integrity checks, reachability solver, playtest, economy check |

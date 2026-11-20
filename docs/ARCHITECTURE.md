@@ -33,7 +33,11 @@ with sparse-set columns behind the unchanged `World` API. Fleks was rejected at 
 JS/iOS artifacts. A golden recorded on the original store, plus cross-target benchmarks, document equivalence and
 measured results.
 
-This is R1 evidence, not a portable behavior executor or visual editor. Those remain
+The [R1d program executor](runtime-programs.md) adds `core/program`: typed portable programs (functions, state,
+lists, loops, queries, typed host calls, events, waits, effects) checked with source diagnostics and run by a
+resumable bytecode VM. Execution is bounded by deterministic limits, each segment is atomic, and suspended waits
+are checkpointed. QuickJS, Chasm and Luak failed required-target screening.
+This is R1 evidence, not the complete R4 language or a visual editor. Those remain
 explicit acceptance gates in the revised plan.
 
 ## Big picture
@@ -89,6 +93,7 @@ JS, Wasm, mingwX64, linuxX64 and the iOS simulator. See [ADR-0004](adr/0004-dete
 | Renderer: viewport, camera, keyboard/touch, interpolation, HUD | merged [PR #18](https://github.com/aioanei/spawnkit/pull/18); browser smoke and visual evidence retained |
 | Exported-game shells | unfinished checkpoint `b2bf830`, preserved for R6 adaptation |
 | General runtime world/component/scheduler | R1a–R1c evidence: lifecycle, checkpoints/replay, selected sparse-set store; separate public-API consumer |
+| Portable program executor | R1d proof slice in `core/program`; checkpointed waits, atomic segments, cross-target golden |
 | Engine/editor/programming/extension foundation | broader R1 comparisons and R2–R9 work remain unfinished |
 | Guided creation, accessibility and novice-usability release gate | required by revised plan; not implemented or user-tested |
 | Browser deployment, editor, validation, AI Studio, publishing | preserved roadmap, revised R0–R9 dependency order |

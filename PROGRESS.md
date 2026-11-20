@@ -1,6 +1,27 @@
 # SpawnKit progress
 
-## Current checkpoint — R1c runtime storage decision (2026-11-20, autonomous overnight session)
+## Current checkpoint — R1d portable program executor (2026-11-20, autonomous overnight session)
+
+- **R1c is done.** PR #27 merged as `9732f1b` after green `build`/`ios-simulator`. An independent AI-subagent review
+  found nothing blocking; its fixes are in `573d649` and `a2718f9`. Issue #26 is closed. PR #25 (reassessment)
+  stays open for owner review.
+- **Branch and issue.** Branch `feat/28-program-executor` from main `9732f1b`;
+  [issue #28](https://github.com/aioanei/spawnkit/issues/28).
+- **Screening.** Every embedded candidate fails required targets. quickjs-kt 1.0.18 and Chasm 2.5.0 publish no
+  js/wasmJs variants. korlibs Luak 4.0.0-alpha-2 has no wasmJs and has been unmaintained since 2023. minigdx Luak
+  covers jvm/js only.
+- **New module `core/program`.** Typed program tree, type checker with source diagnostics, resumable bytecode VM
+  and `ProgramFeature` runtime integration. It covers deterministic limits, atomic segments, checkpointed waits and
+  effect IDs that replay deterministically.
+- **Checkpoints.** `a9bbf05` (executor and tests), `1ab0eee` (platform-independent fingerprints).
+- **Tests.** 30 tests pass on each of JVM, Android host, JS, Wasm and mingwX64. The cross-target golden is fuel
+  3044, hash `-1990361367860152568`. Decision note: [runtime programs](docs/runtime-programs.md).
+- **Next step.** Run the full gates, open the PR, get an independent review, then merge on green CI. After that,
+  R1 is complete except for focused rendering/collision choices, which the plan allows to stay open until R3.
+  Next is R2: general world, resources and execution metadata. Start with typed property/function/event
+  descriptors (authoring metadata) and hierarchy/resource references in `core/runtime`.
+
+## Previous checkpoint — R1c runtime storage decision (2026-11-20, autonomous overnight session)
 
 - **Session context.** The owner asked for autonomous overnight continuation of the approved plan. They authorized
   merging the agent's own PRs once required CI passes, after independent review, without bypassing branch rules.
