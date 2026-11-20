@@ -15,6 +15,8 @@ import dev.spawnkit.runtime.RuntimeBuilder
 import dev.spawnkit.runtime.World
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 
 class ProgramInputTest {
@@ -91,5 +93,59 @@ class ProgramInputTest {
         val fault = fixture.instance(world).fault
         assertEquals(FaultKind.HostFailure, fault?.kind)
         assertEquals("block:typo", fault?.source?.nodeId)
+    }
+
+    @Test
+    fun releasesAreVisibleAndForeignInputsFaultTheRuleNotTheWorld() {
+        val fixture = Fixture()
+        val released =
+            Program(
+                "release",
+                state = listOf(field("releases", IntegerValue(0))),
+                handlers =
+                    listOf(
+                        everyTick(
+                            ifThen(
+                                host("wasReleased", text("game:jump")),
+                                listOf(setState("releases", op(BinaryOp.Add, state("releases"), int(1)))),
+                            ),
+                        ),
+                    ),
+            )
+        val world = fixture.world(released)
+        world.submitInput(InputFrame(down = setOf(fixture.jump)))
+        world.step()
+        world.submitInput(InputFrame())
+        world.step()
+        assertEquals(IntegerValue(1), fixture.instance(world).state("releases"))
+
+        // A host built with another runtime's actions runs inside this runtime's world.
+        val other = Fixture()
+        val mixedHost = ProgramHostBuilder().inputs(listOf(other.jump)).build()
+        val mixedBuilder = RuntimeBuilder()
+        val mixedFeature = ProgramFeature(mixedBuilder, mixedHost)
+        val mixedWorld = mixedBuilder.build().createWorld()
+        val prepared =
+            (
+                prepareProgram(
+                    Program("mixed", handlers = listOf(everyTick(P.eval(host("isDown", text("game:jump")))))),
+                    mixedHost,
+                ) as PrepareResult.Ready
+            ).program
+        val entity = mixedWorld.spawn()
+        mixedWorld.set(entity, mixedFeature.behavior, mixedFeature.instantiate(prepared))
+        mixedWorld.step()
+        assertEquals(FaultKind.HostFailure, checkNotNull(mixedWorld.get(entity, mixedFeature.behavior)).fault?.kind)
+        assertFalse(mixedWorld.isFaulted)
+    }
+
+    @Test
+    fun inputRegistrationIsAtomicAndRejectsDuplicates() {
+        val fixture = Fixture()
+        val clash =
+            ProgramHostBuilder().function("axis", emptyList(), DecimalType, AuthoringInfo("Mine")) { DecimalValue(0.0) }
+        assertFailsWith<IllegalArgumentException> { clash.inputs(listOf(fixture.jump), listOf(fixture.moveX)) }
+        assertEquals(listOf("axis"), clash.build().functionCatalog.map { it.name })
+        assertFailsWith<IllegalArgumentException> { ProgramHostBuilder().inputs(listOf(fixture.jump, Fixture().jump)) }
     }
 }

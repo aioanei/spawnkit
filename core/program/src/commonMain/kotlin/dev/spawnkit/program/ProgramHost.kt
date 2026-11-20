@@ -217,6 +217,10 @@ public class ProgramHostBuilder(
         axes: List<InputAxis> = emptyList(),
     ): ProgramHostBuilder =
         apply {
+            require(actions.map { it.id }.toSet().size == actions.size) { "Duplicate input action IDs" }
+            require(axes.map { it.id }.toSet().size == axes.size) { "Duplicate input axis IDs" }
+            val taken = listOf("isDown", "wasPressed", "wasReleased", "axis").filter { name -> functions.any { it.name == name } }
+            require(taken.isEmpty()) { "Input functions are already registered: ${taken.joinToString()}" }
             val byId = actions.associateBy { it.id }
             val axesById = axes.associateBy { it.id }
 
@@ -225,23 +229,28 @@ public class ProgramHostBuilder(
                 return byId[name] ?: throw ProgramHostException("there is no action called '$name'")
             }
             val info = AuthoringInfo("Input", "Reads player input", "Input")
-            function("isDown", listOf(TextType), BoolType, info.copy(name = "Is held")) { BoolValue(it.input.isDown(action(it))) }
+            function(
+                "isDown",
+                listOf(TextType),
+                BoolType,
+                info.copy(name = "Is held"),
+            ) { foreignSafe { BoolValue(it.input.isDown(action(it))) } }
             function(
                 "wasPressed",
                 listOf(TextType),
                 BoolType,
                 info.copy(name = "Was pressed"),
-            ) { BoolValue(it.input.wasPressed(action(it))) }
+            ) { foreignSafe { BoolValue(it.input.wasPressed(action(it))) } }
             function(
                 "wasReleased",
                 listOf(TextType),
                 BoolType,
                 info.copy(name = "Was released"),
-            ) { BoolValue(it.input.wasReleased(action(it))) }
+            ) { foreignSafe { BoolValue(it.input.wasReleased(action(it))) } }
             function("axis", listOf(TextType), DecimalType, info.copy(name = "Axis value")) { call ->
                 val name = (call.arguments[0] as TextValue).value
                 val axis = axesById[name] ?: throw ProgramHostException("there is no axis called '$name'")
-                DecimalValue(call.input.axis(axis))
+                foreignSafe { DecimalValue(call.input.axis(axis)) }
             }
         }
 
@@ -308,3 +317,11 @@ private fun <V : Any> descriptorMapping(kind: ValueKind<V>): KindMapping<V>? =
         is ValueKind.Text, is ValueKind.Choice -> KindMapping<String>(TextType, { TextValue(it) }, { (it as TextValue).value })
         is ValueKind.ObjectReference -> null
     } as KindMapping<V>?
+
+/** Inputs registered by a different runtime than the one running the rule fault the rule, not the world. */
+private inline fun foreignSafe(read: () -> ProgramValue): ProgramValue =
+    try {
+        read()
+    } catch (failure: IllegalArgumentException) {
+        throw ProgramHostException("this input belongs to a different game: ${failure.message}")
+    }

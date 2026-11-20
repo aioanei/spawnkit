@@ -46,5 +46,6 @@ Wasm and mingwX64. It covers:
 
 - Device bindings and rebinding UI live in the renderer and player hosts (R3/R6).
 - Programs read input through `ProgramHostBuilder.inputs(actions, axes)` (R2e). It provides `isDown`, `wasPressed`,
-  `wasReleased` and `axis`, addressed by action or axis ID. An unknown name faults the rule with `HostFailure`. Names
+  `wasReleased` and `axis`, addressed by action or axis ID. An unknown name faults the rule with `HostFailure`. An action or axis registered by a different runtime
+  also faults the rule, not the world. Registering the four functions is atomic. Names
   are checked at run time, not when the program is prepared.
