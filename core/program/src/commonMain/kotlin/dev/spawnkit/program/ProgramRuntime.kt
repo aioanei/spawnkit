@@ -37,6 +37,9 @@ public enum class FaultKind {
 
     /** A host function failed or returned a value of the wrong type. */
     HostFailure,
+
+    /** A property write violated the property's constraints, such as a range or a list of choices. */
+    InvalidValue,
 }
 
 /** A stopped instance's explanation, located at the program node that failed. */
@@ -560,6 +563,9 @@ private class Segment(
                     val value = stack.pop()
                     val entity = (stack.pop() as EntityValue).entity
                     if (readProperty(entity, op.property) == null) throw missing(entity, op.property)
+                    feature.host.properties[op.property].problem(value)?.let {
+                        throw FaultSignal(FaultKind.InvalidValue, "${feature.host.properties[op.property].authoring.name}: $it")
+                    }
                     writes[entity to op.property] = value
                 }
 

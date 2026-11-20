@@ -104,8 +104,8 @@ reapplying it is then rejected like any other stale reference. `addComponent` at
 ## Not yet
 
 - The Compose inspector that renders these controls arrives with the first editor surface (R4).
-- Programs still declare `ProgramHost` properties separately. Deriving program bindings from descriptors is a
-  follow-up, so that rules, inspector and agents share one declaration.
+- Program bindings can be derived from descriptors (R2c, `ProgramHostBuilder.properties`). Object-reference
+  properties are not bound to programs yet.
 - Units are display text, with no conversion. Records/lists of values, colors, assets and resource references come
   with R2 resources and R3 presentation.
 - Edits are individual operations. Transactions, grouping and undo stacks belong to `core/editing` in R4.

@@ -7,8 +7,8 @@ requested implementation of the documentation revision. Persistence is secondary
 Plan PR #20 is merged with owner authorization and R0 repository/GitHub reconciliation is complete. R1a
 ([headless runtime foundation](docs/runtime-foundation.md)) and R1b ([native checkpoints and replay](docs/runtime-checkpoints.md))
 are merged. R1c ([runtime storage decision](docs/runtime-storage.md)) and R1d ([portable program executor](docs/runtime-programs.md))
-are merged, so R1 is complete. R2a ([descriptors](docs/runtime-descriptors.md)) is merged. Current work is R2b / issue #32:
-[hierarchy, resources and seeded random](docs/runtime-hierarchy.md). The architecture reassessment (PR #25) awaits owner review.
+are merged, so R1 is complete. R2a ([descriptors](docs/runtime-descriptors.md)) and R2b ([hierarchy, resources and random](docs/runtime-hierarchy.md)) are
+merged. Current work is R2c / issue #34: program properties derived from descriptors ([programs](docs/runtime-programs.md)). The architecture reassessment (PR #25) awaits owner review.
 The visual editor remains unfinished. Do not resume old Tasks 11–12 or assume a production backend
 has been selected. All product features and mandatory technologies remain.
 
