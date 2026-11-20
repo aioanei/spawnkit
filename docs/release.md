@@ -29,7 +29,7 @@ Return to the editor to correct a reported scene or object and try again.
 | Shared player | `player/playerKit` | `PlaySession`, the fixed 60 Hz loop, `PlaySurface` (rendering, pointer-to-world input, touch controls) and play keys. The builder's Play mode uses the same code. `GamePlayer(pkg)` refuses games whose capabilities are missing and explains why. |
 | Universal web player | `player/webPlayer` (`wasm-js/app`, Kotlin Toolchain only) | Loads `game.spawnkit.json` from beside its `index.html` and plays it. A missing or invalid file shows an explanation, never a blank page. |
 
-On a clean developer checkout, first run `./kotlin build -m webPlayer`. Repeat this step after changes to the player
+On a clean developer checkout, first run `./kotlin build -m webPlayer -v release`; the optimized player is what exports and the Arcade ship. Repeat this step after changes to the player
 or its dependencies. The pinned Toolchain exposes its final Wasm distribution separately from JVM artifacts.
 CI builds that distribution first. The `web-player-bundle` plugin then archives it at `spawnkit/web-player.zip` in
 the Android APK, desktop executable JAR and Arcade JAR. The Gradle compatibility build runs the same two steps.
@@ -50,14 +50,14 @@ emulator reaches the host at `http://10.0.2.2:8080`. Use a reachable HTTPS addre
 Each published package is immutable and survives server restarts. Set `SPAWNKIT_ARCADE_DIR` to a persistent
 directory for one server process. The default is `.spawnkit/arcade` under the service account's home directory.
 This version supports anonymous publishing and a maximum of 128 releases per directory. Uploads are limited to
-4,259,840 UTF-8 bytes, four simultaneous submissions and 30 seconds for the body. The rolling one-minute limits
+12,779,520 UTF-8 bytes (three bytes per package character), and the decoded package to 4,259,840 characters, four simultaneous submissions and 30 seconds for the body. The rolling one-minute limits
 are six attempts per connecting address and 60 per server process. The client displays the server's explanation
 when it refuses a release. Use a separate directory for smoke testing.
 
 ## Try the web player directly
 
 1. `./kotlin test -p jvm -m playerKit` writes a sample package to `player/playerKit/build/sample-game/`.
-2. `./kotlin build -m webPlayer` writes the bundle to `build/tasks/_webPlayer_buildWasmJsAppWasmJsDebug/`. Upstream
+2. `./kotlin build -m webPlayer -v release` writes the bundle to `build/tasks/_webPlayer_buildWasmJsAppWasmJsRelease/`. Upstream
    may change this internal path.
 3. Copy the bundle and `game.spawnkit.json` into one folder.
 4. Serve the folder with `.mjs` as `text/javascript` and `.wasm` as `application/wasm`, then open `index.html`.
@@ -75,5 +75,6 @@ Evidence (headless Chrome, 2026-11-20): the [sample game playing](media/web-play
 | [Android saved the ZIP](media/android-release-saved.png) · [Android received its Arcade link](media/android-arcade-published.png) | [Chrome playing the Android ZIP after collecting a coin](media/android-export-playing.png) |
 
 The Android ZIP and the game at the returned Arcade URL both responded to keyboard input and reached **Score: 1**.
+After the switch to the optimized player, the Android export was re-verified: a 7,357,435-byte ZIP played in Chrome.
 The emulator used an adb reverse tunnel to a local test server. Reproduction is in
 [`android-release-smoke.py`](../tools/android-release-smoke.py) and [`release-player-smoke.py`](../tools/release-player-smoke.py).

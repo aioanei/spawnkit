@@ -140,6 +140,27 @@ class ArcadeTest {
         }
 
     @Test
+    fun defaultUploadLimitCoversEveryPackageTheBuilderCanProduce() {
+        // Packages are limited in UTF-16 characters; a character can take up to three UTF-8 bytes on the wire.
+        assertTrue(PublishLimits().bytes >= 3L * GamePackageCodec.MAX_PACKAGE_CHARS)
+        val nonAscii = GamePackageCodec.encode(GamePackage.of(Project.blank("ゲーム ".repeat(10))))
+        assertTrue(nonAscii.encodeToByteArray().size > nonAscii.length)
+    }
+
+    @Test
+    fun aDamagedStoreFileDoesNotHideOtherGames() =
+        withStore { directory ->
+            testApplication {
+                application { arcade(ArcadeStore(directory), playerFixture()) }
+                assertEquals(HttpStatusCode.Created, client.publish(packageText).status)
+                Files.write(directory.resolve("notes.game"), byteArrayOf(0x7F))
+                val listing = client.get("/api/games")
+                assertEquals(HttpStatusCode.OK, listing.status)
+                assertEquals(1, Json.parseToJsonElement(listing.bodyAsText()).jsonArray.size)
+            }
+        }
+
+    @Test
     fun globalRateLimitBoundsTheNumberOfAddresses() {
         var now = 10L
         val limits = PublishLimits(perAddress = 1, perServer = 2, clockMillis = { now })

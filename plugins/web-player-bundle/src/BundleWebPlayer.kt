@@ -15,7 +15,7 @@ fun bundleWebPlayer(
 ) {
     val root = player.toFile()
     for (required in listOf("index.html", "webPlayer.mjs", "webPlayer.wasm", "skiko.wasm")) {
-        check(root.resolve(required).isFile) { "Missing $required from the web player. Run ./kotlin build -m webPlayer first." }
+        check(root.resolve(required).isFile) { "Missing $required from the web player. Run ./kotlin build -m webPlayer -v release first." }
     }
     val destination = output.resolve("spawnkit/web-player.zip").toFile()
     destination.parentFile.mkdirs()

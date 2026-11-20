@@ -6,6 +6,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import java.io.DataInputStream
 import java.io.DataOutputStream
+import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -61,9 +62,15 @@ internal class ArcadeStore(
         if (Files.notExists(directory)) return emptyList()
         return Files.newDirectoryStream(directory, "*.game").use { files ->
             files
-                .map { file ->
-                    val title = DataInputStream(Files.newInputStream(file).buffered()).use { it.readUTF() }
-                    PublishedGame(file.fileName.toString().removeSuffix(".game"), title)
+                .mapNotNull { file ->
+                    val slug = file.fileName.toString().removeSuffix(".game")
+                    // Damaged or foreign files are skipped, so one bad file never hides every other release.
+                    if (!SLUG.matches(slug)) return@mapNotNull null
+                    try {
+                        PublishedGame(slug, DataInputStream(Files.newInputStream(file).buffered()).use { it.readUTF() })
+                    } catch (_: IOException) {
+                        null
+                    }
                 }.sortedWith(compareBy(PublishedGame::title, PublishedGame::slug))
         }
     }

@@ -1,7 +1,7 @@
 tasks:
   bundle:
     action: !dev.spawnkit.build.release.bundleWebPlayer
-      player: ${project.rootDir}/build/tasks/_webPlayer_buildWasmJsAppWasmJsDebug
+      player: ${project.rootDir}/build/tasks/_webPlayer_buildWasmJsAppWasmJsRelease
       output: ${taskOutputDir}
 
 generated:

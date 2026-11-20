@@ -89,7 +89,7 @@ jobs:
         run: ./kotlin check ktlint
 
       - name: Build the universal player for the creator and Arcade
-        run: ./kotlin build -m webPlayer
+        run: ./kotlin build -m webPlayer -v release
 
       - name: Tests (JVM, Android host, linuxX64)
         run: ./kotlin test -p jvm -p android -p linuxX64

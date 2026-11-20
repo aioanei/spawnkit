@@ -23,7 +23,10 @@ internal suspend fun publishGame(
                 (base.path.isNullOrEmpty() || base.path == "/") &&
                 (
                     base.scheme.equals("https", ignoreCase = true) ||
-                        (base.scheme.equals("http", ignoreCase = true) && base.host in setOf("localhost", "127.0.0.1", "[::1]", "10.0.2.2"))
+                        (
+                            base.scheme.equals("http", ignoreCase = true) &&
+                                base.host.lowercase() in setOf("localhost", "127.0.0.1", "10.0.2.2")
+                        )
                 ),
         ) { ADDRESS_HELP }
         val connection = base.resolve("/api/games").toURL().openConnection() as HttpURLConnection

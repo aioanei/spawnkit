@@ -10,6 +10,18 @@
   ran in headless Chrome and keyboard movement collected a coin, reaching **Score: 1**. The same Android workspace
   published to the packaged Ktor server and played through its returned URL. The offline emulator reached the
   loopback server through a temporary adb tunnel. See the [release guide and evidence](docs/release.md).
+- **Review (PR #67).** A code review led to these fixes:
+  - The Arcade's upload limit is now in UTF-8 bytes (3 × the package character limit), so non-ASCII games are not
+    refused. A package that outgrows the limit on re-encoding gets a 413 instead of a 500.
+  - One damaged store file no longer hides the other releases.
+  - Exports and the Arcade ship the optimized release player: its Wasm is 8.2 MB instead of 22.1 MB, and the bundle
+    ZIP is 6.1 MB.
+  - Android export writes in "wt" mode, which cloud providers accept. It clears a cancelled picker request, removes
+    orphaned empty files, and the Activity no longer restarts on rotation.
+  - Loopback hosts are matched case-insensitively.
+  - Re-verified on the API 36 emulator: the rules, projects and release smokes pass. The exported ZIP is now
+    7,357,435 bytes and plays to "Score: 1" in Chrome. Toolchain: 545 tests, 0 failed; the APK, desktop JAR and
+    server JAR ship an identical player. Gradle: `spotlessCheck` and the server, builder and app targets pass.
 - **Validation before commit (continued session).**
   - `./kotlin package -m androidApp` first failed: AGP's release lint rejected the network security config because
     `includeSubdomains` was implicit. Making it explicit keeps plain HTTP limited to the exact loopback hosts.

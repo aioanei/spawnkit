@@ -42,7 +42,7 @@ SpawnKit builds with the [Kotlin Toolchain](https://kotlin-toolchain.org/) ([ADR
 The committed `kotlin` wrapper (`kotlin.bat` on Windows) downloads the pinned CLI and provisions the JDK,
 Kotlin/Native, Node and Skiko on first use. An Android SDK (`ANDROID_HOME`) is needed for Android targets. iOS
 requires macOS with Xcode. Before building or running the Android creator, desktop creator or Arcade server, run
-`./kotlin build -m webPlayer` to prepare the player they ship. Repeat after changing the player or its dependencies.
+`./kotlin build -m webPlayer -v release` to prepare the player they ship. Repeat after changing the player or its dependencies.
 
 | Target | Command |
 |---|---|

@@ -102,7 +102,7 @@ Gradle exceptions are in [Kotlin Toolchain](docs/kotlin-toolchain.md).
 | Packages | `./kotlin build -m androidApp` (APK) · `./kotlin package -m androidApp` (AAB) · `package -m desktopApp` / `-m server` (JAR) |
 | Project model | `./kotlin show modules` · `./kotlin show settings -m <module>` |
 
-Build `./kotlin build -m webPlayer` before the Android/desktop creator or server builds and JVM tests on a clean
+Build `./kotlin build -m webPlayer -v release` before the Android/desktop creator or server builds and JVM tests on a clean
 checkout. Repeat after changing the player or its dependencies. The Gradle aggregates run this step automatically.
 
 Never run `./kotlin update` without a reviewed PR. Do not run `kotlin test -p wasmJs` where an ancestor directory

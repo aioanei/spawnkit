@@ -65,9 +65,15 @@ internal class WebPlayerBundle(
     }
 }
 
+/**
+ * Largest accepted upload in UTF-8 bytes. Packages are limited in UTF-16 characters, and one character can take up to
+ * three UTF-8 bytes, so every package the builder can produce fits. The decoder still enforces the character limit.
+ */
+internal const val MAX_UPLOAD_BYTES: Int = 3 * GamePackageCodec.MAX_PACKAGE_CHARS
+
 /** Both limits apply to attempts, including invalid bodies. The global window bounds rate-limit state. */
 internal class PublishLimits(
-    val bytes: Int = GamePackageCodec.MAX_PACKAGE_CHARS,
+    val bytes: Int = MAX_UPLOAD_BYTES,
     private val perAddress: Int = 6,
     private val perServer: Int = 60,
     private val clockMillis: () -> Long = { System.nanoTime() / 1_000_000 },
@@ -116,7 +122,13 @@ internal fun Application.arcade(
                                 }
                             val problem = StandardEngine().let { pkg.releaseProblem(it.runtime, it.host) }
                             if (problem != null) throw ArcadeProblem(HttpStatusCode.UnprocessableEntity, problem)
-                            val bytes = GamePackageCodec.encode(pkg).encodeToByteArray()
+                            // Re-encoding adds the current envelope fields, so a package at the limit can outgrow it.
+                            val bytes =
+                                try {
+                                    GamePackageCodec.encode(pkg).encodeToByteArray()
+                                } catch (_: IllegalArgumentException) {
+                                    throw tooLarge(limits.bytes)
+                                }
                             if (bytes.size > limits.bytes) throw tooLarge(limits.bytes)
                             store.publish(pkg.title, bytes)
                         }
