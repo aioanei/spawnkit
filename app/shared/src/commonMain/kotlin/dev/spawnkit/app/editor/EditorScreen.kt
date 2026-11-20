@@ -87,7 +87,7 @@ private fun CompactLayout(state: EditorState) {
     var expanded by remember { mutableStateOf(true) }
     Column(Modifier.fillMaxSize()) {
         Toolbar(state, compact = true)
-        Viewport(state, Modifier.weight(1f).fillMaxWidth())
+        Viewport(state, Modifier.weight(1f).fillMaxWidth(), touchControls = true)
         StatusBar(state)
         if (state.play == null) {
             Panel(Modifier.fillMaxWidth()) {
@@ -242,7 +242,7 @@ private fun flatten(objects: List<ObjectDoc>): List<Pair<ObjectDoc, Int>> {
 private fun StatusBar(state: EditorState) {
     val text =
         when {
-            state.play != null -> "Playing — press Stop to return to editing. Changes made while playing are not kept."
+            state.play != null -> playStatus(state)
             state.message != null -> "⚠ ${state.message}"
             state.selection != null -> "Drag to move · pinch or scroll to zoom · drag empty space to pan"
             else -> "Tap an object to select it · ${state.scene.objects.size} objects in ${state.scene.name}"
@@ -284,4 +284,11 @@ private fun Panel(
     content: @Composable () -> Unit,
 ) {
     Surface(modifier, color = MaterialTheme.colorScheme.surface, tonalElevation = 1.dp) { content() }
+}
+
+/** Status while playing: a rule problem naming its object, or how to stop. Re-read on every presented frame. */
+private fun playStatus(state: EditorState): String {
+    state.play?.frame
+    return state.playProblem()?.let { "⚠ $it" }
+        ?: "Playing — press Stop to return to editing. Changes made while playing are not kept."
 }

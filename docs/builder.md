@@ -46,6 +46,16 @@ on Android and desktop.
 
   Shortcuts only apply while the scene has focus, so typing in an inspector field never moves or deletes objects.
   Other controls are reachable with Tab, as Compose provides.
+- **Play with rules and input (C4b).** Objects' rules run while playing. The player controls the game with:
+  - the keyboard: arrows or WASD hold left/right/up/down, and Space holds jump;
+  - taps and clicks, converted to world units through the camera so rules can use `tapped()`. A press and release
+    between two ticks still reaches the rules exactly once;
+  - on-screen hold-to-press controls on compact (phone) layouts.
+
+  If a rule stops, the status bar names the object and explains why. Objects whose rules have problems play without
+  them, and the status bar says so.
+
+  ![Playing on a phone](media/builder-play-phone.png)
 - **Play and Stop.** Play builds an isolated world from the scene and steps it at a fixed 60 Hz. Stop returns to
   editing, and the project is never changed by playing.
 
@@ -72,6 +82,11 @@ keeps lines at least 32 px apart. The selection outline is 2.5 dp white, which c
     wheel zooms out.
   - **Inline validation (desktop size):** a negative width and a non-number each show an explanation under the field
     and leave the project unchanged; a valid value clears it and applies.
+  - **`PlayRulesUiTest`** plays projects whose rules were set through editor operations:
+    - holding Right on the keyboard moves the player into a coin, which updates the score label and disappears;
+    - a quick tap on an object is seen by its rules exactly once, and taps elsewhere are not;
+    - at phone size, holding the on-screen Right control collects the coin, and a faulting rule's object and reason
+      appear in the status bar.
   - **Keyboard (desktop size):** arrow and Shift+arrow nudges, Ctrl+D, Delete, Ctrl+Z, Ctrl+Shift+Z, Ctrl+Y,
     Escape to deselect and Escape to stop play.
 - **Android emulator** (API 36, 1080×2400): `assembleDebug`, install, launch, then real `adb input` taps and a swipe
@@ -82,7 +97,7 @@ keeps lines at least 32 px apart. The selection outline is 2.5 dp white, which c
 
 ## Not yet
 
-- Rules and behaviors (C4).
+- Editing rules in the builder (C4c); rules can only be set through operations so far.
 - Saving and opening projects (C5).
 - Release and Arcade (C6).
 - AI Studio (C7).
