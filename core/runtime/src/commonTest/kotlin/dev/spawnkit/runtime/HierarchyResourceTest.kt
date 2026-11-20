@@ -45,6 +45,15 @@ class HierarchyResourceTest {
         assertEquals(emptyList(), world.children(c))
         assertFailsWith<IllegalArgumentException> { world.setParent(a, root, index = 5) }
         assertNull(world.parent(a), "A rejected insertion leaves the object a root")
+        world.setParent(a, c)
+        assertFailsWith<IllegalArgumentException> { world.setParent(a, root, index = 3) }
+        assertEquals(c, world.parent(a), "A rejected move keeps the old parent")
+        assertFailsWith<IllegalArgumentException> { world.setParent(b, root, index = 2) }
+        assertEquals(listOf(b, c), world.children(root), "Same-parent reorder positions exclude the moved child")
+        world.setParent(b, root, index = 1)
+        assertEquals(listOf(c, b), world.children(root))
+        assertFailsWith<IllegalArgumentException> { world.setParent(b, root, index = -7) }
+        assertEquals(listOf(c, b), world.children(root))
     }
 
     @Test

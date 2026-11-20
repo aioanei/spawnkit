@@ -14,6 +14,7 @@ schedule. Spatial transform inheritance is R3 presentation work built on top of 
 | `setParent(child, parent, index = -1)` | Appends, or inserts at `index`. Reparenting under the same parent reorders. `parent = null` makes a root. |
 | `parent(e)`, `children(e)` | The parent, or `null`; the children in authored order. |
 | Invalid edits | Self-parenting, cycles, a position out of range, and stale or foreign handles are rejected with no change. |
+| Positions | `index` counts positions after the moved child has been removed, so reordering `[a, b, c]` under the same parent accepts `0..2`. `-1` appends; other negative values are rejected. |
 | `destroy(e)` | Detaches `e`; its children become roots in their existing order. A reused slot starts without hierarchy. |
 | `destroyTree(e)` | Destroys descendants depth-first in child order, then `e`. |
 | `WorldCommands.setParent` / `destroyTree` | Deferred to commit. The command is skipped if the child, parent or target was destroyed earlier in the same batch. A cycle introduced only by command ordering fails at commit like any other native command error. |
@@ -24,7 +25,7 @@ schedule. Spatial transform inheritance is R3 presentation work built on top of 
 
 `RuntimeBuilder.resource(id, authoring, checkpoint, create)` registers a typed per-world singleton, such as settings,
 score tables or random generators. Each world calls `create` once, so worlds never share values.
-`World.resource(type)` returns the world's value and rejects another runtime's resource type. Snapshots require a
+`World.resource(type)` returns the world's value and rejects another runtime's resource type. Codecs and checkpoint hooks must not read or change resources; checkpoint contexts do not expose the world. Snapshots require a
 codec for every registered resource and fail explicitly otherwise, so resource state is never silently dropped.
 
 ## SeededRandom

@@ -114,6 +114,7 @@ public class World internal constructor(
     ) {
         requireStructuralEdit()
         requireEntity(child)
+        require(index >= -1) { "Child position $index is invalid; use -1 to append" }
         if (parent != null) {
             requireEntity(parent)
             var cursor = parent.index
@@ -122,12 +123,16 @@ public class World internal constructor(
                 cursor = slots[cursor].parent
             }
         }
+        if (parent != null && index >= 0) {
+            // Validate before detaching, so a rejected edit changes nothing.
+            val existing = slots[parent.index].children?.size ?: 0
+            val available = if (slots[child.index].parent == parent.index) existing - 1 else existing
+            require(index <= available) { "Child position $index is outside 0..$available" }
+        }
         detach(child.index)
         if (parent == null) return
         val siblings = slots[parent.index].children ?: mutableListOf<Int>().also { slots[parent.index].children = it }
-        val position = if (index < 0) siblings.size else index
-        require(position <= siblings.size) { "Child position $index is outside 0..${siblings.size}" }
-        siblings.add(position, child.index)
+        siblings.add(if (index < 0) siblings.size else index, child.index)
         slots[child.index].parent = parent.index
     }
 
