@@ -101,7 +101,7 @@ Build one executable programming foundation and an early guided creation loop to
 
 - [ ] Typed program representation, user state/records/collections, functions/parameters/returns, conditions, iteration, events, timers and engine calls.
 - [ ] Type checking/preparation, execution budgets, continuation state and source-to-runtime diagnostics; failures cannot hang the host.
-- [ ] An actual workspace object model and editor transactions for entity/component/property/behavior edits, with preconditions, undo/redo and rollback.
+- [ ] An actual workspace object model and editor transactions for entity/component/property/behavior edits, with preconditions, undo/redo and rollback. Progress: C2 / [issue #46](https://github.com/aioanei/spawnkit/issues/46) adds the workspace model, typed validated operations, batches, undo/redo and isolated scene worlds ([editing](../editing.md)); behavior edits arrive with C4.
 - [ ] A small Compose hierarchy/inspector and event/function editing surface using those operations. Play instantiates a separate world; step/inspect/stop is functional.
 - [ ] Functional blank project, drag-and-drop object placement, visible selection, friendly behavior forms with defaults and visual When / If / Do rule controls. No mandatory template, code, expression string, technical ID or AI key.
 - [ ] Complete the loop: place an object → add/edit a behavior → assemble/change a rule → Play → inspect the result → Stop → undo. For example, visually create a Score counter and a contact rule that increases it and removes an object.
