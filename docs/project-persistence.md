@@ -14,6 +14,9 @@ Open **Project** in the toolbar on either a phone or desktop:
 - **Save a copy…** chooses another location and writes a portable project file.
 - **Rename game…** changes the game name as one undoable editor operation.
 
+On narrow phones, **☰** opens Project and **⋯** opens the selected object's Duplicate/Delete actions. Both controls
+have accessible descriptions. Some Android document providers append `.json` to `.spawnkit`; either name opens.
+
 New and Open ask before replacing unsaved changes. Save and continue, Discard changes, and Cancel are explicit.
 Cancelling a picker, opening a bad file, and a failed write keep the current project and its undo history. Opening a
 valid file starts a new undo history. Play uses an isolated world and never writes play state into the project.
@@ -94,6 +97,19 @@ files, runtime-handle rejection, stable IDs after undo/restart, write failure, f
 Phone and desktop layouts save, reopen and play a score rule; cancellation, bad files, write failures, missing
 capabilities, restart recovery, and undo/redo autosaves are exercised. This does not claim automated desktop OS-dialog
 interaction.
+
+The Android API 36 emulator ran the native document flow with real `adb` taps: save the tap-built Score + collect
+game, start blank, reopen the file and collect to **Score: 1**. Add Circle, wait for autosave, force-stop the process,
+relaunch and restore all four authored objects. `tools/android-projects-smoke.py` follows
+`tools/android-rules-smoke.py`; its optional `--resume-after-save` resumes the documented saved/blank stage after an
+interrupted harness run. UI-tree readiness and visible text take precedence over ambiguous accessibility descriptions.
+
+| Android file picker | Reopened game playing | Recovery after process restart |
+|---|---|---|
+| ![Picker](media/android-project-picker.png) | ![Score after reopen](media/android-project-reopened-play.png) | ![Recovery](media/android-project-recovery.png) |
+
+[Saved file](media/android-project-saved.png) · [Restored workspace](media/android-project-restored.png) ·
+[Desktop menu](media/project-menu-desktop.png) · [360 dp / 130% text](media/project-toolbar-compact.png)
 
 Per-resource directories, assets, dependency locks, legacy import, cloud sync and extension migrations remain in R5.
 The full novice usability gate and physical-device checks remain separate acceptance evidence.

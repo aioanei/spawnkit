@@ -12,8 +12,13 @@
   `spotlessApply`, then separately `spotlessCheck allJvmAndWebTests localNativeTests` plus Android APK, desktop and
   JS/Wasm app compilation (`BUILD SUCCESSFUL`, 615 tasks, 2m 11s). The cross-target gate caught negative zero being
   normalized on JS; the codec now retains its explicit token. Phone QA caught a squeezed Play label; the compact
-  toolbar now has an object-actions menu and a 360 dp / 130% text regression test. Android native-picker/restart
-  smoke evidence and remote CI are being completed. See [persistence](docs/project-persistence.md).
+  toolbar now has an object-actions menu and a 360 dp / 130% text regression test.
+- **Android evidence.** The API 36 emulator saved through the system document picker, started a blank game, reopened
+  the saved file and played its rules to "Score: 1". After adding Circle and force-stopping the process, Restore draft
+  brought back all four authored objects. Captures are in `docs/media`. The smoke harness now waits for populated
+  accessibility trees and prefers visible Scene-tab text over the viewport's matching description.
+- **PR.** [#57](https://github.com/aioanei/spawnkit/pull/57); Linux/iOS CI checks are the authority for remote status.
+  See [persistence](docs/project-persistence.md) for the workflow, test evidence and explicit platform limitations.
 - **Stop point.** The owner requested stopping after this C5 PR is finished. C6 (Release and Arcade) remains planned;
   do not start it during this task. The preserved player-shell checkpoint remains separate.
 

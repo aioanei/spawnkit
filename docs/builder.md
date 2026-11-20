@@ -16,6 +16,7 @@ on Android and desktop.
   game. Android and desktop use native file pickers. Changes autosave locally; startup offers to restore the draft,
   including a previous valid draft when the latest one is damaged. New/Open confirm before replacing unsaved work.
   Cancellation and failed opens/writes keep the current game. See [project files and recovery](project-persistence.md).
+  On phones, **☰** opens Project; **⋯** holds Duplicate/Delete so Play stays readable with larger text.
 - **Add objects** from a palette (Box, Circle, Platform, Player, Camera). Each preset is built only from general
   engine components; nothing is hardcoded for a genre. The builder runs the same `StandardEngine` as exported
   players ([gameplay](gameplay.md)), so Text, Tag and Number components can be added from the inspector.

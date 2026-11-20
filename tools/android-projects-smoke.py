@@ -2,6 +2,7 @@
 
 Uses the real Android document picker to save, start blank, reopen and play; then force-stops the app and restores
 an autosaved edit. Usage: python -u tools/android-projects-smoke.py <capture-directory>.
+Pass --resume-after-save only when an interrupted run already saved the sample and started a blank game.
 """
 import os
 import subprocess
@@ -26,10 +27,13 @@ def nodes():
 
 
 def find(label, exact=True):
-    for node in nodes():
-        values = [node.get("text", ""), node.get("content-desc", "")]
-        if any(value == label if exact else label in value for value in values):
-            return node
+    snapshot = nodes()
+    # The viewport is described as "Scene" too; prefer the visible tab text over a fallback description.
+    for attribute in ["text", "content-desc"]:
+        for node in snapshot:
+            value = node.get(attribute, "")
+            if value == label if exact else label in value:
+                return node
     return None
 
 
@@ -64,26 +68,27 @@ def menu(label):
     tap(label, exact=False)
 
 
-tap("Stop", exact=False)
-menu("Save")
-time.sleep(2)
-capture("android-project-picker.png")
-# The system provider chooses its default writable folder. The name comes from the workspace.
-tap("SAVE", exact=False)
-time.sleep(2)
-capture("android-project-saved.png")
-menu("New game")
+if "--resume-after-save" not in sys.argv[2:]:
+    tap("Stop", exact=False)
+    menu("Save")
+    time.sleep(2)
+    capture("android-project-picker.png")
+    # The system provider chooses its default writable folder. The name comes from the workspace.
+    tap("SAVE", exact=False)
+    time.sleep(2)
+    capture("android-project-saved.png")
+    menu("New game")
 tap("Scene", exact=True)
-assert find("Your scene is empty", exact=False) is not None
+assert wait_for("Your scene is empty", exact=False) is not None
 menu("Open project file")
 time.sleep(2)
 capture("android-project-open-picker.png")
 tap("My game.spawnkit", exact=False)
 time.sleep(2)
 tap("Scene", exact=True)
-assert find("Coin") is not None and find("Score") is not None and find("Player") is not None
+assert all(wait_for(label) is not None for label in ["Coin", "Score", "Player"])
 tap("Play", exact=False)
-right = find("Right")
+right = wait_for("Right")
 assert right is not None
 x1, y1, x2, y2 = map(int, right.get("bounds").replace("][", ",").strip("[]").split(","))
 x, y = str((x1 + x2) // 2), str((y1 + y2) // 2)
@@ -101,6 +106,6 @@ assert wait_for("Restore draft") is not None
 capture("android-project-recovery.png")
 tap("Restore draft")
 tap("Scene", exact=True)
-assert all(find(label) is not None for label in ["Coin", "Score", "Player", "Circle"])
+assert all(wait_for(label) is not None for label in ["Coin", "Score", "Player", "Circle"])
 capture("android-project-restored.png")
 print("PASS: document save/open, reopened rules, process-restart recovery", flush=True)
