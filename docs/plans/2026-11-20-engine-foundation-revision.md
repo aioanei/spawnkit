@@ -86,7 +86,7 @@ Exit: a game can create and execute arbitrary registered component/behavior asse
 ### R3 — general 2D presentation and collision facilities
 
 - [ ] Extract existing viewport, camera, input cancellation, fixed-step presentation and interpolation into generic runtime observations.
-- [ ] Explicit camera selection; transforms; drawable/sprite and layer APIs; assets/font/animation resources; game-UI property/event binding.
+- [ ] Explicit camera selection; transforms; drawable/sprite and layer APIs; assets/font/animation resources; game-UI property/event binding. Progress: C1 / [issue #44](https://github.com/aioanei/spawnkit/issues/44) adds transforms, shape/sprite drawables, layers, camera selection, render lists and a shared Compose renderer ([2D graphics](../graphics-2d.md)); assets, fonts, animation and game UI remain.
 - [ ] General collision shapes, filtering, overlap/raycast/contact APIs and configurable kinematic motion. Preserve existing collision algorithms where applicable.
 - [ ] Document the initial axis-aligned physics capability and extension seam for advanced physics. Keep demo-specific controller and rendering semantics outside these APIs.
 - [ ] Clear unit/coordinate contracts; preserve existing demo scale through its adapter.

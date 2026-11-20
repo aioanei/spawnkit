@@ -1,5 +1,21 @@
 # SpawnKit progress
 
+## Current checkpoint — C1 2D presentation (2026-11-20)
+
+- **Vision reconciliation done.** PR #43 merged after an independent review, with its fixes applied before merge.
+  Issue #42 is closed.
+- **Branch and issue.** Branch `feat/44-graphics2d`; [issue #44](https://github.com/aioanei/spawnkit/issues/44).
+- **Added.**
+  - New module `core/graphics`: Transform2D/Shape2D/Sprite2D/Camera2D with descriptors and codecs; Affine2D;
+    render lists in layer and scene order; hit testing; view transforms.
+  - `ValueKind.Color`.
+  - `render/RuntimeCanvas`: a shared Compose renderer with a JVM Skia pixel test and screenshot
+    `docs/media/runtime-canvas.png`.
+- **Verified locally.** The renderer compiles for Android, JS and Wasm. Docs: [2D graphics](docs/graphics-2d.md).
+- **Next step.** Gates, PR, review, merge. Then C2: `core/editing`, with the workspace (project, scenes, objects
+  from component descriptors and seeds, rules as programs), typed operations, undo/redo and play-world
+  instantiation. Then C3, the responsive builder on Android and desktop.
+
 ## Current checkpoint — product vision reconciliation and contest track (2026-11-20)
 
 - **Merged before this work.** PR #41 (R2f scene templates) merged as `cfa16a3`, after green CI and an independent

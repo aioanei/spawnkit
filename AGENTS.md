@@ -58,12 +58,13 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
 | `core/engine` | KMP, all targets | preserved tested platformer runtime and compatibility regression baseline |
 | `core/runtime` | KMP, all targets | provisional headless world/component/scheduler and explicit checkpoint/replay APIs; no legacy model dependency |
 | `core/program` | KMP, all targets | portable program executor: typed programs, type checking, resumable bytecode VM, atomic segments, checkpointed waits |
+| `core/graphics` | KMP, all targets | general 2D presentation: transform, shape, sprite and camera components with descriptors; render lists, hit testing, view transforms |
 | `samples/runtimeProbe` | KMP, all targets | separately compiled public-API consumer and cross-target extension evidence |
 | `benchmarks/runtimeStorage` | KMP executable (jvm, js, wasmJs, mingwX64, linuxX64) | unshipped runtime storage benchmark harness; public `World` API only |
 | `core/validation` | KMP, all targets | integrity checks, reachability solver, playtest, economy check |
 | `core/editing` | KMP, all targets | planned real workspace operations, undo/redo, transactions and changesets |
 | `core/api` | KMP, all targets | client/server DTOs |
-| `render` | KMP + Compose | `GameView`: Canvas renderer, camera, input, HUD |
+| `render` | KMP + Compose | shared `RuntimeCanvas` for general-runtime frames (editor and players); legacy platformer `GameView` |
 | `ai` | KMP | planned Koog engine/editor capability tools, media providers, record/replay executors |
 | `app/shared` + `app/*App` | KMP + Compose | creator app (editor, AI Studio, arcade) and platform entry points |
 | `player/shared` + `player/*App` | KMP + Compose | exported-game shells (single game / arcade gallery) |
