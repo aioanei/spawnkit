@@ -8,12 +8,13 @@ public const val FIXED_DELTA_SECONDS: Double = 1.0 / 60.0
  * Structural changes are immediate outside a tick and deferred through [WorldCommands] during a tick.
  * Each world is confined to one caller thread; neither mutable components nor native systems are sandboxed.
  *
- * This initial evidence implementation has no snapshots, persistence, physics or portable program executor.
+ * Checkpoints require explicit native state contracts; persistence, physics and portable program execution are separate.
  * Native systems are trusted: a failure faults the world and discards pending commands, but does not roll back
  * component writes or structural commands already committed. Inspect a faulted world; create a fresh one to run again.
  */
 public class World internal constructor(
     private val registry: Any,
+    private val registeredComponents: List<ComponentType<*>>,
     private val systems: List<Pair<String, WorldSystem>>,
 ) {
     private val owner = Any()
@@ -38,6 +39,8 @@ public class World internal constructor(
     /** Registered ID responsible for a failed update/command, or `null` when this world has not faulted. */
     public var failedSystem: String? = null
         private set
+
+    internal val checkpointIdentity: Any get() = owner
 
     /** Creates an empty entity, reusing free slots in deterministic last-freed-first order. */
     public fun spawn(): EntityHandle {
@@ -75,7 +78,7 @@ public class World internal constructor(
         component: ComponentType<T>,
         value: T,
     ) {
-        check(!isFaulted) { "World is faulted" }
+        check(!isFaulted && stage != Stage.Capturing && stage != Stage.Restoring) { "World is faulted or checkpointing" }
         requireEntity(entity)
         requireComponent(component)
         val existing = stores[component]
@@ -136,6 +139,91 @@ public class World internal constructor(
         }
     }
 
+    /**
+     * Captures at a healthy idle tick boundary. Every attached component needs a codec and every installed system
+     * must implement [CheckpointSystem]. Pure capture failures leave engine-owned source state unchanged.
+     */
+    public fun snapshot(limits: SnapshotLimits = SnapshotLimits()): WorldSnapshot {
+        check(stage == Stage.Idle && !isFaulted) { "Snapshots require a healthy idle world" }
+        val populated = stores.filterValues { it.isNotEmpty() }.entries.sortedBy { it.key.id }
+        populated.forEach { check(it.key.supportsCheckpoint) { "Component '${it.key.id}' has no checkpoint codec" } }
+        systems.forEach { (id, system) -> check(system is CheckpointSystem) { "System '$id' has no checkpoint contract" } }
+        val context = StateCaptureContext(this)
+        val freezer = StateFreezer(owner, limits)
+        stage = Stage.Capturing
+        try {
+            val capturedComponents =
+                populated.map { (component, values) ->
+                    CapturedComponent(
+                        component,
+                        values.entries.sortedBy { it.key }.map { (index, value) ->
+                            index to freezer.copy(component.capture(value, context))
+                        },
+                    )
+                }
+            val capturedSystems =
+                systems.map { (id, system) ->
+                    id to freezer.copy((system as CheckpointSystem).captureState(context))
+                }
+            return WorldSnapshot(
+                CapturedWorld(
+                    registry,
+                    owner,
+                    tick,
+                    slots.map { CapturedSlot(it.generation, it.alive) },
+                    freeSlots.toList(),
+                    registeredComponents.map { it.id },
+                    capturedComponents,
+                    capturedSystems,
+                ),
+            )
+        } finally {
+            context.close()
+            stage = Stage.Idle
+        }
+    }
+
+    /** Captures and hashes the complete declared checkpoint state; unsupported native state is never omitted. */
+    public fun stateHash(): Long = snapshot().stateHash()
+
+    internal fun restoreSnapshot(state: CapturedWorld) {
+        check(stage == Stage.Idle && slots.isEmpty()) { "Restore requires a fresh world" }
+        val context = StateRestoreContext(this, state.origin)
+        stage = Stage.Restoring
+        try {
+            tick = state.tick
+            slots += state.slots.map { Slot(it.generation, it.alive) }
+            freeSlots += state.freeSlots
+            entityCount = slots.count { it.alive }
+            for ((component, entries) in state.components) {
+                stores[component] =
+                    entries
+                        .associate { (index, value) ->
+                            index to component.restore(copyCapturedState(value), context)
+                        }.toMutableMap()
+            }
+            for ((index, captured) in state.systems.withIndex()) {
+                val (id, system) = systems[index]
+                check(id == captured.first && system is CheckpointSystem) { "System '$id' has no matching checkpoint contract" }
+                system.restoreState(copyCapturedState(captured.second), context)
+            }
+        } finally {
+            context.close()
+            stage = Stage.Idle
+        }
+    }
+
+    internal fun requireOwnedReference(entity: EntityHandle) {
+        require(entity.owner === owner && entity.index in slots.indices && entity.generation in 0..slots[entity.index].generation) {
+            "Foreign or invalid entity reference"
+        }
+    }
+
+    internal fun restoredReference(
+        index: Int,
+        generation: Long,
+    ): EntityHandle = EntityHandle(owner, index, generation).also(::requireOwnedReference)
+
     internal fun requireEntity(entity: EntityHandle) {
         require(isAlive(entity)) { "Stale or foreign entity handle: $entity" }
     }
@@ -146,7 +234,7 @@ public class World internal constructor(
 
     private fun requireStructuralEdit() {
         check(!isFaulted) { "World is faulted" }
-        check(stage != Stage.Updating) { "Use WorldCommands for structural edits during a system update" }
+        check(stage == Stage.Idle || stage == Stage.Committing) { "Use WorldCommands during updates; checkpoint state is read-only" }
     }
 
     private fun handle(index: Int): EntityHandle = EntityHandle(owner, index, slots[index].generation)
@@ -156,5 +244,5 @@ public class World internal constructor(
         var alive: Boolean = true,
     )
 
-    private enum class Stage { Idle, Updating, Committing }
+    private enum class Stage { Idle, Updating, Committing, Capturing, Restoring }
 }

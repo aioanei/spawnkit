@@ -28,15 +28,19 @@ public class RuntimeBuilder {
     private val systems = mutableMapOf<String, SystemRegistration>()
     private var built = false
 
-    /** Registers an open Kotlin component type; duplicate IDs and registration after build are rejected. */
+    /**
+     * Registers an open Kotlin component type; duplicate IDs and registration after build are rejected.
+     * [checkpoint] is optional for ordinary execution but required when an attached value is captured.
+     */
     public fun <T : Any> component(
         id: String,
         authoring: AuthoringInfo,
+        checkpoint: StateCodec<T>? = null,
     ): ComponentType<T> {
         check(!built) { "Runtime registration has closed" }
         requireCapabilityId(id)
         require(id !in components) { "Duplicate component '$id'" }
-        return ComponentType<T>(id, authoring, registry).also { components[id] = it }
+        return ComponentType<T>(id, authoring, registry, checkpoint).also { components[id] = it }
     }
 
     /**
@@ -61,20 +65,30 @@ public class RuntimeBuilder {
         check(!built) { "Runtime registration has closed" }
         val schedule = orderSystems(systems.values.toList())
         built = true
-        return Runtime(registry, schedule)
+        return Runtime(registry, components.values.sortedBy { it.id }, schedule)
     }
 }
 
 /** An immutable set of installed runtime capabilities that can instantiate independent headless worlds. */
 public class Runtime internal constructor(
     private val registry: Any,
+    private val components: List<ComponentType<*>>,
     private val schedule: List<SystemRegistration>,
 ) {
     /** Effective fixed-tick system order; returned as a copy so callers cannot mutate the installed schedule. */
     public val systemOrder: List<String> get() = schedule.map { it.id }
 
     /** Constructs an empty world and fresh system instances. Component instances are supplied through [World.set]. */
-    public fun createWorld(): World = World(registry, schedule.map { it.id to it.create() })
+    public fun createWorld(): World = World(registry, components, schedule.map { it.id to it.create() })
+
+    /**
+     * Restores into fresh world/system instances from this runtime's checkpoint. Repeated restores are independent;
+     * failure publishes no world and does not consume the checkpoint. Native callbacks must obey their state contracts.
+     */
+    public fun restore(snapshot: WorldSnapshot): World {
+        require(snapshot.state.registry === registry) { "Snapshot belongs to another runtime" }
+        return createWorld().also { it.restoreSnapshot(snapshot.state) }
+    }
 }
 
 internal data class SystemRegistration(
