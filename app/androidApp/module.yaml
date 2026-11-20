@@ -21,3 +21,6 @@ settings:
     resourcePackaging:
       excludes:
         - "/META-INF/{AL2.0,LGPL2.1}"
+
+plugins:
+  web-player-bundle: enabled
