@@ -304,7 +304,7 @@ private class Frame(
 /** One atomic execution segment: runs until the handler ends, waits or faults, then commits or discards. */
 private class Segment(
     private val feature: ProgramFeature,
-    private val world: World,
+    override val world: World,
     private val commands: WorldCommands,
     private val selfEntity: EntityHandle,
     private val instance: ProgramInstance,
