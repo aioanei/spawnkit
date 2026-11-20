@@ -221,6 +221,9 @@ private class ProgramCompiler(
             if (!conforms(field.initial, field.initial.type)) {
                 error(field.source, "State field '${field.name}' starts with list items of the wrong type")
             }
+            if (longestText(field.initial) > host.limits.maxTextLength) {
+                error(field.source, "State field '${field.name}' starts with text longer than ${host.limits.maxTextLength} characters")
+            }
         }
         program.functions.forEachIndexed { index, function ->
             if (function.name in functionIndex) error(function.source, "Function '${function.name}' is declared twice")
@@ -511,6 +514,11 @@ private class ProgramCompiler(
             is Expr.Literal -> {
                 if (containsEntity(expr.value)) error(src, "Object constants are not allowed; use a query or Self")
                 if (!conforms(expr.value, expr.value.type)) error(src, "This list contains items of the wrong type")
+                if (longestText(expr.value) >
+                    host.limits.maxTextLength
+                ) {
+                    error(src, "This text is longer than ${host.limits.maxTextLength} characters")
+                }
                 unit.emit(Op.Push(expr.value), src)
                 expr.value.type
             }
@@ -825,4 +833,12 @@ private fun signature(program: Program): String =
             append("f:").append(function.name).append('(')
             append(function.parameters.joinToString(",") { "${it.name}:${it.type}" }).append("):").append(function.returns).append(';')
         }
+    }
+
+/** Length of the longest text anywhere in [value]. */
+internal fun longestText(value: ProgramValue): Int =
+    when (value) {
+        is TextValue -> value.value.length
+        is ListValue -> value.items.maxOfOrNull(::longestText) ?: 0
+        else -> 0
     }

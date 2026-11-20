@@ -282,3 +282,27 @@ class ProgramHardeningTest {
         assertTrue(found.any { it.message.contains("nested too deeply") })
     }
 }
+
+class ProgramLimitsPreparationTest {
+    @Test
+    fun overlongTextConstantsAndModerateNestingAreHandledAtPreparation() {
+        val fixture = ProgramFixture()
+        val long = "x".repeat(fixture.host.limits.maxTextLength + 1)
+        val found =
+            assertIs<PrepareResult.Invalid>(
+                prepareProgram(
+                    Program(
+                        "long",
+                        state = listOf(P.field("t", TextValue(long))),
+                        handlers = listOf(P.everyTick(P.eval(P.text(long, id = "block:long")))),
+                    ),
+                    fixture.host,
+                ),
+            ).diagnostics
+        assertEquals(listOf("field:t", "block:long"), found.map { it.source.nodeId })
+        // A 50-term left-nested sum stays within the nesting limit (64 levels, statements and expressions combined).
+        var sum: Expr = P.int(0)
+        repeat(50) { sum = P.op(BinaryOp.Add, sum, P.int(1)) }
+        fixture.prepare(Program("sum", handlers = listOf(P.everyTick(P.eval(sum)))))
+    }
+}

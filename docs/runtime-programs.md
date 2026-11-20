@@ -131,7 +131,7 @@ failure, which faults the world.
 | Events plus effects per segment | 256 |
 | Characters in one text value | 10,000 (text concatenation also counts toward the allocation budget) |
 | Events waiting in one inbox | 256; overflow stops the receiving instance, so event cascades cannot multiply |
-| Rule nesting depth at preparation | 64; deeper trees get a diagnostic instead of overflowing the stack |
+| Rule nesting depth at preparation | 64; deeper trees get a diagnostic instead of overflowing the stack. Text constants longer than the text limit are also rejected |
 
 There is no wall-clock watchdog. Fault kinds:
 
@@ -224,3 +224,10 @@ runs unchanged on JVM, Android host, Node JS, Node Wasm and mingwX64 (30 tests p
 - **Instance lifecycle.** An instance should be created per entity with `ProgramFeature.instantiate`; this is a
   documented contract, not enforced. A faulted instance stays stopped until replaced.
 - **Devices.** Android device and iOS execution are CI and host-test evidence only, not device runs.
+- **Preparation is recursive.** The nesting limit of 64 counts statements and expressions together. It leaves about
+  1.6× headroom on the mingwX64 debug test binary: 100 levels passed and 128 overflowed its stack. Long left-nested
+  sums beyond 64 terms are rejected with a diagnostic. An iterative compiler, or smaller frames, would lift this
+  limit; do that before graph editors generate large expressions.
+- **Event flooding is a deliberate choice.** Another entity can stop a receiver by sending it more than
+  `maxInboxEvents` events in one tick. The outcome is deterministic and explained by the fault. A drop-oldest
+  policy is the alternative if that proves too strict.
