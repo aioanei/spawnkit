@@ -14,16 +14,28 @@ Plan/status: [PLANS.md](PLANS.md), [PROGRESS.md](PROGRESS.md).
 
 ## Current direction and implementation checkpoint
 
-The owner confirmed engine ownership and guided creation for non-programmers, removed time pressure as an
-architectural constraint, then authorized merging plan PR #20 and starting implementation. R0 reconciliation is
-complete. R1a / issue #21 and R1b / issue #23 are merged. R1c / issue #26 (storage decision) and R1d / issue #28 ([portable program executor](docs/runtime-programs.md)) are
-merged, so R1 is complete. R2a ([descriptors](docs/runtime-descriptors.md)) and R2b ([hierarchy, resources and random](docs/runtime-hierarchy.md)) are
-merged, as is R2c (descriptor-derived program properties). R2d ([deterministic input](docs/runtime-input.md)) and R2e (input functions for rules) are merged.
-Current work is R2f / issue #40: [scene templates and instance identity](docs/runtime-hierarchy.md).
-The architecture reassessment is open for owner review in PR #25 and is not merged autonomously. The visual
-editor remains unfinished. Do not resume old Tasks 11–12 or treat unselected libraries as approved.
-Preserve completed work and player checkpoint `b2bf830` on `feat/6-player-shells`. JSON remains allowed for
-storage/transport; its schema and a closed list of gameplay mechanics cannot define engine capability.
+The owner confirmed SpawnKit owns its engine and that guided creation for non-programmers is required. They
+authorized implementation of the R0–R9 plan, then clarified the product vision on 2026-11-20
+([gap analysis](docs/design/2026-11-20-product-vision-gap-analysis.md),
+[ADR-0007](docs/adr/0007-mobile-builder-and-in-builder-release.md)).
+
+- **Done:** R1 is complete: runtime, checkpoints, storage and the [portable program executor](docs/runtime-programs.md).
+  R2a–R2f are merged: [descriptors](docs/runtime-descriptors.md), [hierarchy, resources, random and scene
+  templates](docs/runtime-hierarchy.md), [deterministic input](docs/runtime-input.md), and descriptor and input
+  bindings for programs.
+- **Now:** the [contest delivery track](docs/plans/2026-11-20-engine-foundation-revision.md#contest-delivery-track),
+  C1–C8, from C1 (2D presentation) onward.
+- **Open for owner review:** PR #25 (architecture reassessment). It is not merged autonomously.
+- **Preserve:** completed work and player checkpoint `b2bf830` on `feat/6-player-shells`.
+- **Do not:** resume old Tasks 11–12, or treat unselected libraries as approved. JSON remains allowed for
+  storage and transport, but its schema and a closed list of gameplay mechanics cannot define engine capability.
+
+- The builder is first-class on Android and desktop (then iOS and web). Every editor screen needs a compact,
+  touch-first layout as well as an expanded one; a desktop-only layout fails review. A creator must never need a
+  desktop computer.
+- Creators release independent games from the builder (web export and Arcade first, Android export next). They
+  never use Gradle, an IDE or a terminal, and credentials never enter projects, logs or exports.
+
 
 - SpawnKit owns the runtime, gameplay APIs, behavior execution, editor capabilities and extension SDK. Focused
   libraries are allowed; another complete engine cannot become the foundation.
