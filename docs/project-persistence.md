@@ -62,6 +62,27 @@ components and uses defaults for unsupported values; this projection never chang
 unavailable components. Play is blocked with an object-specific explanation until the matching capability is installed
 or the affected setting is corrected. `Project.capabilityProblems(runtime)` supplies the same check to headless callers.
 
+## Game packages for release (C6)
+
+A game package is what a SpawnKit player runs without the creator app, for web export, the Arcade and the Kotlin
+Toolchain release service (issue #64, [Release Manager build architecture](design/2026-11-20-release-manager-kotlin-toolchain.md)).
+`GamePackage.of(project, title, startScene)` validates the release fields, and `GamePackageCodec` encodes them:
+
+```json
+{"format":"spawnkit-game","packageVersion":1,"title":"Coin Run","startScene":"scene-1",
+ "requiredComponents":["gameplay:tag","graphics:shape","graphics:transform"],
+ "project":{"format":"spawnkit-project","schemaVersion":1, "...": "..."}}
+```
+
+- The project is the unchanged project-file document, so decoding reuses all project validation.
+- `requiredComponents` is derived from the project. A package whose list disagrees with its contents is reported as
+  damaged instead of being trusted.
+- Players call `missingComponents(runtime)` before running, and explain which capabilities they lack.
+- Foreign files, newer package versions, unknown start scenes, malformed JSON and oversized input fail with
+  player-facing messages. Parser details are not shown.
+- Evidence: `GamePackageTest` (5 tests) passes on JVM, Android host and mingwX64 (Kotlin Toolchain) and on JS and
+  Wasm (Gradle Node runners).
+
 ## Recovery boundary
 
 `DraftStore` supplies atomic per-key storage. `ProjectJournal` uses three keys:

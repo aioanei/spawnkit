@@ -1,6 +1,23 @@
 # SpawnKit progress
 
-## Current checkpoint — K1 Kotlin Toolchain adoption (2026-11-20)
+## Current checkpoint — C6 started: game package (2026-11-20)
+
+- **Branch.** `feat/64-release-arcade`, stacked on the K1 branch (`chore/58-kotlin-toolchain`, PR #65), because the
+  web player will be a Kotlin Toolchain `wasm-js/app`. [Issue #64](https://github.com/aioanei/spawnkit/issues/64).
+- **Added (C6a).** `GamePackage` and `GamePackageCodec` in `core/editing`: a versioned `spawnkit-game` envelope
+  around the unchanged project document, with a title, a start scene and derived required components. Tampered,
+  foreign, newer, malformed and oversized packages fail with player-facing messages. `missingComponents(runtime)`
+  lets players refuse games they cannot run. Documented in [persistence](docs/project-persistence.md).
+- **Evidence.** `GamePackageTest` (5 tests); `editing` passes 25/25 on JVM, Android host and mingwX64 (Toolchain)
+  and on JS and Wasm (Gradle Node). The new ktlint plugin caught over-long test lines, and `ktlintFormat` fixed them.
+  `spotlessCheck` passes.
+- **Next steps.**
+  - C6b: extract the builder's play session and play view into a shared player library. Add a universal web player
+    (`wasm-js/app`, Toolchain-only module) that loads `game.spawnkit.json` next to its `index.html`.
+  - C6c: Release Manager screen with web export (player bundle plus package) on Android and desktop.
+  - C6d: Ktor Arcade publish/list/get with limits and `/play/{slug}`.
+
+## Previous checkpoint — K1 Kotlin Toolchain adoption (2026-11-20)
 
 - **Decision.** The owner made the Kotlin Toolchain mandatory, for SpawnKit's own build and as the Release Manager's
   build engine. [ADR-0008](docs/adr/0008-kotlin-toolchain.md), [issue #58](https://github.com/aioanei/spawnkit/issues/58),
