@@ -141,13 +141,13 @@ Preserve Level Designer, Character Forge and Game Architect, procedural creation
 
 **Agentic parity ([ADR-0009](../adr/0009-agentic-parity.md)).** Everything a creator can do by hand in the builder is also operable by an agent from a natural-language prompt.
 
-- **Derived tools.** The agent tool surface is generated from the same catalogs as the UI: editing operations, capability descriptors, the rule block catalog and installed extensions. New capabilities therefore become promptable without new agent code. Hand-written tools only compose these into workflows.
+- **Derived tools.** The agent tool surface is generated from the same catalogs as the UI: editing operations, capability descriptors, the rule block catalog and installed extensions. New capabilities therefore become promptable without new agent code. Hand-written tools only compose these into workflows. The operation and rule block catalogs, with their metadata, are built in C7; descriptors already exist.
 - **Rules by prompt.**
-  - Agents create, change, delete, reorder, enable and duplicate When / If / Do rules on one object or many.
+  - Agents perform every rule edit the builder supports by hand (today: add, change and delete rules and blocks), on one object or many. Reordering, duplicating and enabling rules are added for hands and agents together.
   - They prefer friendly blocks the creator can edit by hand, and fall back to labelled advanced rules only when blocks cannot express the request.
   - They explain rules in the creator's terms, and debug them from real headless play traces.
 - **Review.** Every agent edit is a staged, validated changeset shown as the creator's own blocks, objects and properties, with a runnable preview. Accept is one undoable step; reject discards it. Ambiguous prompts get a clarifying question.
-- **Consent.** Outward-facing or irreversible actions (publishing, store builds, deleting scenes) always need the creator's explicit confirmation. Agents never receive credentials.
+- **Consent.** Outward-facing or irreversible actions (publishing, store builds, overwriting or deleting saved project files) always need the creator's explicit confirmation. Agents never receive any credentials, including model API keys.
 - **No UI-only or agent-only paths.** Parity tests enumerate the operation catalog and compare the UI path with the agent tool. Recorded prompt scenarios, replayed without live models, cover rule authoring end to end.
 - **AI optional.** AI remains optional. Every capability stays fully usable by hand.
 

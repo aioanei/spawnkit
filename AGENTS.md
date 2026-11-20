@@ -51,7 +51,8 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
   all, is also operable by an AI agent from a prompt.
   - It goes through the same typed operation, as a staged and validated changeset the creator accepts or rejects.
   - Agent tools are derived from the operation, descriptor and rule block catalogs.
-  - Outward-facing actions need explicit confirmation, and agents never see credentials. AI stays optional.
+  - Outward-facing actions need explicit confirmation. Agents never receive any credentials, including model API
+    keys, through tool inputs or outputs. AI stays optional.
 - Basic/advanced tools, agents and extensions share one executable model. Metadata must generate usable property
   controls/behavior forms for installed capabilities; custom inspectors are optional enhancements.
 - Contextual help, previews, undo/redo, autosave/recovery, explainable errors, keyboard access and scalable text
@@ -147,11 +148,11 @@ unavailable on most machines. Use the aggregates above.
   for breaking changes.
 - UI, agents and plugins use actual typed editor operations and real-engine inspection/validation. Specs may be
   tool inputs, but do not limit agents to generating document JSON or predefined game configurations.
-- Never add a UI-only or agent-only editing path. A new operation, component property, rule block or extension
-  capability needs complete catalog metadata (name, help, parameters, constraints, examples). That metadata generates
-  both its controls and its agent tool. Add a parity test that applies it through the UI path and through the agent
-  tool.
   Stage AI edits and commit only a user-accepted changeset against the expected workspace revision.
+- Never add a UI-only or agent-only editing path (ADR-0009). A new operation, component property, rule block or
+  extension capability needs complete catalog metadata (name, help, parameters, constraints, examples). That metadata
+  generates both its controls and, from C7/R7 on, its agent tool. From C7/R7 on, add a parity test that applies it
+  through the UI path and through the agent tool. Before C7, record the missing agent coverage in the issue.
 - Tests use `kotlin.test` in `commonTest` unless a platform API is under test. No live LLM/image API calls in tests;
   use the replaying executor and recorded fixtures.
 
