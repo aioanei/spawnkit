@@ -22,7 +22,10 @@ All changes go through typed `EditOperation`s, validated against the installed d
 - scenes: `AddScene` and `RenameScene`;
 - `Batch`: atomic, with one undo step and a label.
 
-A rejection returns a plain-language message and changes nothing. Values are coerced by the value kind; for example,
+A rejection returns a plain-language message and changes nothing. IDs are minted above every ID the project or the
+editor session has used, so neither undo nor an imported project with a stale counter can cause an ID to be reused.
+`Project.problems()` reports duplicate IDs, missing parents and cycles; the editor refuses to open such a project.
+Re-applying an identical value creates no undo step. Values are coerced by the value kind; for example,
 an integer typed into a decimal field is accepted. Object-reference properties are not authorable yet.
 
 ## Editor

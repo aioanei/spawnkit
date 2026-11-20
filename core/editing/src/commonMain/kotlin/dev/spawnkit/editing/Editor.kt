@@ -23,9 +23,10 @@ public class Editor(
     private val undoStack = ArrayDeque<Pair<Project, String>>()
     private val redoStack = ArrayDeque<Pair<Project, String>>()
     private val listeners = mutableListOf<(Project) -> Unit>()
+    private var idFloor = 1L
 
     /** The current project. */
-    public var project: Project = initial
+    public var project: Project = initial.also(::requireUsable)
         private set
 
     /** Incremented on every change, including undo and redo. */
@@ -46,8 +47,9 @@ public class Editor(
 
     /** Validates and applies [operation] as one undoable step. A rejection changes nothing. */
     public fun apply(operation: EditOperation): OperationResult {
-        val (next, result) = applier.apply(project, operation)
-        if (result is OperationResult.Applied && next != project) {
+        val (next, result) = applier.apply(project, operation, idFloor)
+        if (result is OperationResult.Applied && next.copy(nextId = project.nextId) != project) {
+            idFloor = maxOf(idFloor, next.nextId)
             undoStack.addLast(project to operation.label)
             if (undoStack.size > historyLimit) undoStack.removeFirst()
             redoStack.clear()
@@ -74,6 +76,7 @@ public class Editor(
 
     /** Replaces the whole project (for example after opening a file) and clears history. */
     public fun load(project: Project) {
+        requireUsable(project)
         undoStack.clear()
         redoStack.clear()
         commit(project)
@@ -159,3 +162,8 @@ private fun <T : Any, V : Any> applyErased(
     component: T,
     authored: Any,
 ): T = property.with(component, property.kind.coerce(authored) ?: return component)
+
+private fun requireUsable(project: Project) {
+    val problems = project.problems()
+    require(problems.isEmpty()) { "This project cannot be opened: ${problems.joinToString("; ")}" }
+}

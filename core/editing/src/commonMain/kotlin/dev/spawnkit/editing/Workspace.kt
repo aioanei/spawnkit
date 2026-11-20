@@ -67,3 +67,38 @@ public data class Project(
         public fun blank(name: String = "My game"): Project = Project(name, listOf(SceneDoc("scene-1", "Main scene")), nextId = 2)
     }
 }
+
+/**
+ * Structural problems that make a project unusable: duplicate scene, object or component IDs, unknown parents and
+ * parent cycles. Empty for every project produced by editor operations; checked when a project is loaded.
+ */
+public fun Project.problems(): List<String> {
+    val problems = mutableListOf<String>()
+    if (scenes.isEmpty()) problems += "The project has no scenes"
+    val sceneIds = scenes.map { it.id }
+    if (sceneIds.toSet().size != sceneIds.size) problems += "Two scenes share an ID"
+    val objectIds = scenes.flatMap { scene -> scene.objects.map { it.id } }
+    if (objectIds.toSet().size != objectIds.size) problems += "Two objects share an ID"
+    for (scene in scenes) {
+        val parents = scene.objects.associate { it.id to it.parent }
+        for (obj in scene.objects) {
+            val components = obj.components.map { it.componentId }
+            if (components.toSet().size != components.size) problems += "${obj.name} has the same component twice"
+            val parent = obj.parent ?: continue
+            if (parent !in parents) {
+                problems += "${obj.name} has a missing parent"
+                continue
+            }
+            var cursor: String? = parent
+            var steps = 0
+            while (cursor != null && steps++ <= parents.size) {
+                if (cursor == obj.id) {
+                    problems += "${obj.name} is inside itself"
+                    break
+                }
+                cursor = parents[cursor]
+            }
+        }
+    }
+    return problems.distinct()
+}

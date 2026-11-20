@@ -154,7 +154,7 @@ class EditorTest {
         val scene = checkNotNull(editor.project.scene(fixture.scene))
         assertEquals("Hero copy", scene.find(copy)?.name)
         assertEquals(copy, scene.find(copiedHat)?.parent)
-        assertEquals(listOf(hero, hat, copy, copiedHat), scene.objects.map { it.id })
+        assertEquals(listOf(hero, copy, copiedHat, hat), scene.objects.map { it.id }, "Copies are placed right after the original")
         assertEquals(
             scene.objects.size,
             scene.objects
@@ -224,6 +224,75 @@ class EditorTest {
                 .map { it.id }
                 .toSet()
                 .size == 2,
+        )
+    }
+
+    @Test
+    fun idsAreNeverReusedAfterUndoOrWithAStaleCounter() {
+        val fixture = Fixture()
+        val editor = fixture.editor
+        val first = fixture.add("First")
+        editor.undo()
+        val second = fixture.add("Second")
+        assertTrue(first != second, "An undone ID is not handed out again")
+        val stale =
+            Project(
+                "Imported",
+                listOf(SceneDoc("scene-1", "Main", listOf(ObjectDoc("obj-7", "Old")))),
+                nextId = 1,
+            )
+        val imported = Editor(fixture.runtime, stale)
+        val added = assertIs<OperationResult.Applied>(imported.apply(EditOperation.AddObject("scene-1", "New"))).createdIds.single()
+        assertEquals("obj-8", added)
+        val scene = assertIs<OperationResult.Applied>(imported.apply(EditOperation.AddScene("Two"))).createdIds.single()
+        assertTrue(scene != "scene-1")
+    }
+
+    @Test
+    fun brokenProjectsAreRejectedOnLoadAndPositionsAreValidated() {
+        val fixture = Fixture()
+        val broken =
+            Project(
+                "Broken",
+                listOf(
+                    SceneDoc(
+                        "scene-1",
+                        "Main",
+                        listOf(ObjectDoc("obj-1", "A", parent = "obj-2"), ObjectDoc("obj-2", "B", parent = "obj-1")),
+                    ),
+                ),
+            )
+        assertTrue(broken.problems().isNotEmpty())
+        kotlin.test.assertFailsWith<IllegalArgumentException> { fixture.editor.load(broken) }
+        kotlin.test.assertFailsWith<IllegalArgumentException> { Editor(fixture.runtime, Project("Empty", emptyList())) }
+        val a = fixture.add("A")
+        val b = fixture.add("B")
+        assertIs<OperationResult.Rejected>(fixture.editor.apply(EditOperation.AddObject(fixture.scene, "Bad", index = -5)))
+        val front =
+            assertIs<OperationResult.Applied>(
+                fixture.editor.apply(EditOperation.AddObject(fixture.scene, "Front", index = 0)),
+            ).createdIds.single()
+        assertEquals(
+            listOf(front, a, b),
+            fixture.editor.project
+                .scene(fixture.scene)
+                ?.objects
+                ?.map { it.id },
+        )
+        assertIs<OperationResult.Applied>(fixture.editor.apply(EditOperation.ReparentObject(fixture.scene, a, b)))
+        assertEquals(
+            b,
+            fixture.editor.project
+                .scene(fixture.scene)
+                ?.find(a)
+                ?.parent,
+        )
+        val revision = fixture.editor.revision
+        fixture.editor.apply(EditOperation.SetProperty(fixture.scene, b, "graphics:transform", "x", 1.0))
+        fixture.editor.apply(EditOperation.SetProperty(fixture.scene, b, "graphics:transform", "x", 1.0))
+        assertEquals(revision + 1, fixture.editor.revision, "Re-setting the same value creates no extra undo step")
+        assertIs<OperationResult.Applied>(
+            fixture.editor.apply(EditOperation.SetProperty(fixture.scene, b, "graphics:shape", "color", 0x112233)),
         )
     }
 }

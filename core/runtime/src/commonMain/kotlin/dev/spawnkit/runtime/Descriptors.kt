@@ -149,7 +149,12 @@ public sealed interface ValueKind<V : Any> {
             world: World?,
         ): String? = if (value < 0L || value > 0xFFFFFFFFL) "Choose a valid color" else null
 
-        override fun coerce(value: Any): Long? = value as? Long
+        override fun coerce(value: Any): Long? =
+            when (value) {
+                is Long -> value
+                is Int -> value.toLong() and 0xFFFFFFFFL
+                else -> null
+            }
     }
 
     /**

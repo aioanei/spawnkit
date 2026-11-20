@@ -122,10 +122,13 @@ internal class OperationApplier(
     fun apply(
         project: Project,
         operation: EditOperation,
+        idFloor: Long = 1,
     ): Pair<Project, OperationResult> =
         try {
             val created = mutableListOf<String>()
-            val result = applyInternal(project, operation, created)
+            // IDs are minted above every ID ever used, so undo or a stale counter can never cause reuse.
+            val minting = project.copy(nextId = maxOf(project.nextId, idFloor, project.maxIdSuffix() + 1))
+            val result = applyInternal(minting, operation, created)
             result to OperationResult.Applied(created.toList())
         } catch (rejection: Rejection) {
             project to OperationResult.Rejected(rejection.message ?: "This change is not possible")
@@ -237,7 +240,8 @@ internal class OperationApplier(
             editScene(project, operation.sceneId) { scene ->
                 operation.parent?.let { requireObject(scene, it) }
                 val obj = ObjectDoc(id, operation.name.trim(), operation.parent, components)
-                if (operation.index < 0) {
+                if (operation.index < -1) reject("Position ${operation.index} is invalid")
+                if (operation.index == -1) {
                     scene.copy(objects = scene.objects + obj)
                 } else {
                     // Insert before the index-th existing sibling, keeping authoring order meaningful.
@@ -265,12 +269,12 @@ internal class OperationApplier(
             originals.map { original ->
                 original.copy(
                     id = mapping.getValue(original.id),
-                    name = if (original.id == operation.objectId) "${original.name} copy" else original.name,
+                    name = if (original.id == operation.objectId) "${original.name} copy".take(MAX_NAME) else original.name,
                     parent = if (original.id == operation.objectId) original.parent else mapping.getValue(checkNotNull(original.parent)),
                 )
             }
         created += copies.map { it.id }
-        val insertAt = scene.objects.indexOfLast { it.id in mapping.keys } + 1
+        val insertAt = scene.objects.indexOfFirst { it.id == operation.objectId } + 1
         val objects = scene.objects.toMutableList().apply { addAll(insertAt, copies) }
         return project.copy(scenes = project.scenes.map { if (it.id == scene.id) scene.copy(objects = objects) else it }, nextId = counter)
     }
@@ -306,7 +310,7 @@ internal class OperationApplier(
 
     private fun requireName(name: String) {
         if (name.isBlank()) reject("Give it a name")
-        if (name.length > 80) reject("Use a name of at most 80 characters")
+        if (name.trim().length > MAX_NAME) reject("Use a name of at most $MAX_NAME characters")
     }
 
     fun descriptor(componentId: String): ComponentDescriptor<*> =
@@ -336,3 +340,11 @@ internal class OperationApplier(
 }
 
 private fun reject(message: String): Nothing = throw Rejection(message)
+
+private const val MAX_NAME = 80
+
+/** Largest numeric suffix among `scene-N` and `obj-N` IDs in the project, or 0. */
+internal fun Project.maxIdSuffix(): Long =
+    (scenes.map { it.id } + scenes.flatMap { scene -> scene.objects.map { it.id } })
+        .mapNotNull { id -> id.substringAfterLast('-').toLongOrNull() }
+        .maxOrNull() ?: 0
