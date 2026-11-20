@@ -35,13 +35,19 @@ public data class Pointer(
  * touches into frames; the runtime never reads devices or wall-clock time, so recorded frames replay exactly.
  */
 public class InputFrame(
-    /** Actions currently held. */
-    public val down: Set<InputAction> = emptySet(),
-    /** Axis values in `[-1, 1]`; absent axes read as 0. */
-    public val axes: Map<InputAxis, Double> = emptyMap(),
-    /** Active pointers. */
-    public val pointers: List<Pointer> = emptyList(),
+    down: Set<InputAction> = emptySet(),
+    axes: Map<InputAxis, Double> = emptyMap(),
+    pointers: List<Pointer> = emptyList(),
 ) {
+    /** Actions currently held; a private copy, so later changes to the caller's set have no effect. */
+    public val down: Set<InputAction> = down.toSet()
+
+    /** Axis values in `[-1, 1]`; absent axes read as 0. A private copy. */
+    public val axes: Map<InputAxis, Double> = axes.toMap()
+
+    /** Active pointers; a private copy. */
+    public val pointers: List<Pointer> = pointers.toList()
+
     internal fun requireValid(registry: Any) {
         down.forEach { require(it.registry === registry) { "Input action '${it.id}' belongs to another runtime" } }
         axes.forEach { (axis, value) ->

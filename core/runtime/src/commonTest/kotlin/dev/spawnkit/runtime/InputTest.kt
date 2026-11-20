@@ -171,6 +171,52 @@ class InputTest {
         assertFalse(world.input.isDown(jump))
     }
 
+    @Test
+    fun submittedFramesAreIsolatedFromLaterCallerChanges() {
+        val fixture = Fixture()
+        val world = fixture.world()
+        val held = mutableSetOf(fixture.jump)
+        val axes = mutableMapOf(fixture.moveX to 0.5)
+        world.submitInput(InputFrame(down = held, axes = axes))
+        held.clear()
+        axes[fixture.moveX] = 5.0
+        world.step()
+        assertTrue(world.input.isDown(fixture.jump))
+        assertEquals(0.5, world.input.axis(fixture.moveX))
+    }
+
+    @Test
+    fun pointerOnlyInputIsCheckpointedWithoutRegisteredActions() {
+        val builder = RuntimeBuilder()
+        val taps = mutableListOf<Int>()
+        builder.system("test:taps") {
+            object : CheckpointSystem {
+                override fun update(
+                    world: World,
+                    commands: WorldCommands,
+                ) {
+                    taps += world.input.pointers.size
+                }
+
+                override fun captureState(context: StateCaptureContext): StateValue = StateValue.Null
+
+                override fun restoreState(
+                    state: StateValue,
+                    context: StateRestoreContext,
+                ) {}
+            }
+        }
+        val runtime = builder.build()
+        val world = runtime.createWorld()
+        val before = world.stateHash()
+        world.submitInput(InputFrame(pointers = listOf(Pointer(1, 3.0, 4.0, true))))
+        assertTrue(before != world.stateHash(), "Pending pointers are part of the checkpoint")
+        val restored = runtime.restore(world.snapshot())
+        restored.step()
+        assertEquals(listOf(Pointer(1, 3.0, 4.0, true)), restored.input.pointers)
+        assertEquals(listOf(1), taps)
+    }
+
     /** Recorded on JVM; every target must reproduce it. */
     private companion object {
         const val GOLDEN_HASH = -8903530279068901628L

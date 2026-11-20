@@ -25,8 +25,8 @@ They submit it with `World.submitInput(frame)` between ticks. The runtime never 
 
 Because systems only see submitted frames, a recorded per-tick frame log replays to the same state hash. Snapshots
 capture the current, previous and pending frames, so a restore taken between ticks continues with correct edges and
-the already-submitted next frame. The hash includes the input section only for runtimes that register actions or
-axes, so existing goldens are unchanged.
+the already-submitted next frame. The input section is captured and hashed when the runtime registers actions or axes, or when any frame holds
+pointers, so existing goldens are unchanged.
 
 ## Evidence
 

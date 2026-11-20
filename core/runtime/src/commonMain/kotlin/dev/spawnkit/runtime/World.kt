@@ -326,7 +326,7 @@ public class World internal constructor(
                     capturedSystems,
                     slots.indices.mapNotNull { index -> slots[index].children?.let { index to it.toList() } },
                     registeredResources.sortedBy { it.id }.map { it.id to freezer.copy(it.capture(resources[it.ordinal], context)) },
-                    if (registeredActions.isEmpty() && registeredAxes.isEmpty()) {
+                    if (registeredActions.isEmpty() && registeredAxes.isEmpty() && !hasPointerInput()) {
                         null
                     } else {
                         CapturedInput(capture(currentInput), capture(previousInput), pendingInput?.let(::capture))
@@ -379,6 +379,9 @@ public class World internal constructor(
             stage = Stage.Idle
         }
     }
+
+    private fun hasPointerInput(): Boolean =
+        currentInput.pointers.isNotEmpty() || previousInput.pointers.isNotEmpty() || pendingInput?.pointers?.isNotEmpty() == true
 
     internal fun restoreInputFrame(frame: CapturedFrame): InputFrame =
         InputFrame(
