@@ -82,13 +82,15 @@ fun Viewport(
                     var dragId: String? = if (hit != null && s.canMove(hit)) hit else null
                     var dragX = 0.0
                     var dragY = 0.0
+                    val previousSelection = s.selection
                     if (hit != null) s.selection = hit
                     while (true) {
                         val event = awaitPointerEvent()
                         val pressed = event.changes.filter { it.pressed }
                         if (pressed.isEmpty()) break
                         if (pressed.size >= 2) {
-                            // Two fingers: pinch-zoom around the centroid and pan; never moves objects.
+                            // Two fingers: pinch-zoom around the centroid and pan; never moves or selects objects.
+                            if (dragId != null || s.selection != previousSelection) s.selection = previousSelection
                             dragId = null
                             s.dragging = null
                             val zoom = event.calculateZoom()

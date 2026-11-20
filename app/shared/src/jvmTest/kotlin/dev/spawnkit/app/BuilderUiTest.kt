@@ -11,8 +11,10 @@ import androidx.compose.ui.test.click
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.pinch
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import androidx.compose.ui.test.swipe
 import dev.spawnkit.app.editor.EditorScreen
@@ -128,6 +130,26 @@ class BuilderUiTest {
             assertEquals(1.0, transform?.get("y"))
             assertEquals(before + 1, state.editor.revision, "A whole drag is one change")
             assertTrue(state.editor.undoLabel?.startsWith("Move") == true)
+            // Two-finger pinch outwards zooms in; the mouse wheel zooms back out.
+            viewport.performTouchInput {
+                pinch(
+                    center - Offset(40f, 0f),
+                    center - Offset(160f, 0f),
+                    center + Offset(40f, 0f),
+                    center + Offset(160f, 0f),
+                    durationMillis = 300,
+                )
+            }
+            waitForIdle()
+            val pinched = state.camera.zoom
+            assertTrue(pinched > 1.5, "Pinch zoomed in (zoom $pinched)")
+            assertEquals(box, state.selection, "Pinching never moves or deselects objects")
+            viewport.performMouseInput {
+                moveTo(center)
+                scroll(3f)
+            }
+            waitForIdle()
+            assertTrue(state.camera.zoom < pinched, "Wheel zoomed out (zoom ${state.camera.zoom})")
             onRoot().screenshot("builder-desktop")
         }
 }
