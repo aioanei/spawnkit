@@ -1,6 +1,15 @@
 # SpawnKit progress
 
-## Current checkpoint — R2d deterministic input (2026-11-20, autonomous overnight session)
+## Current checkpoint — R2e input functions for rules (2026-11-20, autonomous overnight session)
+
+- **R2d is done.** PR #37 merged as `6d6e8fe`. Review fixes: defensive frame copies, and checkpointing of
+  pointer-only input.
+- **Branch and issue.** Branch `feat/38-program-input`; [issue #38](https://github.com/aioanei/spawnkit/issues/38).
+  Adds `ProgramHostBuilder.inputs` (isDown/wasPressed/wasReleased/axis by ID) and `HostCallContext.input`.
+- **Next step.** Gates, PR, review, merge. Then scene-instance identity (authoring IDs mapped to runtime handles),
+  or R3 presentation facilities (transforms, camera, drawables) extracted from the legacy renderer.
+
+## Previous checkpoint — R2d deterministic input (2026-11-20, autonomous overnight session)
 
 - **R2c is done.** PR #35 merged as `4bb8295`. The review found nothing blocking; descriptor bindings now register
   atomically.

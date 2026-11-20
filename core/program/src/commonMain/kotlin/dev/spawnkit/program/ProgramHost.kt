@@ -4,6 +4,9 @@ import dev.spawnkit.runtime.AuthoringInfo
 import dev.spawnkit.runtime.ComponentDescriptor
 import dev.spawnkit.runtime.ComponentType
 import dev.spawnkit.runtime.EntityHandle
+import dev.spawnkit.runtime.InputAction
+import dev.spawnkit.runtime.InputAxis
+import dev.spawnkit.runtime.InputView
 import dev.spawnkit.runtime.PropertyDescriptor
 import dev.spawnkit.runtime.ValueKind
 import dev.spawnkit.runtime.World
@@ -23,6 +26,9 @@ public interface HostCallContext {
 
     /** Current fixed tick. */
     public val tick: Long
+
+    /** Read-only input for the current tick (R2d). */
+    public val input: InputView
 
     /** Reads a registered property, or `null` when the entity is stale or lacks the component. */
     public fun read(
@@ -201,6 +207,43 @@ public class ProgramHostBuilder(
             { value -> property.kind.problem(mapping.fromProgram(value), null) },
         )
     }
+
+    /**
+     * Registers input functions for [actions] and [axes], addressed by their IDs: `isDown`, `wasPressed` and
+     * `wasReleased` return yes/no, and `axis` returns a decimal. An unknown name faults the calling segment.
+     */
+    public fun inputs(
+        actions: List<InputAction>,
+        axes: List<InputAxis> = emptyList(),
+    ): ProgramHostBuilder =
+        apply {
+            val byId = actions.associateBy { it.id }
+            val axesById = axes.associateBy { it.id }
+
+            fun action(call: HostCallContext): InputAction {
+                val name = (call.arguments[0] as TextValue).value
+                return byId[name] ?: throw ProgramHostException("there is no action called '$name'")
+            }
+            val info = AuthoringInfo("Input", "Reads player input", "Input")
+            function("isDown", listOf(TextType), BoolType, info.copy(name = "Is held")) { BoolValue(it.input.isDown(action(it))) }
+            function(
+                "wasPressed",
+                listOf(TextType),
+                BoolType,
+                info.copy(name = "Was pressed"),
+            ) { BoolValue(it.input.wasPressed(action(it))) }
+            function(
+                "wasReleased",
+                listOf(TextType),
+                BoolType,
+                info.copy(name = "Was released"),
+            ) { BoolValue(it.input.wasReleased(action(it))) }
+            function("axis", listOf(TextType), DecimalType, info.copy(name = "Axis value")) { call ->
+                val name = (call.arguments[0] as TextValue).value
+                val axis = axesById[name] ?: throw ProgramHostException("there is no axis called '$name'")
+                DecimalValue(call.input.axis(axis))
+            }
+        }
 
     /** Registers a host function. [implementation] must be deterministic and bounded; throw [ProgramHostException] to fail. */
     public fun function(

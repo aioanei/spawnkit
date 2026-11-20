@@ -45,4 +45,6 @@ Wasm and mingwX64. It covers:
 ## Not yet
 
 - Device bindings and rebinding UI live in the renderer and player hosts (R3/R6).
-- Program access to input (for example `wasPressed("jump")` in rules) needs host functions in a later increment.
+- Programs read input through `ProgramHostBuilder.inputs(actions, axes)` (R2e). It provides `isDown`, `wasPressed`,
+  `wasReleased` and `axis`, addressed by action or axis ID. An unknown name faults the rule with `HostFailure`. Names
+  are checked at run time, not when the program is prepared.

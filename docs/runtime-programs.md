@@ -110,6 +110,13 @@ faults the segment with `FaultKind.InvalidValue` at the write's node and rolls b
 One declaration therefore drives
 the generated inspector, visual rules and agents, with identical constraints. Evidence: `ProgramDescriptorBindingTest`.
 
+### Input functions (R2e)
+
+`ProgramHostBuilder.inputs(actions, axes)` gives rules typed access to the deterministic [input model](runtime-input.md).
+`isDown`, `wasPressed` and `wasReleased` take an action ID and return yes/no; `axis` takes an axis ID and returns a
+decimal. Host functions see the world's `InputView` through `HostCallContext.input`. Recorded frames replay identically
+through rules. Evidence: `ProgramInputTest`.
+
 ## Execution semantics
 
 `ProgramFeature` installs the `program:behavior` component and the `program:execute` system. Each tick, entities are

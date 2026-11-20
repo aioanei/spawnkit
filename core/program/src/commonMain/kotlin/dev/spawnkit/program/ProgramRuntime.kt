@@ -4,6 +4,7 @@ import dev.spawnkit.runtime.AuthoringInfo
 import dev.spawnkit.runtime.CheckpointSystem
 import dev.spawnkit.runtime.ComponentType
 import dev.spawnkit.runtime.EntityHandle
+import dev.spawnkit.runtime.InputView
 import dev.spawnkit.runtime.RuntimeBuilder
 import dev.spawnkit.runtime.StateCaptureContext
 import dev.spawnkit.runtime.StateCodec
@@ -320,6 +321,8 @@ private class Segment(
     override val arguments: List<ProgramValue> get() = hostArguments
     override val self: EntityHandle get() = selfEntity
     override val tick: Long get() = world.tick
+
+    override val input: InputView get() = world.input
 
     override fun read(
         entity: EntityHandle,
