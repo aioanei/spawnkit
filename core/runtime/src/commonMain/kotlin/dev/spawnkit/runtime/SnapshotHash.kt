@@ -45,6 +45,17 @@ internal fun hashCapturedWorld(state: CapturedWorld): Long {
             hash.state(value)
         }
     }
+    state.scenes?.let { scenes ->
+        hash.text("scenes")
+        hash.number(scenes.counter)
+        hash.number(scenes.identities.size.toLong())
+        scenes.identities.forEach { (index, identity) ->
+            hash.number(index.toLong())
+            hash.text(identity.templateId)
+            hash.number(identity.instance)
+            hash.text(identity.objectId)
+        }
+    }
     state.input?.let { input ->
         hash.text("input")
         hashFrame(hash, input.current)

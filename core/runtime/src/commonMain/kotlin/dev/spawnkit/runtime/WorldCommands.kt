@@ -61,6 +61,18 @@ public class WorldCommands internal constructor(
         }
     }
 
+    /** Instantiates [template] at commit, then calls [onCreated]; skipped when [parent] was destroyed first. */
+    public fun instantiate(
+        template: SceneTemplate,
+        parent: EntityHandle? = null,
+        onCreated: (SceneInstance) -> Unit = {},
+    ) {
+        checkActive()
+        parent?.let(world::requireEntity)
+        template.objects.forEach { obj -> obj.components.forEach { world.requireComponent(it.component) } }
+        record { if (parent == null || world.isAlive(parent)) onCreated(world.instantiate(template, parent)) }
+    }
+
     /** Destroys an object and its descendants at commit; skipped if it was already destroyed. */
     public fun destroyTree(entity: EntityHandle) {
         checkActive()

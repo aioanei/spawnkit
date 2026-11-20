@@ -51,6 +51,7 @@ public class World internal constructor(
     internal var currentInput: InputFrame = InputFrame.EMPTY
     internal var previousInput: InputFrame = InputFrame.EMPTY
     private var pendingInput: InputFrame? = null
+    private var instanceCounter = 0L
 
     /** Input for the current tick; see [submitInput]. */
     public val input: InputView = InputView(this)
@@ -97,6 +98,7 @@ public class World internal constructor(
         check(slot.generation < Long.MAX_VALUE) { "Entity generation exhausted" }
         detach(entity.index)
         slot.children?.forEach { slots[it].parent = NO_PARENT }
+        slot.identity = null
         slot.children = null
         for (column in columns) column?.remove(entity.index)
         slot.alive = false
@@ -159,6 +161,45 @@ public class World internal constructor(
         siblings.add(if (index < 0) siblings.size else index, child.index)
         slots[child.index].parent = parent.index
     }
+
+    /**
+     * Instantiates [template] between ticks (or during command commit): creates its objects in declaration order with
+     * fresh component values, reproduces its hierarchy and places its roots under [parent] when given. Every created
+     * entity records an [ObjectIdentity]. Components are validated before anything is created.
+     */
+    public fun instantiate(
+        template: SceneTemplate,
+        parent: EntityHandle? = null,
+    ): SceneInstance {
+        requireStructuralEdit()
+        parent?.let(::requireEntity)
+        template.objects.forEach { obj -> obj.components.forEach { requireComponent(it.component) } }
+        check(instanceCounter < Long.MAX_VALUE) { "Scene instance counter exhausted" }
+        val number = ++instanceCounter
+        val handles = LinkedHashMap<String, EntityHandle>()
+        for (obj in template.objects) {
+            val entity = spawn()
+            handles[obj.id] = entity
+            slots[entity.index].identity = ObjectIdentity(template.id, number, obj.id)
+            obj.components.forEach { attachSeed(entity, it) }
+        }
+        for (obj in template.objects) {
+            val target = obj.parent?.let(handles::getValue) ?: parent ?: continue
+            setParent(handles.getValue(obj.id), target)
+        }
+        return SceneInstance(template, number, handles)
+    }
+
+    /** Where [entity] came from, or `null` when it was not created from a scene template. */
+    public fun identity(entity: EntityHandle): ObjectIdentity? {
+        requireEntity(entity)
+        return slots[entity.index].identity
+    }
+
+    private fun <T : Any> attachSeed(
+        entity: EntityHandle,
+        seed: ComponentSeed<T>,
+    ) = set(entity, seed.component, seed.create())
 
     /** Returns the world's value of a registered resource. */
     @Suppress("UNCHECKED_CAST") // Each table entry was created by its own typed resource factory.
@@ -331,6 +372,13 @@ public class World internal constructor(
                     } else {
                         CapturedInput(capture(currentInput), capture(previousInput), pendingInput?.let(::capture))
                     },
+                    if (instanceCounter ==
+                        0L
+                    ) {
+                        null
+                    } else {
+                        CapturedScenes(instanceCounter, slots.indices.mapNotNull { i -> slots[i].identity?.let { i to it } })
+                    },
                 ),
             )
         } finally {
@@ -364,6 +412,10 @@ public class World internal constructor(
             for ((parent, children) in state.hierarchy) {
                 slots[parent].children = children.toMutableList()
                 children.forEach { slots[it].parent = parent }
+            }
+            state.scenes?.let { scenes ->
+                instanceCounter = scenes.counter
+                scenes.identities.forEach { (index, identity) -> slots[index].identity = identity }
             }
             state.input?.let {
                 currentInput = restoreFrame(it.current)
@@ -429,6 +481,8 @@ public class World internal constructor(
         var parent: Int = NO_PARENT,
         /** Ordered child slots, or `null` when there are none. */
         var children: MutableList<Int>? = null,
+        /** Scene identity of the entity, if instantiated from a template. */
+        var identity: ObjectIdentity? = null,
     )
 
     private enum class Stage { Idle, Updating, Committing, Capturing, Restoring }
