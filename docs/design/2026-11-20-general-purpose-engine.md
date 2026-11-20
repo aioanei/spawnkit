@@ -4,6 +4,8 @@ Status: **accepted direction and creation requirements**, 2026-11-20. The owner 
 
 This revision supersedes the document-first premise and affected future work in the [original design](2026-11-19-spawnkit-design.md). It preserves its product scope and mandatory technologies. The [revised implementation plan](../plans/2026-11-20-engine-foundation-revision.md) replaces the unfinished sequence. Existing code remains working migration input.
 
+Review checkpoint, 2026-11-20: at the owner's request, the [alternatives reassessment](2026-11-20-engine-alternatives-review.md) re-evaluated runtime, custom-logic and persistence alternatives. The owner reviewed and merged it (PR #25). The accepted requirements are unchanged.
+
 ## 1. Product and architectural objective
 
 SpawnKit is a general-purpose, extensible 2D game engine built with Kotlin Multiplatform, with an integrated Compose Multiplatform visual editor. Creators build games without code; developers can implement reusable components, behaviors and tools. Koog agents use real editor and engine capabilities to create, inspect, run, debug and validate games. Ktor powers publishing and hosted services. Monetization, export, arcade distribution and a marketplace remain part of the product.
@@ -41,6 +43,7 @@ The following recommendation is an engineering inference from the project's requ
 | Extensible scene tree / object components | Direct visual hierarchy, reusable scenes, approachable inspector and callbacks | Deep inheritance and implicit callback ordering can create coupling | Use scene composition and component APIs; avoid an inheritance tree of game genres |
 | Pure ECS as the public model | Open component types, queries and scheduled processing; efficient bulk updates | Does not supply visual authoring, programmable behavior, metadata, packages or persistence by itself | Keep ECS techniques available inside runtime storage; do not make creators author storage internals |
 | Scene/component authoring with scheduled runtime | Natural editor model plus explicit execution, replaceable storage and open types | Requires clear instance identity, lifecycle and authoring/runtime mapping | **Recommended**, with one capability/type contract and separate authoring and play instances |
+| Immutable state with event reducers throughout | Explicit transitions, useful for authoring history and testing | Whole-world copying/replay and extension-owned mutable state require additional design and measurement | Apply transactions/history to authoring where useful; do not mandate immutable/event-sourced simulation |
 | Adopt a complete engine such as KorGE | Existing rendering, input and platform facilities | Would place ownership of the engine foundation outside SpawnKit; integration/target suitability is also unproven | Researched alternative, excluded by the owner's engine-ownership requirement; individual supporting facilities may still be evaluated |
 | Keep the current closed document/compiler and add more mechanics | Smallest immediate change | New core cases still gate expressiveness | Rejected: does not satisfy the revised objective |
 
@@ -198,7 +201,7 @@ This is a staged responsibility map, not permission to generate empty modules. E
 
 | Responsibility | Candidate boundary | Dependency direction |
 |---|---|---|
-| Handles, type/capability registration, world and scheduler | `core/engine` | No Compose, persistence codec, Koog or platformer dependency |
+| Handles, type/capability registration, world and scheduler | Existing independent `core/runtime`; consolidate paths only through reviewed migration | No Compose, persistence codec, Koog or platformer dependency |
 | General components and 2D facilities | `engine/*` or small first-party packages | Engine SDK; optional physics/render adapters |
 | Portable programs/compiler/interpreter | `core/behavior` | Engine capability/value contracts; no editor UI |
 | Editable scenes/resources and persistence adapters | `core/project` + legacy `core/model` adapter | Engine/type contracts; codecs at the boundary |
@@ -234,4 +237,4 @@ All original product features remain: no-code visual editing, templates and char
 
 The owner explicitly removed time pressure as an architectural constraint. Progress follows capability, correctness and usability gates, with estimates describing measured work. The former contest-driven daily schedule and cut-lines no longer determine engine scope or design. The contest remains a showcase opportunity for the version ready at submission; it does not justify weakening engine generality, extension ownership or beginner usability. The full commercial roadmap remains.
 
-Runtime/editor migration follows the [replacement sequence](../plans/2026-11-20-engine-foundation-revision.md). R0 reconciliation is complete; [R1a](../runtime-foundation.md) supplies initial headless lifecycle/scheduling evidence and a separate public-API consumer. Broader R1 state capture, storage/program comparisons and the visual editor remain unfinished. Do not restart old Tasks 11–12 or claim planned interfaces are already implemented.
+Runtime/editor migration follows the [replacement sequence](../plans/2026-11-20-engine-foundation-revision.md). R0 reconciliation and R1 are complete: headless lifecycle/scheduling ([R1a](../runtime-foundation.md)), native checkpoints and replay ([R1b](../runtime-checkpoints.md)), measured storage, and the [portable program executor](../runtime-programs.md). R2a–R2f and contest-track items C1–C3 are merged; [PROGRESS](../../PROGRESS.md) records the current checkpoint. Do not restart old Tasks 11–12 or claim planned interfaces are already implemented.
