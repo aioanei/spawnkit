@@ -90,7 +90,14 @@ fun Inspector(
         for (doc in obj.components) {
             val descriptor =
                 state.engine.runtime.catalog
-                    .firstOrNull { it.component.id == doc.componentId } ?: continue
+                    .firstOrNull { it.component.id == doc.componentId }
+            if (descriptor == null) {
+                Text(
+                    "${doc.componentId} is not installed. Its data is kept; install its extension to play.",
+                    color = MaterialTheme.colorScheme.error,
+                )
+                continue
+            }
             if (descriptor.visibility == Visibility.Advanced && !state.showAdvanced) continue
             ComponentSection(state, obj, descriptor)
         }

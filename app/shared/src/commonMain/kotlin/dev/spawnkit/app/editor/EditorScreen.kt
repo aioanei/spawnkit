@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,11 +15,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -40,6 +44,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import dev.spawnkit.app.persistence.ProjectDialogs
+import dev.spawnkit.app.persistence.ProjectMenu
+import dev.spawnkit.app.persistence.ProjectSession
 import dev.spawnkit.editing.ObjectDoc
 
 /** Below this width the builder uses the compact (phone) layout. */
@@ -50,16 +57,21 @@ private val CompactWidth = 720.dp
 fun EditorScreen(
     state: EditorState = remember { EditorState() },
     modifier: Modifier = Modifier,
+    projectSession: ProjectSession? = null,
 ) {
     BoxWithConstraints(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).safeDrawingPadding()) {
-        if (maxWidth < CompactWidth) CompactLayout(state) else ExpandedLayout(state)
+        if (maxWidth < CompactWidth) CompactLayout(state, projectSession) else ExpandedLayout(state, projectSession)
     }
+    if (projectSession != null) ProjectDialogs(projectSession)
 }
 
 @Composable
-private fun ExpandedLayout(state: EditorState) {
+private fun ExpandedLayout(
+    state: EditorState,
+    session: ProjectSession?,
+) {
     Column(Modifier.fillMaxSize()) {
-        Toolbar(state, compact = false)
+        Toolbar(state, compact = false, session)
         Row(Modifier.weight(1f)) {
             Panel(Modifier.width(260.dp).fillMaxHeight()) {
                 Column {
@@ -85,18 +97,21 @@ private fun ExpandedLayout(state: EditorState) {
                 }
             }
         }
-        StatusBar(state)
+        StatusBar(state, session)
     }
 }
 
 @Composable
-private fun CompactLayout(state: EditorState) {
+private fun CompactLayout(
+    state: EditorState,
+    session: ProjectSession?,
+) {
     var tab by remember { mutableIntStateOf(0) }
     var expanded by remember { mutableStateOf(true) }
     Column(Modifier.fillMaxSize()) {
-        Toolbar(state, compact = true)
+        Toolbar(state, compact = true, session)
         Viewport(state, Modifier.weight(1f).fillMaxWidth(), touchControls = true)
-        StatusBar(state)
+        StatusBar(state, session)
         if (state.play == null) {
             Panel(Modifier.fillMaxWidth()) {
                 Column {
@@ -110,11 +125,16 @@ private fun CompactLayout(state: EditorState) {
                                         expanded = true
                                     },
                                     Modifier.testTag("tab:$title"),
-                                    text = { Text(title) },
-                                )
+                                ) {
+                                    Text(title, Modifier.padding(horizontal = 4.dp, vertical = 12.dp), maxLines = 1, softWrap = false)
+                                }
                             }
                         }
-                        TextButton({ expanded = !expanded }, Modifier.testTag("panel-toggle")) { Text(if (expanded) "▾" else "▴") }
+                        TextButton(
+                            { expanded = !expanded },
+                            Modifier.size(48.dp).testTag("panel-toggle"),
+                            contentPadding = PaddingValues(0.dp),
+                        ) { Text(if (expanded) "▾" else "▴") }
                     }
                     if (expanded) {
                         Box(Modifier.height(280.dp).fillMaxWidth()) {
@@ -136,6 +156,7 @@ private fun CompactLayout(state: EditorState) {
 private fun Toolbar(
     state: EditorState,
     compact: Boolean,
+    session: ProjectSession?,
 ) {
     Surface(color = MaterialTheme.colorScheme.surface, tonalElevation = 2.dp) {
         Row(
@@ -143,8 +164,15 @@ private fun Toolbar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
+            if (session != null) ProjectMenu(session, compact)
             Text(
-                if (compact) "SpawnKit" else "SpawnKit — ${state.project.name}",
+                if (compact && session != null) {
+                    ""
+                } else if (compact) {
+                    "SpawnKit"
+                } else {
+                    "SpawnKit — ${state.project.name}"
+                },
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.weight(1f),
@@ -154,21 +182,29 @@ private fun Toolbar(
             val editing = state.play == null
             // Undo/redo availability lives in the editor, so subscribe to every revision explicitly.
             state.revision
-            ToolButton("↶", "Undo", enabled = editing && state.editor.undoLabel != null, tag = "undo") { state.undo() }
-            ToolButton("↷", "Redo", enabled = editing && state.editor.redoLabel != null, tag = "redo") { state.redo() }
-            ToolButton("⧉", "Duplicate", enabled = editing && state.selection != null, tag = "duplicate") { state.duplicateSelection() }
-            ToolButton("🗑", "Delete", enabled = editing && state.selection != null, tag = "delete") { state.deleteSelection() }
+            ToolButton("↶", "Undo", enabled = editing && state.editor.undoLabel != null, tag = "undo", compact = compact) { state.undo() }
+            ToolButton("↷", "Redo", enabled = editing && state.editor.redoLabel != null, tag = "redo", compact = compact) { state.redo() }
+            if (compact && session != null) {
+                CompactObjectMenu(state)
+            } else {
+                ToolButton("⧉", "Duplicate", enabled = editing && state.selection != null, tag = "duplicate", compact = compact) {
+                    state.duplicateSelection()
+                }
+                ToolButton("🗑", "Delete", enabled = editing && state.selection != null, tag = "delete", compact = compact) {
+                    state.deleteSelection()
+                }
+            }
             if (editing) {
                 Button({
                     state.startPlay()
                 }, Modifier.testTag("play"), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)) {
-                    Text("▶ Play")
+                    Text("▶ Play", maxLines = 1, softWrap = false)
                 }
             } else {
                 Button({
                     state.stopPlay()
                 }, Modifier.testTag("stop"), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) {
-                    Text("■ Stop")
+                    Text("■ Stop", maxLines = 1, softWrap = false)
                 }
             }
         }
@@ -181,11 +217,50 @@ private fun ToolButton(
     description: String,
     enabled: Boolean,
     tag: String,
+    compact: Boolean = false,
     onClick: () -> Unit,
 ) {
     // Compact symbols on screen; screen readers announce the full description.
-    TextButton(onClick, enabled = enabled, modifier = Modifier.testTag(tag).semantics { contentDescription = description }) {
+    TextButton(
+        onClick,
+        enabled = enabled,
+        modifier =
+            Modifier
+                .then(
+                    if (compact) Modifier.size(48.dp) else Modifier,
+                ).testTag(tag)
+                .semantics { contentDescription = description },
+        contentPadding = if (compact) PaddingValues(0.dp) else ButtonDefaults.TextButtonContentPadding,
+    ) {
         Text(symbol, style = MaterialTheme.typography.titleLarge)
+    }
+}
+
+@Composable
+private fun CompactObjectMenu(state: EditorState) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        ToolButton("⋯", "Object actions", enabled = state.play == null, tag = "object-menu", compact = true) { expanded = true }
+        DropdownMenu(expanded, { expanded = false }) {
+            DropdownMenuItem(
+                text = { Text("Duplicate object") },
+                enabled = state.selection != null,
+                modifier = Modifier.testTag("duplicate"),
+                onClick = {
+                    expanded = false
+                    state.duplicateSelection()
+                },
+            )
+            DropdownMenuItem(
+                text = { Text("Delete object") },
+                enabled = state.selection != null,
+                modifier = Modifier.testTag("delete"),
+                onClick = {
+                    expanded = false
+                    state.deleteSelection()
+                },
+            )
+        }
     }
 }
 
@@ -250,7 +325,10 @@ private fun flatten(objects: List<ObjectDoc>): List<Pair<ObjectDoc, Int>> {
 }
 
 @Composable
-private fun StatusBar(state: EditorState) {
+private fun StatusBar(
+    state: EditorState,
+    session: ProjectSession?,
+) {
     val text =
         when {
             state.play != null -> playStatus(state)
@@ -277,6 +355,18 @@ private fun StatusBar(state: EditorState) {
             },
         maxLines = 2,
     )
+    if (session != null) {
+        Text(
+            session.status,
+            Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(horizontal = 12.dp, vertical = 4.dp)
+                .testTag("project-status"),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
 }
 
 @Composable
