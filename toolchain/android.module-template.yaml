@@ -1,0 +1,7 @@
+# Android SDK levels shared by every module with the `android` platform (kmp/lib and android/app).
+settings:
+  android:
+    compileSdk: 37
+    minSdk: 24
+    # Same build tools as AGP 9.1.1 in the Gradle build (the Toolchain default, 37.0.0, is not installed everywhere).
+    buildToolsVersion: 36.0.0

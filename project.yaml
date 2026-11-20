@@ -1,0 +1,24 @@
+# Kotlin Toolchain project (issue #58). Gradle (settings.gradle.kts) remains the CI authority until each gate is
+# reproduced here; see docs/kotlin-toolchain.md for the migration status and the recorded Gradle exceptions.
+modules:
+  - app/androidApp
+  - app/desktopApp
+  - app/shared
+  - app/webApp
+  - core/editing
+  - core/engine
+  - core/gameplay
+  - core/graphics
+  - core/model
+  - core/program
+  - core/runtime
+  - core/templates
+  - plugins/embedded-templates
+  - plugins/ktlint
+  - render
+  - samples/runtimeProbe
+  - server
+
+plugins:
+  - ./plugins/embedded-templates
+  - ./plugins/ktlint

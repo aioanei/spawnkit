@@ -1,0 +1,11 @@
+tasks:
+  generate:
+    action: !dev.spawnkit.build.templates.generateEmbeddedTemplates
+      templatesDir: ${project.rootDir}/templates
+      outputDir: ${taskOutputDir}
+      packageName: ${pluginSettings.packageName}
+
+generated:
+  sources:
+    - language: kotlin
+      directory: ${tasks.generate.action.outputDir}

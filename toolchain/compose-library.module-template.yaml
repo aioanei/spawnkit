@@ -1,0 +1,7 @@
+# Common Compose UI libraries of shared UI modules (replaces the dependency part of `spawnkit.kmp.compose`).
+# Platforms: [ jvm, android, iosArm64, iosSimulatorArm64, js, wasmJs ]
+dependencies:
+  - $libs.compose.foundation
+  - $libs.compose.ui
+  - $libs.compose.material3
+  - $libs.compose.components.resources

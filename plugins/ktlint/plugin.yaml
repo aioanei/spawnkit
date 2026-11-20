@@ -1,0 +1,17 @@
+tasks:
+  check:
+    action: !dev.spawnkit.build.ktlint.ktlintCheck
+      moduleRootDir: ${module.rootDir}
+      settings: ${pluginSettings}
+  format:
+    action: !dev.spawnkit.build.ktlint.ktlintFormat
+      moduleRootDir: ${module.rootDir}
+      settings: ${pluginSettings}
+
+checks:
+  - name: ktlint
+    performedBy: check
+
+commands:
+  - name: ktlintFormat
+    performedBy: format

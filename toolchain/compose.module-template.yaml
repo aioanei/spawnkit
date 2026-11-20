@@ -1,0 +1,6 @@
+# Compose Multiplatform toolchain (compiler plugin, runtime, resources). Keep the version aligned with
+# composeMultiplatform in gradle/libs.versions.toml while Gradle and the Kotlin Toolchain coexist.
+settings:
+  compose:
+    enabled: true
+    version: 1.12.2

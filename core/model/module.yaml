@@ -1,0 +1,20 @@
+product:
+  type: kmp/lib
+  platforms: [ jvm, android, iosArm64, iosSimulatorArm64, js, wasmJs, mingwX64, linuxX64 ]
+
+apply:
+  - //toolchain/kotlin.module-template.yaml
+  - //toolchain/android.module-template.yaml
+  - //toolchain/core-library.module-template.yaml
+  - //toolchain/lint.module-template.yaml
+
+dependencies:
+  - $libs.kotlinx.serialization.json: exported
+
+settings:
+  kotlin:
+    serialization:
+      enabled: true
+      version: 1.13.0 # keep aligned with kotlinx-serialization in gradle/libs.versions.toml
+  android:
+    namespace: dev.spawnkit.core.model

@@ -1,0 +1,8 @@
+# Pure-Kotlin engine libraries (replaces the compiler part of the `spawnkit.kmp.core` convention plugin). Apply
+# together with kotlin.module-template.yaml and android.module-template.yaml. Every core module lists all SpawnKit
+# targets in its own `product.platforms`:
+#   [ jvm, android, iosArm64, iosSimulatorArm64, js, wasmJs, mingwX64, linuxX64 ]
+settings:
+  kotlin:
+    explicitApi: strict
+    allWarningsAsErrors: true

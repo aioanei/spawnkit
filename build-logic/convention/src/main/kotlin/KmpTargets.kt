@@ -17,6 +17,7 @@ internal fun Project.configureSpawnkitTargets(
     nativeDesktop: Boolean,
     nodeTests: Boolean,
 ) {
+    configureKotlinToolchainLayout(kmp)
     kmp.jvm()
     kmp.iosArm64()
     kmp.iosSimulatorArm64()

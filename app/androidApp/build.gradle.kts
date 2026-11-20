@@ -60,4 +60,10 @@ android {
     buildFeatures {
         compose = true
     }
+    // Kotlin Toolchain android/app layout (issue #58): src/AndroidManifest.xml, src/ and res/ at the module root.
+    sourceSets.getByName("main") {
+        manifest.srcFile("src/AndroidManifest.xml")
+        kotlin.srcDir("src")
+        res.srcDir("res")
+    }
 }

@@ -1,0 +1,19 @@
+product: jvm/app
+
+# Keeps Gradle's src/main/kotlin layout while both builds coexist (issue #58).
+layout: maven-like
+
+apply:
+  - //toolchain/kotlin.module-template.yaml
+  - //toolchain/compose.module-template.yaml
+  - //toolchain/lint.module-template.yaml
+
+dependencies:
+  - //app/shared
+  - $compose.desktop.currentOs
+  - $libs.kotlinx.coroutinesSwing
+  - $libs.compose.uiToolingPreview
+
+settings:
+  jvm:
+    mainClass: dev.spawnkit.app.MainKt
