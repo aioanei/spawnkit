@@ -172,6 +172,15 @@ class EditorState(
         )
     }
 
+    /** Moves the selected object by a local-space offset, for keyboard nudging. Each nudge is one undo step. */
+    fun nudgeSelection(
+        dx: Double,
+        dy: Double,
+    ) {
+        val id = selection ?: return
+        if (canMove(id)) commitMove(id, dx, dy)
+    }
+
     fun startPlay() {
         selection = null
         play = PlaySession(editor.buildWorld(sceneId))

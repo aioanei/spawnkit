@@ -114,7 +114,7 @@ private fun NameField(
         key = obj.id + "/name",
         tag = "field:name",
         numeric = false,
-    ) { text -> state.apply(EditOperation.RenameObject(state.sceneId, obj.id, text)) is OperationResult.Applied }
+    ) { text -> state.apply(EditOperation.RenameObject(state.sceneId, obj.id, text)).rejection() }
 }
 
 @Composable
@@ -178,16 +178,17 @@ private fun PropertyControl(
     val name = property.authoring.name
     val key = "${obj.id}/$componentId/${property.id}"
 
-    fun set(newValue: Any): Boolean =
-        state.apply(
-            EditOperation.SetProperty(state.sceneId, obj.id, componentId, property.id, newValue, "Change $name of ${obj.name}"),
-        ) is OperationResult.Applied
+    fun set(newValue: Any): String? =
+        state
+            .apply(
+                EditOperation.SetProperty(state.sceneId, obj.id, componentId, property.id, newValue, "Change $name of ${obj.name}"),
+            ).rejection()
     when (val kind = property.kind) {
         is ValueKind.WholeNumber -> {
             NumberRow(name, (value as Long).toString(), key, kind.unit, onStep = { delta ->
                 set((value + delta * kind.step).coerceIn(kind.min, kind.max))
             }) { text ->
-                text.trim().toLongOrNull()?.let(::set) ?: false
+                text.trim().toLongOrNull()?.let(::set) ?: "Enter a whole number, for example 3."
             }
         }
 
@@ -199,7 +200,7 @@ private fun PropertyControl(
                     .trim()
                     .replace(',', '.')
                     .toDoubleOrNull()
-                    ?.let(::set) ?: false
+                    ?.let(::set) ?: "Enter a number, for example 2.5."
             }
         }
 
@@ -266,7 +267,7 @@ private fun NumberRow(
     key: String,
     unit: String,
     onStep: (Int) -> Unit,
-    onCommit: (String) -> Boolean,
+    onCommit: (String) -> String?,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         CommitTextField(
@@ -285,7 +286,8 @@ private fun NumberRow(
 
 /**
  * A text field that edits a local draft and commits it on Done or focus loss, so typing does not create one undo
- * step per keystroke. Rejected drafts stay visible with the editor's explanation shown in the status bar.
+ * step per keystroke. [onCommit] returns an explanation when the draft is rejected; the draft then stays visible with
+ * that explanation shown under the field until the creator changes it.
  */
 @Composable
 private fun CommitTextField(
@@ -295,17 +297,22 @@ private fun CommitTextField(
     tag: String,
     numeric: Boolean,
     modifier: Modifier = Modifier.fillMaxWidth(),
-    onCommit: (String) -> Boolean,
+    onCommit: (String) -> String?,
 ) {
     var draft by remember(key, value) { mutableStateOf(value) }
+    var error by remember(key, value) { mutableStateOf<String?>(null) }
     var focused by remember(key) { mutableStateOf(false) }
-    val commit = { if (draft != value) onCommit(draft) }
+    val commit = { if (draft != value) error = onCommit(draft) }
     OutlinedTextField(
         value = draft,
-        onValueChange = { draft = it },
+        onValueChange = {
+            draft = it
+            error = null
+        },
         label = { Text(label) },
         singleLine = true,
-        isError = false,
+        isError = error != null,
+        supportingText = error?.let { { Text(it, Modifier.testTag("$tag:error")) } },
         keyboardOptions =
             KeyboardOptions(
                 keyboardType = if (numeric) KeyboardType.Decimal else KeyboardType.Text,
@@ -361,3 +368,6 @@ private fun formatDecimal(value: Double): String =
     } else {
         value.toString()
     }
+
+/** The creator-facing explanation of a rejected operation, or null when it was applied. */
+private fun OperationResult.rejection(): String? = (this as? OperationResult.Rejected)?.message

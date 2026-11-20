@@ -4,19 +4,26 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.toAwtImage
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
+import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.pinch
+import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import androidx.compose.ui.test.swipe
+import androidx.compose.ui.test.withKeyDown
 import dev.spawnkit.app.editor.EditorScreen
 import dev.spawnkit.app.editor.EditorState
 import java.io.File
@@ -151,5 +158,93 @@ class BuilderUiTest {
             waitForIdle()
             assertTrue(state.camera.zoom < pinched, "Wheel zoomed out (zoom ${state.camera.zoom})")
             onRoot().screenshot("builder-desktop")
+        }
+
+    @Test
+    fun rejectedTypedValuesShowAnInlineExplanationAndKeepTheProject() =
+        runDesktopComposeUiTest(width = 1440, height = 900) {
+            val state = EditorState()
+            setContent { MaterialTheme(colorScheme = darkColorScheme()) { EditorScreen(state) } }
+            onNodeWithTag("add:Box").performClick()
+            waitForIdle()
+            val box = checkNotNull(state.selection)
+            val width = "field:$box/graphics:shape/width"
+
+            fun width() =
+                state.scene
+                    .find(box)
+                    ?.component("graphics:shape")
+                    ?.values
+                    ?.get("width")
+
+            fun type(text: String) {
+                onNodeWithTag(width).performScrollTo().performTextReplacement(text)
+                onNodeWithTag(width).performImeAction()
+                waitForIdle()
+            }
+            type("-3")
+            onNodeWithTag("$width:error", useUnmergedTree = true).assertExists()
+            assertEquals(1.0, width(), "A rejected value never reaches the project")
+            type("abc")
+            onNodeWithTag("$width:error", useUnmergedTree = true).assertTextContains("number", substring = true)
+            assertEquals(1.0, width())
+            type("2.5")
+            onNodeWithTag("$width:error", useUnmergedTree = true).assertDoesNotExist()
+            assertEquals(2.5, width())
+        }
+
+    @Test
+    fun keyboardShortcutsEditTheSceneWithoutAMouse() =
+        runDesktopComposeUiTest(width = 1440, height = 900) {
+            val state = EditorState()
+            setContent { MaterialTheme(colorScheme = darkColorScheme()) { EditorScreen(state) } }
+            onNodeWithTag("add:Box").performClick()
+            waitForIdle()
+            val box = checkNotNull(state.selection)
+            val viewport = onNodeWithTag("viewport")
+            viewport.performTouchInput { click(center) }
+            waitForIdle()
+
+            fun x() =
+                state.scene
+                    .find(box)
+                    ?.component("graphics:transform")
+                    ?.values
+                    ?.get("x")
+            viewport.performKeyInput { pressKey(Key.DirectionRight) }
+            waitForIdle()
+            assertEquals(0.1, x(), "Arrow keys nudge the selection")
+            viewport.performKeyInput { withKeyDown(Key.ShiftLeft) { pressKey(Key.DirectionRight) } }
+            waitForIdle()
+            assertEquals(1.1, x(), "Shift+arrow nudges by a whole unit")
+
+            viewport.performKeyInput { withKeyDown(Key.CtrlLeft) { pressKey(Key.D) } }
+            waitForIdle()
+            assertEquals(2, state.scene.objects.size, "Ctrl+D duplicates")
+            viewport.performKeyInput { pressKey(Key.Delete) }
+            waitForIdle()
+            assertEquals(listOf(box), state.scene.objects.map { it.id }, "Delete removes the selected copy")
+            viewport.performKeyInput { withKeyDown(Key.CtrlLeft) { pressKey(Key.Z) } }
+            waitForIdle()
+            assertEquals(2, state.scene.objects.size, "Ctrl+Z undoes")
+            viewport.performKeyInput { withKeyDown(Key.CtrlLeft) { withKeyDown(Key.ShiftLeft) { pressKey(Key.Z) } } }
+            waitForIdle()
+            assertEquals(1, state.scene.objects.size, "Ctrl+Shift+Z redoes")
+            viewport.performKeyInput { withKeyDown(Key.CtrlLeft) { pressKey(Key.Z) } }
+            viewport.performKeyInput { withKeyDown(Key.CtrlLeft) { pressKey(Key.Y) } }
+            waitForIdle()
+            assertEquals(1, state.scene.objects.size, "Ctrl+Y redoes")
+
+            state.selection = box
+            viewport.performKeyInput { pressKey(Key.Escape) }
+            waitForIdle()
+            assertNull(state.selection, "Escape clears the selection")
+            mainClock.autoAdvance = false
+            onNodeWithTag("play").performClick()
+            mainClock.advanceTimeBy(100)
+            viewport.performKeyInput { pressKey(Key.Escape) }
+            mainClock.advanceTimeBy(100)
+            mainClock.autoAdvance = true
+            assertNull(state.play, "Escape stops play")
         }
 }
