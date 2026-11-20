@@ -17,3 +17,6 @@ dependencies:
 settings:
   jvm:
     mainClass: dev.spawnkit.app.MainKt
+
+plugins:
+  web-player-bundle: enabled

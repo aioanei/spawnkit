@@ -41,7 +41,8 @@ provide reproducible evidence of the current runtime and UI.
 SpawnKit builds with the [Kotlin Toolchain](https://kotlin-toolchain.org/) ([ADR-0008](docs/adr/0008-kotlin-toolchain.md)).
 The committed `kotlin` wrapper (`kotlin.bat` on Windows) downloads the pinned CLI and provisions the JDK,
 Kotlin/Native, Node and Skiko on first use. An Android SDK (`ANDROID_HOME`) is needed for Android targets. iOS
-requires macOS with Xcode.
+requires macOS with Xcode. Before building or running the Android creator, desktop creator or Arcade server, run
+`./kotlin build -m webPlayer -v release` to prepare the player they ship. Repeat after changing the player or its dependencies.
 
 | Target | Command |
 |---|---|
@@ -56,9 +57,9 @@ During the migration, Gradle (`./gradlew`) still runs the required CI check and 
 not cover yet (Kotlin/JS tests, desktop installers, the existing iOS Xcode app). See
 [Kotlin Toolchain](docs/kotlin-toolchain.md) for the status, verified evidence and Gradle exceptions.
 
-SpawnKit's Release Manager will use the same toolchain on remote build workers, so creators can release standalone
-games without installing anything ([design](docs/design/2026-11-20-release-manager-kotlin-toolchain.md)). That build
-service is planned, not yet implemented.
+In the Android or desktop builder, choose **Project → Release game…** to export an offline web ZIP or publish to a
+running Arcade. Players open the game in a browser. See the [release guide](docs/release.md). Compiled store
+releases depend on the planned [build service](docs/design/2026-11-20-release-manager-kotlin-toolchain.md).
 
 ## License
 

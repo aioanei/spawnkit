@@ -47,6 +47,9 @@ import androidx.compose.ui.unit.dp
 import dev.spawnkit.app.persistence.ProjectDialogs
 import dev.spawnkit.app.persistence.ProjectMenu
 import dev.spawnkit.app.persistence.ProjectSession
+import dev.spawnkit.app.release.ReleaseManager
+import dev.spawnkit.app.release.ReleasePlatform
+import dev.spawnkit.app.release.rememberReleasePlatform
 import dev.spawnkit.editing.ObjectDoc
 
 /** Below this width the builder uses the compact (phone) layout. */
@@ -58,20 +61,28 @@ fun EditorScreen(
     state: EditorState = remember { EditorState() },
     modifier: Modifier = Modifier,
     projectSession: ProjectSession? = null,
+    releasePlatform: ReleasePlatform = rememberReleasePlatform(),
 ) {
+    var releasing by remember { mutableStateOf(false) }
     BoxWithConstraints(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).safeDrawingPadding()) {
-        if (maxWidth < CompactWidth) CompactLayout(state, projectSession) else ExpandedLayout(state, projectSession)
+        if (maxWidth < CompactWidth) {
+            CompactLayout(state, projectSession) { releasing = true }
+        } else {
+            ExpandedLayout(state, projectSession) { releasing = true }
+        }
     }
     if (projectSession != null) ProjectDialogs(projectSession)
+    if (releasing) ReleaseManager(state, releasePlatform) { releasing = false }
 }
 
 @Composable
 private fun ExpandedLayout(
     state: EditorState,
     session: ProjectSession?,
+    onRelease: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
-        Toolbar(state, compact = false, session)
+        Toolbar(state, compact = false, session, onRelease)
         Row(Modifier.weight(1f)) {
             Panel(Modifier.width(260.dp).fillMaxHeight()) {
                 Column {
@@ -105,11 +116,12 @@ private fun ExpandedLayout(
 private fun CompactLayout(
     state: EditorState,
     session: ProjectSession?,
+    onRelease: () -> Unit,
 ) {
     var tab by remember { mutableIntStateOf(0) }
     var expanded by remember { mutableStateOf(true) }
     Column(Modifier.fillMaxSize()) {
-        Toolbar(state, compact = true, session)
+        Toolbar(state, compact = true, session, onRelease)
         Viewport(state, Modifier.weight(1f).fillMaxWidth(), touchControls = true)
         StatusBar(state, session)
         if (state.play == null) {
@@ -157,6 +169,7 @@ private fun Toolbar(
     state: EditorState,
     compact: Boolean,
     session: ProjectSession?,
+    onRelease: () -> Unit,
 ) {
     Surface(color = MaterialTheme.colorScheme.surface, tonalElevation = 2.dp) {
         Row(
@@ -164,7 +177,7 @@ private fun Toolbar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            if (session != null) ProjectMenu(session, compact)
+            if (session != null) ProjectMenu(session, compact, onRelease)
             Text(
                 if (compact && session != null) {
                     ""

@@ -49,7 +49,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** Real desktop files and storage; test pickers select them deterministically instead of showing an OS dialog. */
-private class TestProjectFiles : ProjectFiles {
+internal class TestProjectFiles : ProjectFiles {
     // Create build/ first: the Kotlin Toolchain does not create it in the module directory, unlike Gradle.
     private val directory = Files.createTempDirectory(Files.createDirectories(Path.of("build")), "project-ui-")
     override val drafts = DesktopDraftStore(directory.resolve("recovery"))
