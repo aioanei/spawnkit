@@ -176,27 +176,30 @@ public class ProgramHostBuilder(
         prefix: String = "",
     ): ProgramHostBuilder =
         apply {
-            for (property in descriptor.properties) bindDescriptorProperty(descriptor.component, property, prefix)
+            // Build every binding first so an invalid or duplicate name leaves the builder unchanged.
+            val added = descriptor.properties.mapNotNull { bindDescriptorProperty(descriptor.component, it, prefix) }
+            val names = properties.map { it.name } + added.map { it.name }
+            require(names.size == names.toSet().size) { "Duplicate program property names from '${descriptor.component.id}'" }
+            properties += added
         }
 
     private fun <T : Any, V : Any> bindDescriptorProperty(
         component: ComponentType<T>,
         property: PropertyDescriptor<T, V>,
         prefix: String,
-    ) {
-        val mapping = descriptorMapping(property.kind) ?: return
+    ): PropertyBinding<T>? {
+        val mapping = descriptorMapping(property.kind) ?: return null
         val name = prefix + property.id
-        requireName(name, properties.map { it.name })
-        properties +=
-            PropertyBinding(
-                name,
-                component,
-                mapping.type,
-                property.authoring,
-                { mapping.toProgram(property.get(it)) },
-                { current, value -> property.with(current, mapping.fromProgram(value)) },
-                { value -> property.kind.problem(mapping.fromProgram(value), null) },
-            )
+        requireName(name, emptyList())
+        return PropertyBinding(
+            name,
+            component,
+            mapping.type,
+            property.authoring,
+            { mapping.toProgram(property.get(it)) },
+            { current, value -> property.with(current, mapping.fromProgram(value)) },
+            { value -> property.kind.problem(mapping.fromProgram(value), null) },
+        )
     }
 
     /** Registers a host function. [implementation] must be deterministic and bounded; throw [ProgramHostException] to fail. */

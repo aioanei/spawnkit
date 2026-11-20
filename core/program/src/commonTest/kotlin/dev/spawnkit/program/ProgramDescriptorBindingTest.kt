@@ -16,6 +16,7 @@ import dev.spawnkit.runtime.RuntimeBuilder
 import dev.spawnkit.runtime.ValueKind
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 
@@ -142,5 +143,14 @@ class ProgramDescriptorBindingTest {
             assertEquals("block:bad", fault?.source?.nodeId)
             assertEquals(Hero(), hero, "Earlier writes in the faulted segment are rolled back ($property)")
         }
+    }
+
+    @Test
+    fun rejectedDescriptorBindingsLeaveTheBuilderUnchanged() {
+        val fixture = Fixture()
+        val builder = ProgramHostBuilder().properties(fixture.descriptor)
+        assertFailsWith<IllegalArgumentException> { builder.properties(fixture.descriptor) }
+        assertFailsWith<IllegalArgumentException> { builder.properties(fixture.descriptor, prefix = "bad-") }
+        assertEquals(listOf("health", "speed", "shielded", "name", "mood"), builder.build().propertyCatalog.map { it.name })
     }
 }

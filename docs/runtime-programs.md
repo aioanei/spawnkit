@@ -105,8 +105,9 @@ reach arbitrary engine APIs.
 | Text, choice | `TextType` |
 
 Object references are skipped until nullable reference semantics are designed. Each property-write statement checks
-the descriptor's value kind as it runs. An out-of-range number, unknown choice or over-long text faults the segment
-with `FaultKind.InvalidValue` at the write's node and rolls back the whole segment. One declaration therefore drives
+the descriptor's value kind as it runs. An out-of-range number, unknown choice, over-long text or line break in single-line text
+faults the segment with `FaultKind.InvalidValue` at the write's node and rolls back the whole segment. Only writes are checked: a value that native code stored out of range reads normally.
+One declaration therefore drives
 the generated inspector, visual rules and agents, with identical constraints. Evidence: `ProgramDescriptorBindingTest`.
 
 ## Execution semantics
