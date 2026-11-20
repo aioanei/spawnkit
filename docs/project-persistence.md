@@ -80,7 +80,7 @@ Toolchain release service (issue #64, [Release Manager build architecture](desig
 - Players call `missingComponents(runtime)` before running, and explain which capabilities they lack.
 - Foreign files, newer package versions, unknown start scenes, malformed JSON and oversized input fail with
   player-facing messages. Parser details are not shown.
-- Evidence: `GamePackageTest` (5 tests) passes on JVM, Android host and mingwX64 (Kotlin Toolchain) and on JS and
+- Evidence: `GamePackageTest` (6 tests) passes on JVM, Android host and mingwX64 (Kotlin Toolchain) and on JS and
   Wasm (Gradle Node runners).
 
 ## Recovery boundary

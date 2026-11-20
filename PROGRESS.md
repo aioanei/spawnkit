@@ -8,7 +8,7 @@
   around the unchanged project document, with a title, a start scene and derived required components. Tampered,
   foreign, newer, malformed and oversized packages fail with player-facing messages. `missingComponents(runtime)`
   lets players refuse games they cannot run. Documented in [persistence](docs/project-persistence.md).
-- **Evidence.** `GamePackageTest` (5 tests); `editing` passes 25/25 on JVM, Android host and mingwX64 (Toolchain)
+- **Evidence.** `GamePackageTest` (6 tests); `editing` passes 26/26 on JVM, Android host and mingwX64 (Toolchain)
   and on JS and Wasm (Gradle Node). The new ktlint plugin caught over-long test lines, and `ktlintFormat` fixed them.
   `spotlessCheck` passes.
 - **Added (C6b).**
@@ -17,9 +17,13 @@
   - `player/webPlayer` (Toolchain-only `wasm-js/app`) plays `game.spawnkit.json` from beside its page.
   - Docs: [release](docs/release.md).
 - **Evidence (C6b).**
-  - `GamePlayerUiTest` 2/2. The builder's 16 UI tests still pass on the moved code.
+  - `GamePlayerUiTest` 3/3, including a banner when rules stop or cannot run. The builder's 16 UI tests still pass on the moved code.
   - In headless Chrome, the Toolchain-built web player plays the sample package, and shows an explanation when the
     file is missing (`docs/media/web-player-*.png`).
+- **Review.** On 2026-11-20 the owner asked for both PRs to be reviewed and merged, then for work to stop. Code
+  reviews of #65 and #66 were addressed in `fix(build): address K1 review findings` and
+  `fix(release): address C6 review findings`. The pre-existing template-renderer issues are recorded on #65 as
+  follow-ups.
 - **Next steps.**
   - C6c: Release Manager screen with web export (player bundle plus package) on Android and desktop.
   - C6d: Ktor Arcade publish/list/get with limits and `/play/{slug}`.
