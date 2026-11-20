@@ -124,7 +124,7 @@ public class World internal constructor(
             if (driver < 0 || column.size < checkNotNull(required[driver]).size) driver = i
         }
         val smallest = checkNotNull(required[driver])
-        if (smallest.size.toLong() * SORT_COST_FACTOR >= slots.size) {
+        if (smallest.size.toLong() * ComponentColumn.SORT_COST_FACTOR >= slots.size) {
             // Dense relative to the slot range: an ordered slot scan avoids sorting.
             val result = ArrayList<EntityHandle>(smallest.size)
             for (index in slots.indices) {
@@ -192,8 +192,10 @@ public class World internal constructor(
                 populated.map { (component, column) ->
                     CapturedComponent(
                         component,
-                        column.sortedEntries().map { (index, value) ->
-                            index to freezer.copy(component.capture(value, context))
+                        ArrayList<Pair<Int, StateValue>>(column.size).also { entries ->
+                            column.forEachInSlotOrder { index, value ->
+                                entries += index to freezer.copy(component.capture(value, context))
+                            }
                         },
                     )
                 }
@@ -232,7 +234,7 @@ public class World internal constructor(
             freeSlots += state.freeSlots
             entityCount = slots.count { it.alive }
             for ((component, entries) in state.components) {
-                val column = ComponentColumn()
+                val column = ComponentColumn(entries.size, slots.size)
                 for ((index, value) in entries) column.put(index, component.restore(copyCapturedState(value), context))
                 columns[component.ordinal] = column
             }
@@ -283,14 +285,6 @@ public class World internal constructor(
         /** Handle for the current generation; cleared whenever the generation changes. */
         var handle: EntityHandle? = null,
     )
-
-    private companion object {
-        /**
-         * A sparse query collects the smallest column then sorts; a dense one scans slots in order. Sorting k
-         * matches costs about k·log2(k) comparisons, so scan once k·16 reaches the slot range (k ≥ slots/16).
-         */
-        const val SORT_COST_FACTOR = 16L
-    }
 
     private enum class Stage { Idle, Updating, Committing, Capturing, Restoring }
 }

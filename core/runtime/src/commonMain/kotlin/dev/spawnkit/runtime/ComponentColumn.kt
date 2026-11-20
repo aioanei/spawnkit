@@ -6,10 +6,13 @@ package dev.spawnkit.runtime
  * order is arbitrary: every observable iteration goes through [World.entities] or [sortedEntries], which restore
  * ascending slot order. Selected by the R1 storage comparison (issue #26); see docs/runtime-storage.md.
  */
-internal class ComponentColumn {
-    private var sparse = IntArray(0)
-    private var denseSlots = IntArray(INITIAL_CAPACITY)
-    private var values = arrayOfNulls<Any>(INITIAL_CAPACITY)
+internal class ComponentColumn(
+    capacity: Int = INITIAL_CAPACITY,
+    slotRange: Int = 0,
+) {
+    private var sparse = IntArray(slotRange)
+    private var denseSlots = IntArray(maxOf(capacity, INITIAL_CAPACITY))
+    private var values = arrayOfNulls<Any>(maxOf(capacity, INITIAL_CAPACITY))
 
     /** Number of entities that have this component. */
     var size: Int = 0
@@ -63,12 +66,36 @@ internal class ComponentColumn {
 
     /** All entries in ascending slot order, for canonical checkpoint capture. */
     fun sortedEntries(): List<Pair<Int, Any>> {
-        val slots = denseSlots.copyOf(size)
-        slots.sort()
-        return slots.map { it to checkNotNull(get(it)) }
+        val result = ArrayList<Pair<Int, Any>>(size)
+        forEachInSlotOrder { slot, value -> result += slot to value }
+        return result
     }
 
-    private companion object {
-        const val INITIAL_CAPACITY = 8
+    /** Visits all entries in ascending slot order without building an intermediate list. */
+    inline fun forEachInSlotOrder(action: (slot: Int, value: Any) -> Unit) {
+        if (size.toLong() * SORT_COST_FACTOR >= sparseRange) {
+            // Dense relative to the slot range: walking the sparse index is already in slot order.
+            for (slot in 0 until sparseRange) {
+                val value = get(slot)
+                if (value != null) action(slot, value)
+            }
+            return
+        }
+        val slots = IntArray(size) { slotAt(it) }
+        slots.sort()
+        for (slot in slots) action(slot, checkNotNull(get(slot)))
+    }
+
+    /** Current extent of the slot index; slots at or beyond it are absent. */
+    val sparseRange: Int get() = sparse.size
+
+    internal companion object {
+        private const val INITIAL_CAPACITY = 8
+
+        /**
+         * Ordered iteration either sorts the k dense slots (about k·log2(k) work) or walks the whole slot range.
+         * Walk the range once k·16 reaches it; queries in [World.entities] use the same rule.
+         */
+        const val SORT_COST_FACTOR = 16L
     }
 }

@@ -38,6 +38,19 @@ class ComponentStorageTest {
     }
 
     @Test
+    fun orderedEntriesUseSortingForSparseColumnsAndSlotWalksForDenseOnes() {
+        val sparse = ComponentColumn()
+        sparse.put(5_000, "far")
+        sparse.put(10, "near")
+        sparse.put(2_500, "middle")
+        assertEquals(listOf(10, 2_500, 5_000), sparse.sortedEntries().map { it.first })
+        assertEquals(listOf("near", "middle", "far"), sparse.sortedEntries().map { it.second })
+        val presized = ComponentColumn(capacity = 3, slotRange = 4)
+        listOf(3, 0, 2).forEach { presized.put(it, it * 10) }
+        assertEquals(listOf(0 to 0, 2 to 20, 3 to 30), presized.sortedEntries())
+    }
+
+    @Test
     fun sparseAndDenseQueriesBothReturnAscendingSlotOrder() {
         val builder = RuntimeBuilder()
         val dense = builder.component<Int>("test:dense", AuthoringInfo("Dense"))
