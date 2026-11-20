@@ -139,6 +139,18 @@ Koog tools adapt these real typed operations. Agents discover installed capabili
 
 Preserve Level Designer, Character Forge and Game Architect, procedural creation, repair loops, media generation, cost/budget controls, cancel, history and labelled replay. Extend agents to create new behavior/functions and use installed extensions, rather than limiting them to predefined template mechanics. Generated Kotlin/native code, if offered later, follows a separate reviewed build workflow; it is not silently executed as a normal agent tool.
 
+**Agentic parity ([ADR-0009](../adr/0009-agentic-parity.md)).** Everything a creator can do by hand in the builder is also operable by an agent from a natural-language prompt.
+
+- **Derived tools.** The agent tool surface is generated from the same catalogs as the UI: editing operations, capability descriptors, the rule block catalog and installed extensions. New capabilities therefore become promptable without new agent code. Hand-written tools only compose these into workflows.
+- **Rules by prompt.**
+  - Agents create, change, delete, reorder, enable and duplicate When / If / Do rules on one object or many.
+  - They prefer friendly blocks the creator can edit by hand, and fall back to labelled advanced rules only when blocks cannot express the request.
+  - They explain rules in the creator's terms, and debug them from real headless play traces.
+- **Review.** Every agent edit is a staged, validated changeset shown as the creator's own blocks, objects and properties, with a runnable preview. Accept is one undoable step; reject discards it. Ambiguous prompts get a clarifying question.
+- **Consent.** Outward-facing or irreversible actions (publishing, store builds, deleting scenes) always need the creator's explicit confirmation. Agents never receive credentials.
+- **No UI-only or agent-only paths.** Parity tests enumerate the operation catalog and compare the UI path with the agent tool. Recorded prompt scenarios, replayed without live models, cover rule authoring end to end.
+- **AI optional.** AI remains optional. Every capability stays fully usable by hand.
+
 ### 6.1 Guided visual creation
 
 Guided visual creation is the default. AI is an optional helper throughout; a functional blank project and visual authoring tools do not require templates, model credentials or AI-generated starting content.
@@ -222,7 +234,7 @@ The foundation is not complete until these are demonstrated:
 2. Build Platformer Adventure, a top-down puzzle/action game and Brainrot Tycoon using the same frozen engine surface. No kernel edits, genre checks or new sealed gameplay cases between demonstrations. A visual/UI-only scene must also be legal.
 3. Author at least one new mechanic using state, functions, iteration, events and queries in the portable programming surface, without adding a mechanic-specific engine instruction.
 4. In a separate consumer/test package, register a new component, behavior and operation. It appears in the inspector and no-code palette, can be called by Koog, runs headlessly and exports on its declared targets, without core source changes.
-5. UI and agent operations produce equivalent results; undo restores authoring state; Play/Stop isolates runtime changes. Save/load is tested separately from those capabilities.
+5. UI and agent operations produce equivalent results for every operation in the catalog, including rules authored from prompts (ADR-0009). Undo restores authoring state; Play/Stop isolates runtime changes. Save/load is tested separately from those capabilities.
 6. The registered deterministic profile produces equivalent results across JVM, JS, Wasm and supported Native targets. Legacy regressions continue to pass during migration.
 
 ### Usability release gate
