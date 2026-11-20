@@ -16,9 +16,10 @@ Plan/status: [PLANS.md](PLANS.md), [PROGRESS.md](PROGRESS.md).
 
 The owner confirmed engine ownership and guided creation for non-programmers, removed time pressure as an
 architectural constraint, then authorized merging plan PR #20 and starting implementation. R0 reconciliation is
-complete. R1a / issue #21 is merged. Current work is R1b / issue #23: explicit native checkpoints, entity remapping
-and replay fingerprints in `core/runtime`, proven through `samples/runtimeProbe`. Remaining R1 comparisons/program proofs and the
-visual editor remain unfinished. Do not resume old Tasks 11–12 or treat unselected libraries as approved.
+complete. R1a / issue #21 and R1b / issue #23 are merged. Current work is R1c / issue #26: the storage
+comparison and selected sparse-set store in `core/runtime` ([decision](docs/runtime-storage.md)). The architecture
+reassessment is open for owner review in PR #25 and is not merged autonomously. The R1 program/host-effect proof
+and the visual editor remain unfinished. Do not resume old Tasks 11–12 or treat unselected libraries as approved.
 Preserve completed work and player checkpoint `b2bf830` on `feat/6-player-shells`. JSON remains allowed for
 storage/transport; its schema and a closed list of gameplay mechanics cannot define engine capability.
 
@@ -43,6 +44,7 @@ storage/transport; its schema and a closed list of gameplay mechanics cannot def
 | `core/engine` | KMP, all targets | preserved tested platformer runtime and compatibility regression baseline |
 | `core/runtime` | KMP, all targets | provisional headless world/component/scheduler and explicit checkpoint/replay APIs; no legacy model dependency |
 | `samples/runtimeProbe` | KMP, all targets | separately compiled public-API consumer and cross-target extension evidence |
+| `benchmarks/runtimeStorage` | KMP executable (jvm, js, wasmJs, mingwX64, linuxX64) | unshipped runtime storage benchmark harness; public `World` API only |
 | `core/validation` | KMP, all targets | integrity checks, reachability solver, playtest, economy check |
 | `core/editing` | KMP, all targets | planned real workspace operations, undo/redo, transactions and changesets |
 | `core/api` | KMP, all targets | client/server DTOs |
@@ -71,6 +73,7 @@ Compose modules omit `mingwX64` and `linuxX64`.
 | iOS simulator tests (macOS only; CI job `ios`) | `./gradlew iosSimulatorArm64Test` |
 | Creator app | `./gradlew :app:desktopApp:run` · `:app:webApp:wasmJsBrowserDevelopmentRun` · `:app:androidApp:installDebug` |
 | Server | `./gradlew :server:run` |
+| Runtime storage benchmark (not a test gate) | `./gradlew :benchmarks:runtimeStorage:jvmRun` · `jsNodeProductionRun` · `wasmJsNodeProductionRun` · `runReleaseExecutableMingwX64` |
 
 Do not run `./gradlew build` or `allTests` locally: they include browser (Karma) and Apple tasks that are slow or
 unavailable on most machines. Use the aggregates above.

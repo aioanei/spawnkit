@@ -28,7 +28,12 @@ The [R1b checkpoint increment](runtime-checkpoints.md) adds explicit component/p
 restore with entity-reference remapping and canonical replay fingerprints. Missing state contracts fail rather
 than being silently omitted. Snapshots are runtime-scoped and in-memory; native hooks remain trusted.
 
-This is R1 evidence, not a completed backend selection, portable behavior executor or visual editor. Those remain
+The [R1c storage decision](runtime-storage.md) keeps a SpawnKit-owned store, replacing per-component hash maps
+with sparse-set columns behind the unchanged `World` API. Fleks was rejected at screening for missing published
+JS/iOS artifacts. A golden recorded on the original store, plus cross-target benchmarks, document equivalence and
+measured results.
+
+This is R1 evidence, not a portable behavior executor or visual editor. Those remain
 explicit acceptance gates in the revised plan.
 
 ## Big picture
@@ -83,7 +88,7 @@ JS, Wasm, mingwX64, linuxX64 and the iOS simulator. See [ADR-0004](adr/0004-dete
 | Document model, platformer engine, determinism clock and golden test | merged (M1, PRs #14–#17) |
 | Renderer: viewport, camera, keyboard/touch, interpolation, HUD | merged [PR #18](https://github.com/aioanei/spawnkit/pull/18); browser smoke and visual evidence retained |
 | Exported-game shells | unfinished checkpoint `b2bf830`, preserved for R6 adaptation |
-| General runtime world/component/scheduler | first R1a evidence implementation; separate public-API consumer |
+| General runtime world/component/scheduler | R1a–R1c evidence: lifecycle, checkpoints/replay, selected sparse-set store; separate public-API consumer |
 | Engine/editor/programming/extension foundation | broader R1 comparisons and R2–R9 work remain unfinished |
 | Guided creation, accessibility and novice-usability release gate | required by revised plan; not implemented or user-tested |
 | Browser deployment, editor, validation, AI Studio, publishing | preserved roadmap, revised R0–R9 dependency order |

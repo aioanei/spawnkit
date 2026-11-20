@@ -1,6 +1,35 @@
 # SpawnKit progress
 
-## Current checkpoint — R1b native checkpoints and replay (2026-11-20)
+## Current checkpoint — R1c runtime storage decision (2026-11-20, autonomous overnight session)
+
+- **Session context.** The owner asked for autonomous overnight continuation of the approved plan. They authorized
+  merging the agent's own PRs once required CI passes, after independent review, without bypassing branch rules.
+- **PR #25.** The uncommitted architecture reassessment was committed as `docs/19-engine-architecture-reassessment`
+  and opened as [PR #25](https://github.com/aioanei/spawnkit/pull/25). It stays open for owner review and is not
+  merged autonomously. Its status lines still say "proposed for review".
+- **Scope of this work.** It follows the R1 storage item already approved in the merged PR #20 plan.
+- **Branch and issue.** Branch `feat/26-runtime-storage` from main `ff86bd0`;
+  [issue #26](https://github.com/aioanei/spawnkit/issues/26).
+- **Fleks screening.** Fleks 2.16 was rejected at target screening. Its published Maven artifacts cover jvm, wasmJs,
+  linuxX64, mingwX64 and macOS, but have no JS variant (last JS release 2.12) and no iOS variant in any version.
+  It was not integrated or benchmarked.
+- **Equivalence fixture.** A seeded churn scenario in `samples/runtimeProbe` uses public APIs only. Its goldens were
+  recorded from the original map store at checkpoint `9a49597`: 298 entities, hash `-1536454527644900448`. Query
+  order feeds private state, so the goldens also pin ordering.
+- **Selected store.** Sparse-set `ComponentColumn`s indexed by component ordinal, smallest-column-driven ordered
+  queries, cached live handles, and presized restore/ordered capture (`bbc5c23`, follow-up perf commit). The public
+  API and checkpoint format are unchanged, and the baseline goldens pass on the new store.
+- **Benchmarks.** The `benchmarks/runtimeStorage` executable measures the public API on JVM, Node JS, Node Wasm and
+  mingwX64. Queries are 4.4–23× faster and steady/churn ticks 1.6–7.4× faster. Snapshot/restore are 1.0–4.5× faster,
+  with two GC/JIT-noisy rows recorded as inconclusive; JVM snapshot allocation is slightly lower. Raw outputs and tables:
+  [runtime storage](docs/runtime-storage.md), [evidence](docs/evidence/runtime-storage/).
+- **Evidence gaps.** No Android/iOS device benchmarks, no linuxX64 run on this host, a single unisolated machine,
+  and allocation measured on JVM only.
+- **Next step.** Run the full gates, push, open the PR, get an independent review and merge only on green CI. Then
+  start the R1 program/host-effect comparison as its own issue. Screen Lua, QuickJS and guest Wasm against required
+  targets first, then build the common Kotlin interpreter fixture.
+
+## Previous checkpoint — R1b native checkpoints and replay (2026-11-20)
 
 - The owner authorized merging PR #22 and granted standing authorization for future completed PRs after required checks pass. PR #22 merged at `b4e90ed`; branched from clean main as `feat/23-runtime-checkpoints`. [Issue #23](https://github.com/aioanei/spawnkit/issues/23) tracks this focused R1 increment.
 - Implemented opaque in-memory snapshots for healthy idle worlds, optional component state codecs, explicit `CheckpointSystem` capture/restore of private native fields, complete current allocator/tick state, live/stale same-world entity remapping and fresh independent restores. Unsupported attached state/system contracts fail explicitly.

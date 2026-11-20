@@ -20,7 +20,7 @@ public class World internal constructor(
     private val owner = Any()
     private val slots = mutableListOf<Slot>()
     private val freeSlots = mutableListOf<Int>()
-    private val stores = mutableMapOf<ComponentType<*>, MutableMap<Int, Any>>()
+    private val columns = arrayOfNulls<ComponentColumn>(registeredComponents.size)
     private var stage = Stage.Idle
     private var currentSystem = "runtime:commands"
 
@@ -61,9 +61,10 @@ public class World internal constructor(
         requireEntity(entity)
         val slot = slots[entity.index]
         check(slot.generation < Long.MAX_VALUE) { "Entity generation exhausted" }
-        stores.values.forEach { it.remove(entity.index) }
+        for (column in columns) column?.remove(entity.index)
         slot.alive = false
         slot.generation++
+        slot.handle = null
         freeSlots += entity.index
         entityCount--
     }
@@ -81,9 +82,9 @@ public class World internal constructor(
         check(!isFaulted && stage != Stage.Capturing && stage != Stage.Restoring) { "World is faulted or checkpointing" }
         requireEntity(entity)
         requireComponent(component)
-        val existing = stores[component]
-        if (existing?.containsKey(entity.index) != true) requireStructuralEdit()
-        stores.getOrPut(component) { mutableMapOf() }[entity.index] = value
+        val column = columns[component.ordinal]
+        if (column?.contains(entity.index) != true) requireStructuralEdit()
+        (column ?: ComponentColumn().also { columns[component.ordinal] = it }).put(entity.index, value)
     }
 
     /** Reads a component, or `null` if absent. Stale/foreign handles and foreign component registrations fail. */
@@ -91,7 +92,7 @@ public class World internal constructor(
     public fun <T : Any> get(entity: EntityHandle, component: ComponentType<T>): T? {
         requireEntity(entity)
         requireComponent(component)
-        return stores[component]?.get(entity.index) as T?
+        return columns[component.ordinal]?.get(entity.index) as T?
     }
 
     /** Detaches a component outside a system update and returns its previous value, if present. */
@@ -100,16 +101,47 @@ public class World internal constructor(
         requireStructuralEdit()
         requireEntity(entity)
         requireComponent(component)
-        return stores[component]?.remove(entity.index) as T?
+        return columns[component.ordinal]?.remove(entity.index) as T?
     }
 
-    /** Captures live handles having all [components], in ascending slot order; no types means every entity. */
+    /**
+     * Captures live handles having all [components], in ascending slot order; no types means every entity.
+     * The smallest requested column drives the query, so sparse components are not found by scanning every slot.
+     */
     public fun entities(vararg components: ComponentType<*>): List<EntityHandle> {
         components.forEach(::requireComponent)
-        return slots.indices
-            .filter { index ->
-                slots[index].alive && components.all { stores[it]?.containsKey(index) == true }
-            }.map(::handle)
+        if (components.isEmpty()) {
+            val result = ArrayList<EntityHandle>(entityCount)
+            for (index in slots.indices) if (slots[index].alive) result += handle(index)
+            return result
+        }
+        val required = arrayOfNulls<ComponentColumn>(components.size)
+        var driver = -1
+        for ((i, component) in components.withIndex()) {
+            val column = columns[component.ordinal]
+            if (column == null || column.size == 0) return emptyList()
+            required[i] = column
+            if (driver < 0 || column.size < checkNotNull(required[driver]).size) driver = i
+        }
+        val smallest = checkNotNull(required[driver])
+        if (smallest.size.toLong() * ComponentColumn.SORT_COST_FACTOR >= slots.size) {
+            // Dense relative to the slot range: an ordered slot scan avoids sorting.
+            val result = ArrayList<EntityHandle>(smallest.size)
+            for (index in slots.indices) {
+                if (required.all { checkNotNull(it).contains(index) }) result += handle(index)
+            }
+            return result
+        }
+        val matches = IntArray(smallest.size)
+        var count = 0
+        for (position in 0 until smallest.size) {
+            val index = smallest.slotAt(position)
+            if (required.all { checkNotNull(it).contains(index) }) matches[count++] = index
+        }
+        matches.sort(0, count)
+        val result = ArrayList<EntityHandle>(count)
+        for (i in 0 until count) result += handle(matches[i])
+        return result
     }
 
     /**
@@ -145,19 +177,25 @@ public class World internal constructor(
      */
     public fun snapshot(limits: SnapshotLimits = SnapshotLimits()): WorldSnapshot {
         check(stage == Stage.Idle && !isFaulted) { "Snapshots require a healthy idle world" }
-        val populated = stores.filterValues { it.isNotEmpty() }.entries.sortedBy { it.key.id }
-        populated.forEach { check(it.key.supportsCheckpoint) { "Component '${it.key.id}' has no checkpoint codec" } }
+        // registeredComponents is sorted by ID, keeping capture order canonical and independent of registration order.
+        val populated =
+            registeredComponents.mapNotNull { component ->
+                columns[component.ordinal]?.takeIf { it.size > 0 }?.let { component to it }
+            }
+        populated.forEach { check(it.first.supportsCheckpoint) { "Component '${it.first.id}' has no checkpoint codec" } }
         systems.forEach { (id, system) -> check(system is CheckpointSystem) { "System '$id' has no checkpoint contract" } }
         val context = StateCaptureContext(this)
         val freezer = StateFreezer(owner, limits)
         stage = Stage.Capturing
         try {
             val capturedComponents =
-                populated.map { (component, values) ->
+                populated.map { (component, column) ->
                     CapturedComponent(
                         component,
-                        values.entries.sortedBy { it.key }.map { (index, value) ->
-                            index to freezer.copy(component.capture(value, context))
+                        ArrayList<Pair<Int, StateValue>>(column.size).also { entries ->
+                            column.forEachInSlotOrder { index, value ->
+                                entries += index to freezer.copy(component.capture(value, context))
+                            }
                         },
                     )
                 }
@@ -196,11 +234,9 @@ public class World internal constructor(
             freeSlots += state.freeSlots
             entityCount = slots.count { it.alive }
             for ((component, entries) in state.components) {
-                stores[component] =
-                    entries
-                        .associate { (index, value) ->
-                            index to component.restore(copyCapturedState(value), context)
-                        }.toMutableMap()
+                val column = ComponentColumn(entries.size, slots.size)
+                for ((index, value) in entries) column.put(index, component.restore(copyCapturedState(value), context))
+                columns[component.ordinal] = column
             }
             for ((index, captured) in state.systems.withIndex()) {
                 val (id, system) = systems[index]
@@ -237,11 +273,17 @@ public class World internal constructor(
         check(stage == Stage.Idle || stage == Stage.Committing) { "Use WorldCommands during updates; checkpoint state is read-only" }
     }
 
-    private fun handle(index: Int): EntityHandle = EntityHandle(owner, index, slots[index].generation)
+    /** Returns the cached immutable handle for a live slot's current generation. */
+    private fun handle(index: Int): EntityHandle {
+        val slot = slots[index]
+        return slot.handle ?: EntityHandle(owner, index, slot.generation).also { slot.handle = it }
+    }
 
     private class Slot(
         var generation: Long = 0L,
         var alive: Boolean = true,
+        /** Handle for the current generation; cleared whenever the generation changes. */
+        var handle: EntityHandle? = null,
     )
 
     private enum class Stage { Idle, Updating, Committing, Capturing, Restoring }
