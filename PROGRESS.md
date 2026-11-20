@@ -1,5 +1,23 @@
 # SpawnKit progress
 
+## Current checkpoint — C3 builder shell (2026-11-20)
+
+- **C2 is done.** PR #48 merged as `955d589`; the C3 branch already sits on that merge.
+- **Branch and issue.** Branch `feat/47-builder-shell`; [issue #47](https://github.com/aioanei/spawnkit/issues/47).
+- **Builder.** The real builder lives in `app/shared`: `EditorState`, `Viewport` (touch and mouse gestures, drag
+  move as one undo step, pan, pinch and wheel zoom), the descriptor-generated `Inspector`, `EditorScreen` (compact and
+  expanded layouts, palette, hierarchy, toolbar, status) and a 60 Hz play loop.
+- **Verification.** Compose UI tests pass at phone and desktop sizes, with a viewport pixel check. The Android debug
+  APK was installed and driven on the API 36 emulator with real taps and a swipe. Screenshots are in `docs/media`.
+  Emulator testing found and fixed density scaling, grid density and selection visibility. Docs:
+  [builder](docs/builder.md).
+- **Pre-PR review fixes.** Inline validation messages under rejected inspector fields (an issue requirement that only
+  reached the status bar), keyboard shortcuts on a focused scene (undo/redo, duplicate, delete, nudge, Escape), and
+  horizontal-only scrolls no longer zoom in. Each has a UI test.
+- **Next step.** Open the C3 PR, review and merge. Then C4: visual rules. Install
+  `ProgramFeature` in `BuilderEngine` with descriptor and input bindings and gameplay host functions, add a
+  `ComponentDoc`-like behavior attachment for programs in the workspace, and build a touch-friendly When/If/Do editor.
+
 ## Current checkpoint — C2 editing core (2026-11-20)
 
 - **C1 is done.** PR #45 merged after an independent review; zoom guard, bounded grid and a real layer-order pixel

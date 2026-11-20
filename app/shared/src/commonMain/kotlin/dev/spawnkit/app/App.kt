@@ -1,45 +1,30 @@
 package dev.spawnkit.app
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import dev.spawnkit.app.editor.EditorScreen
+
+/** SpawnKit's creator palette: a calm dark workspace with bright accents that keep the game content in focus. */
+private val SpawnKitColors =
+    darkColorScheme(
+        primary = Color(0xFF4FC3F7),
+        secondary = Color(0xFFB39DDB),
+        tertiary = Color(0xFF66BB6A),
+        background = Color(0xFF121318),
+        surface = Color(0xFF1A1C22),
+        surfaceVariant = Color(0xFF2A2D36),
+        error = Color(0xFFEF5350),
+    )
 
 /**
- * Root composable of the SpawnKit creator application.
- *
- * The editor, AI Studio and arcade screens are added in later milestones; this shell
- * proves the shared UI runs on every creator target.
+ * Root composable of the SpawnKit creator application. The same builder runs on Android, iOS, desktop and web;
+ * layouts adapt to the window size rather than per platform.
  */
 @Composable
 fun App() {
-    MaterialTheme(colorScheme = darkColorScheme()) {
-        Column(
-            modifier =
-                Modifier
-                    .background(MaterialTheme.colorScheme.background)
-                    .safeContentPadding()
-                    .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Text(
-                text = "SpawnKit",
-                style = MaterialTheme.typography.displayMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-            Text(
-                text = "Build games with AI agents that playtest their own work.",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-        }
+    MaterialTheme(colorScheme = SpawnKitColors) {
+        EditorScreen()
     }
 }

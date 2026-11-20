@@ -66,7 +66,7 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
 | `core/api` | KMP, all targets | client/server DTOs |
 | `render` | KMP + Compose | shared `RuntimeCanvas` for general-runtime frames (editor and players); legacy platformer `GameView` |
 | `ai` | KMP | planned Koog engine/editor capability tools, media providers, record/replay executors |
-| `app/shared` + `app/*App` | KMP + Compose | creator app (editor, AI Studio, arcade) and platform entry points |
+| `app/shared` + `app/*App` | KMP + Compose | creator app: responsive builder (viewport, hierarchy, generated inspector, play) on Android/desktop/iOS/web, plus platform entry points |
 | `player/shared` + `player/*App` | KMP + Compose | exported-game shells (single game / arcade gallery) |
 | `server` | Ktor (JVM) | publishing, arcade hosting, validation |
 
