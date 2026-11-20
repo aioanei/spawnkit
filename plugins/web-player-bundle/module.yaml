@@ -1,0 +1,4 @@
+product: jvm/amper-plugin
+
+apply:
+  - //toolchain/kotlin.module-template.yaml

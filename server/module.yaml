@@ -8,6 +8,8 @@ apply:
   - //toolchain/lint.module-template.yaml
 
 dependencies:
+  - //core/editing
+  - //core/gameplay
   - $libs.logback
   - $libs.ktor.serverCore
   - $libs.ktor.serverNetty
@@ -21,3 +23,7 @@ settings:
   ktor:
     enabled: true
     version: 3.6.1 # keep aligned with ktor in gradle/libs.versions.toml
+
+
+plugins:
+  web-player-bundle: enabled
