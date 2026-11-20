@@ -11,6 +11,7 @@ import dev.spawnkit.editing.Editor
 import dev.spawnkit.editing.OperationResult
 import dev.spawnkit.editing.Project
 import dev.spawnkit.editing.SceneWorld
+import dev.spawnkit.editing.capabilityProblems
 import dev.spawnkit.gameplay.BlockLocation
 import dev.spawnkit.gameplay.RuleBlocks
 import dev.spawnkit.gameplay.RuleItem
@@ -253,6 +254,10 @@ class EditorState(
     }
 
     fun startPlay() {
+        project.capabilityProblems(engine.runtime).firstOrNull()?.let {
+            message = it
+            return
+        }
         selection = null
         play = PlaySession(editor.buildWorld(sceneId), engine.actions)
     }
@@ -286,7 +291,7 @@ class EditorState(
 
     /** The world shown in the viewport: the play world while playing, otherwise a preview of the scene. */
     fun previewWorld(): SceneWorld {
-        val built = editor.buildWorld(sceneId)
+        val built = editor.buildPreview(sceneId)
         dragging?.let { (id, offset) ->
             val entity = built.entity(id) ?: return@let
             val transform = built.world.get(entity, engine.graphics.transform) ?: return@let
@@ -350,6 +355,17 @@ class EditorState(
             .mapNotNull { (it.component("gameplay:tag")?.values?.get("tag") as? String)?.trim() }
             .filter { it.isNotEmpty() }
             .distinct()
+
+    /** Replaces the workspace only after decoding succeeded; transient play/selection/camera state is reset. */
+    fun loadProject(project: Project) {
+        play = null
+        dragging = null
+        selection = null
+        editor.load(project)
+        sceneId = project.scenes.first().id
+        camera = CameraView(zoom = 1.0)
+        message = project.capabilityProblems(engine.runtime).firstOrNull()
+    }
 }
 
 /** Rounds to 0.01 world units so dragged positions stay tidy in the inspector. */

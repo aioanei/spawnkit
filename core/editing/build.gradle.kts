@@ -7,5 +7,6 @@ kotlin {
         api(project(":core:runtime"))
         api(project(":core:graphics"))
         api(project(":core:program"))
+        api(libs.kotlinx.serialization.json)
     }
 }

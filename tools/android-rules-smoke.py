@@ -5,6 +5,7 @@ import re
 import subprocess
 import sys
 import time
+import xml.etree.ElementTree as ET
 
 ADB = os.path.join(os.environ["LOCALAPPDATA"], "Android", "Sdk", "platform-tools", "adb.exe")
 OUT = sys.argv[1]
@@ -16,12 +17,18 @@ def adb(*args, binary=False):
 
 
 def nodes():
-    adb("shell", "uiautomator", "dump", "/sdcard/ui.xml")
-    xml = adb("exec-out", "cat", "/sdcard/ui.xml")
-    found = []
-    for m in re.finditer(r'<node [^>]*?text="([^"]*)"[^>]*?content-desc="([^"]*)"[^>]*?bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', xml):
-        text, desc, x1, y1, x2, y2 = m.groups()
-        found.append((text, desc, (int(x1) + int(x2)) // 2, (int(y1) + int(y2)) // 2, int(y1)))
+    for _ in range(4):
+        adb("shell", "uiautomator", "dump", "/sdcard/ui.xml")
+        root = ET.fromstring(adb("exec-out", "cat", "/sdcard/ui.xml"))
+        found = []
+        for node in root.iter("node"):
+            bounds = re.fullmatch(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", node.get("bounds", ""))
+            if bounds:
+                x1, y1, x2, y2 = map(int, bounds.groups())
+                found.append((node.get("text", ""), node.get("content-desc", ""), (x1 + x2) // 2, (y1 + y2) // 2, y1))
+        if any(text or desc for text, desc, *_ in found):
+            return found
+        time.sleep(0.3)
     return found
 
 
@@ -55,7 +62,18 @@ def screenshot(name):
 
 adb("shell", "am", "force-stop", "dev.spawnkit")
 adb("shell", "monkey", "-p", "dev.spawnkit", "-c", "android.intent.category.LAUNCHER", "1")
-time.sleep(4)
+for _ in range(10):
+    start_new = find("Start new", exact=False)
+    if start_new:
+        adb("shell", "input", "tap", str(start_new[2]), str(start_new[3]))
+        time.sleep(1)
+        print("tap Start new", flush=True)
+        break
+    if find("Score"):
+        break
+    time.sleep(1)
+else:
+    raise SystemExit("The builder did not finish opening")
 
 tap("Score", scroll=False)
 tap("Coin", scroll=False)

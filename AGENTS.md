@@ -23,8 +23,11 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
   R2a–R2f are merged: [descriptors](docs/runtime-descriptors.md), [hierarchy, resources, random and scene
   templates](docs/runtime-hierarchy.md), [deterministic input](docs/runtime-input.md), and descriptor and input
   bindings for programs.
-- **Now:** the [contest delivery track](docs/plans/2026-11-20-engine-foundation-revision.md#contest-delivery-track),
-  C1–C8, from C1 (2D presentation) onward.
+- **Done:** contest-track C1–C4: general presentation, editing operations, responsive builder and visual rules.
+  PRs #54 and #55 are merged.
+- **Now:** C5, project persistence ([issue #56](https://github.com/aioanei/spawnkit/issues/56)), in the
+  [contest delivery track](docs/plans/2026-11-20-engine-foundation-revision.md#contest-delivery-track). See the latest
+  checkpoint in `PROGRESS.md` before continuing; C6–C8 follow.
 - **Reviewed:** the owner merged the [architecture reassessment](docs/design/2026-11-20-engine-alternatives-review.md)
   (PR #25); it records the alternatives behind the current direction.
 - **Preserve:** completed work and player checkpoint `b2bf830` on `feat/6-player-shells`.

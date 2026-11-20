@@ -3,8 +3,11 @@ package dev.spawnkit.app
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import dev.spawnkit.app.editor.EditorScreen
+import dev.spawnkit.app.persistence.ProjectSession
+import dev.spawnkit.app.persistence.rememberProjectFiles
 
 /** SpawnKit's creator palette: a calm dark workspace with bright accents that keep the game content in focus. */
 private val SpawnKitColors =
@@ -24,7 +27,9 @@ private val SpawnKitColors =
  */
 @Composable
 fun App() {
+    val files = rememberProjectFiles()
+    val session = remember(files) { ProjectSession(files) }
     MaterialTheme(colorScheme = SpawnKitColors) {
-        EditorScreen()
+        EditorScreen(session.state, projectSession = session)
     }
 }

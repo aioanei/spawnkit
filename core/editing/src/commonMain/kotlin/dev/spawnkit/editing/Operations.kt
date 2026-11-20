@@ -13,6 +13,13 @@ public sealed interface EditOperation {
     /** Short creator-facing description used for undo history, for example "Move Hero". */
     public val label: String
 
+    /** Renames the project as one undoable step. */
+    public data class RenameProject(
+        /** Creator-facing game name. */
+        public val name: String,
+        override val label: String = "Rename project",
+    ) : EditOperation
+
     /** Adds an object with [components] (defaults unless values are given) under [parent], appended or at [index]. */
     public data class AddObject(
         public val sceneId: String,
@@ -152,6 +159,11 @@ internal class OperationApplier(
         created: MutableList<String>,
     ): Project =
         when (operation) {
+            is EditOperation.RenameProject -> {
+                requireName(operation.name)
+                project.copy(name = operation.name.trim())
+            }
+
             is EditOperation.Batch -> {
                 operation.operations.fold(project) { current, next -> applyInternal(current, next, created) }
             }

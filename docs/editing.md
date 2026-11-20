@@ -11,6 +11,10 @@ A `Project` holds `SceneDoc`s. Each scene holds `ObjectDoc`s with a stable ID, a
 default) and `rules` (C4b). The model is immutable and meaningful without ever being saved; persistence encodes it at a boundary (C5).
 `Project.blank()` is a functional empty project with one scene. Authoring order is sibling order.
 
+C5 adds [project files and recovery](project-persistence.md): `ProjectCodec`, `ProjectJournal`, `DraftStore`,
+`Editor.saveSnapshot()` and capability-aware previews. Opening a file preserves missing components/settings;
+`Project.capabilityProblems(runtime)` blocks execution with an explanation. `RenameProject` is undoable.
+
 ## Operations
 
 All changes go through typed `EditOperation`s, validated against the installed descriptors:
