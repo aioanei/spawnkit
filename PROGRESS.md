@@ -1,6 +1,25 @@
 # SpawnKit progress
 
-## Current checkpoint — R1d portable program executor (2026-11-20, autonomous overnight session)
+## Current checkpoint — R2a capability descriptors (2026-11-20, autonomous overnight session)
+
+- **R1 is complete.** PR #29 (R1d executor) merged as `1d8edab` after green CI. An independent AI-subagent review
+  found two blocking issues: a type hole letting a `ClassCastException` escape, and unbounded text growth. Both
+  were fixed and re-verified, along with should-fix items. Issue #28 is closed.
+- **Branch and issue.** Branch `feat/30-capability-descriptors`;
+  [issue #30](https://github.com/aioanei/spawnkit/issues/30).
+- **Added in `core/runtime`.**
+  - `RuntimeBuilder.describe`, with value kinds (whole number, decimal, yes/no, text, choice, object reference),
+    constraints, defaults, visibility and examples.
+  - `Runtime.catalog` and `descriptor()`.
+  - Inspector functions: `inspect`, typed and ID-based `edit` returning undo values, `addComponent` and
+    `referenceCandidates`.
+  - `samples/runtimeProbe` describes `Counter` and edits it through the generic model.
+- **Docs.** [descriptors](docs/runtime-descriptors.md).
+- **Next step.** Run the gates, open the PR, review and merge. Then continue R2 with hierarchy (parent/children
+  with cycle checks and ordered children), seeded RNG and timers as runtime resources, and function/event
+  descriptors. Deriving `ProgramHost` property bindings from component descriptors is a follow-up.
+
+## Previous checkpoint — R1d portable program executor (2026-11-20, autonomous overnight session)
 
 - **R1c is done.** PR #27 merged as `9732f1b` after green `build`/`ios-simulator`. An independent AI-subagent review
   found nothing blocking; its fixes are in `573d649` and `a2718f9`. Issue #26 is closed. PR #25 (reassessment)

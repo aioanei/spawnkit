@@ -37,6 +37,11 @@ The [R1d program executor](runtime-programs.md) adds `core/program`: typed porta
 lists, loops, queries, typed host calls, events, waits, effects) checked with source diagnostics and run by a
 resumable bytecode VM. Execution is bounded by deterministic limits, each segment is atomic, and suspended waits
 are checkpointed. QuickJS, Chasm and Luak failed required-target screening.
+
+The [R2a descriptors](runtime-descriptors.md) add typed authoring metadata for components: value kinds,
+constraints, defaults, help and visibility. They also add a runtime catalog, a headless generic inspector model and
+validated, undo-ready edits, proven with a separately compiled extension component.
+
 This is R1 evidence, not the complete R4 language or a visual editor. Those remain
 explicit acceptance gates in the revised plan.
 
@@ -94,6 +99,7 @@ JS, Wasm, mingwX64, linuxX64 and the iOS simulator. See [ADR-0004](adr/0004-dete
 | Exported-game shells | unfinished checkpoint `b2bf830`, preserved for R6 adaptation |
 | General runtime world/component/scheduler | R1a–R1c evidence: lifecycle, checkpoints/replay, selected sparse-set store; separate public-API consumer |
 | Portable program executor | R1d proof slice in `core/program`; checkpointed waits, atomic segments, cross-target golden |
+| Capability descriptors and generic inspector model | R2a in `core/runtime`; headless, no Compose UI yet |
 | Engine/editor/programming/extension foundation | broader R1 comparisons and R2–R9 work remain unfinished |
 | Guided creation, accessibility and novice-usability release gate | required by revised plan; not implemented or user-tested |
 | Browser deployment, editor, validation, AI Studio, publishing | preserved roadmap, revised R0–R9 dependency order |
