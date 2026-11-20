@@ -261,18 +261,18 @@ private class ProgramSystem(
             instance.threads.removeAll(due)
             for (thread in due) {
                 if (instance.fault != null) break
-                Segment(feature, world, entity, instance).resume(thread)
+                Segment(feature, world, commands, entity, instance).resume(thread)
             }
             for ((index, handler) in instance.program.handlers.withIndex()) {
                 if (instance.fault != null) break
-                if (handler.trigger == Trigger.EveryTick) Segment(feature, world, entity, instance).start(index, null)
+                if (handler.trigger == Trigger.EveryTick) Segment(feature, world, commands, entity, instance).start(index, null)
             }
             for ((event, payload) in deliveries[i]) {
                 for ((index, handler) in instance.program.handlers.withIndex()) {
                     if (instance.fault != null) break
                     val trigger = handler.trigger
                     if (trigger is Trigger.OnEvent && trigger.event == event) {
-                        Segment(feature, world, entity, instance).start(index, payload)
+                        Segment(feature, world, commands, entity, instance).start(index, payload)
                     }
                 }
             }
@@ -305,6 +305,7 @@ private class Frame(
 private class Segment(
     private val feature: ProgramFeature,
     private val world: World,
+    private val commands: WorldCommands,
     private val selfEntity: EntityHandle,
     private val instance: ProgramInstance,
 ) : HostCallContext {
@@ -314,6 +315,9 @@ private class Segment(
     private val writes = LinkedHashMap<Pair<EntityHandle, Int>, ProgramValue>()
     private val events = mutableListOf<Pair<String, ProgramValue>>()
     private val effects = mutableListOf<Pair<String, ProgramValue>>()
+
+    /** Objects to remove at commit; a set, so its size is bounded by the live objects a segment can reach. */
+    private val removals = LinkedHashSet<EntityHandle>()
     private var fuel = 0L
     private var allocation = 0L
     private var hostArguments: List<ProgramValue> = emptyList()
@@ -413,6 +417,8 @@ private class Segment(
                 }
             }
         }
+        // Structural changes are deferred like every system's commands, so they apply once this tick's updates finish.
+        removals.forEach(commands::destroyTree)
         effects.forEachIndexed { n, (effect, payload) ->
             instance.outbox += EffectRequest("${self.index}.${self.generation}:${instance.segments}:$n", effect, payload)
         }
@@ -584,6 +590,12 @@ private class Segment(
                 is Op.Effect -> {
                     message()
                     effects += op.effect to stack.pop()
+                }
+
+                Op.Destroy -> {
+                    val entity = (stack.pop() as EntityValue).entity
+                    if (!world.isAlive(entity)) throw FaultSignal(FaultKind.MissingProperty, "The object to remove no longer exists")
+                    removals += entity
                 }
 
                 Op.Wait -> {

@@ -172,6 +172,8 @@ internal sealed interface Op {
     ) : Op
 
     data object Wait : Op
+
+    data object Destroy : Op
 }
 
 private class Scope(
@@ -433,6 +435,11 @@ private class ProgramCompiler(
             is Stmt.Wait -> {
                 expect(expression(stmt.ticks, scope), IntegerType, src, "the wait duration")
                 unit.emit(Op.Wait, src)
+            }
+
+            is Stmt.Destroy -> {
+                expect(expression(stmt.entity, scope), EntityType, src, "the object to remove")
+                unit.emit(Op.Destroy, src)
             }
 
             is Stmt.RequestEffect -> {
