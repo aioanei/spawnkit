@@ -47,6 +47,27 @@ public class WorldCommands internal constructor(
         record { if (world.isAlive(entity)) world.remove(entity, component) }
     }
 
+    /** Reparents or reorders at commit; see [World.setParent]. Commands skip if either object was destroyed first. */
+    public fun setParent(
+        child: EntityHandle,
+        parent: EntityHandle?,
+        index: Int = -1,
+    ) {
+        checkActive()
+        world.requireEntity(child)
+        parent?.let(world::requireEntity)
+        record {
+            if (world.isAlive(child) && (parent == null || world.isAlive(parent))) world.setParent(child, parent, index)
+        }
+    }
+
+    /** Destroys an object and its descendants at commit; skipped if it was already destroyed. */
+    public fun destroyTree(entity: EntityHandle) {
+        checkActive()
+        world.requireEntity(entity)
+        record { if (world.isAlive(entity)) world.destroyTree(entity) }
+    }
+
     internal fun commit(onCommand: (String) -> Unit) {
         active = false
         pending.forEach { (system, apply) ->

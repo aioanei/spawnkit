@@ -27,6 +27,10 @@ internal data class CapturedWorld(
     val registeredComponents: List<String>,
     val components: List<CapturedComponent>,
     val systems: List<Pair<String, StateValue>>,
+    /** Parent slot to ordered child slots, ascending by parent. */
+    val hierarchy: List<Pair<Int, List<Int>>> = emptyList(),
+    /** Resource ID to captured value, ascending by ID. */
+    val resources: List<Pair<String, StateValue>> = emptyList(),
 )
 
 internal data class CapturedSlot(

@@ -1,6 +1,23 @@
 # SpawnKit progress
 
-## Current checkpoint — R2a capability descriptors (2026-11-20, autonomous overnight session)
+## Current checkpoint — R2b hierarchy, resources and seeded random (2026-11-20, autonomous overnight session)
+
+- **R2a is done.** PR #31 merged as `c4cde07`. The independent review found nothing blocking; edit gating, factory
+  validation and cross-target decimal input were fixed before merge.
+- **Branch and issue.** Branch `feat/32-hierarchy-resources`;
+  [issue #32](https://github.com/aioanei/spawnkit/issues/32).
+- **Added.**
+  - World hierarchy: `setParent`, `parent`, `children`, `destroyTree`, deferred commands, and detach-on-destroy.
+  - `RuntimeBuilder.resource` and `World.resource`.
+  - SplitMix64 `SeededRandom` with a codec.
+  - Snapshot and hash sections that appear only when non-empty, so existing goldens are unchanged.
+- **Tests.** All targets pass locally. Docs: [hierarchy](docs/runtime-hierarchy.md).
+- **Next step.** Gates, PR, review, merge. Then continue R2 with:
+  - function/event descriptors, deriving `ProgramHost` bindings from component descriptors;
+  - input actions/axes as runtime resources;
+  - scene-instance identity (authoring IDs mapped to runtime handles).
+
+## Previous checkpoint — R2a capability descriptors (2026-11-20, autonomous overnight session)
 
 - **R1 is complete.** PR #29 (R1d executor) merged as `1d8edab` after green CI. An independent AI-subagent review
   found two blocking issues: a type hole letting a `ClassCastException` escape, and unbounded text growth. Both

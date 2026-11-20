@@ -41,6 +41,8 @@ are checkpointed. QuickJS, Chasm and Luak failed required-target screening.
 The [R2a descriptors](runtime-descriptors.md) add typed authoring metadata for components: value kinds,
 constraints, defaults, help and visibility. They also add a runtime catalog, a headless generic inspector model and
 validated, undo-ready edits, proven with a separately compiled extension component.
+The [R2b increment](runtime-hierarchy.md) adds an ordered scene hierarchy, typed per-world resources and a
+deterministic `SeededRandom`. All three are checkpointed, and existing hashes are unchanged.
 
 This is R1 evidence, not the complete R4 language or a visual editor. Those remain
 explicit acceptance gates in the revised plan.

@@ -27,6 +27,7 @@ public class RuntimeBuilder {
     private val components = mutableMapOf<String, ComponentType<*>>()
     private val systems = mutableMapOf<String, SystemRegistration>()
     private val descriptors = mutableMapOf<String, ComponentDescriptor<*>>()
+    private val resources = mutableMapOf<String, ResourceType<*>>()
     private var built = false
 
     /**
@@ -42,6 +43,22 @@ public class RuntimeBuilder {
         requireCapabilityId(id)
         require(id !in components) { "Duplicate component '$id'" }
         return ComponentType<T>(id, authoring, registry, checkpoint, components.size).also { components[id] = it }
+    }
+
+    /**
+     * Registers a per-world singleton resource. [create] must return a fresh value for every world. [checkpoint] is
+     * required for snapshots of worlds created by this runtime; without it, [World.snapshot] fails explicitly.
+     */
+    public fun <T : Any> resource(
+        id: String,
+        authoring: AuthoringInfo,
+        checkpoint: StateCodec<T>?,
+        create: () -> T,
+    ): ResourceType<T> {
+        check(!built) { "Runtime registration has closed" }
+        requireCapabilityId(id)
+        require(id !in resources) { "Duplicate resource '$id'" }
+        return ResourceType(id, authoring, registry, checkpoint, create, resources.size).also { resources[id] = it }
     }
 
     /**
@@ -87,7 +104,13 @@ public class RuntimeBuilder {
         check(!built) { "Runtime registration has closed" }
         val schedule = orderSystems(systems.values.toList())
         built = true
-        return Runtime(registry, components.values.sortedBy { it.id }, schedule, descriptors.values.sortedBy { it.component.id })
+        return Runtime(
+            registry,
+            components.values.sortedBy { it.id },
+            schedule,
+            descriptors.values.sortedBy { it.component.id },
+            resources.values.sortedBy { it.ordinal },
+        )
     }
 }
 
@@ -97,6 +120,7 @@ public class Runtime internal constructor(
     private val components: List<ComponentType<*>>,
     private val schedule: List<SystemRegistration>,
     private val descriptors: List<ComponentDescriptor<*>>,
+    private val resources: List<ResourceType<*>>,
 ) {
     /** Described components in ID order, for palettes, inspectors and agent capability discovery. */
     public val catalog: List<ComponentDescriptor<*>> get() = descriptors.toList()
@@ -112,7 +136,7 @@ public class Runtime internal constructor(
     public val systemOrder: List<String> get() = schedule.map { it.id }
 
     /** Constructs an empty world and fresh system instances. Component instances are supplied through [World.set]. */
-    public fun createWorld(): World = World(registry, components, schedule.map { it.id to it.create() })
+    public fun createWorld(): World = World(registry, components, schedule.map { it.id to it.create() }, resources)
 
     /**
      * Restores into fresh world/system instances from this runtime's checkpoint. Repeated restores are independent;
