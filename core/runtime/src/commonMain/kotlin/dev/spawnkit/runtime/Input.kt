@@ -18,7 +18,10 @@ public class InputAxis internal constructor(
     internal val registry: Any,
 )
 
-/** A touch or mouse pointer in host-defined view coordinates. */
+/**
+ * A touch or mouse pointer in world units. Hosts convert screen positions through the active camera before
+ * submitting, so gameplay is independent of screen size and density.
+ */
 public data class Pointer(
     /** Identifier, unique within a frame and stable while the pointer stays active. */
     public val id: Int,
@@ -84,4 +87,7 @@ public class InputView internal constructor(
 
     /** Active pointers this tick, in the order supplied. */
     public val pointers: List<Pointer> get() = world.currentInput.pointers
+
+    /** Pointers of the previous tick, so rules can detect presses (pressed now, not before) and releases. */
+    public val previousPointers: List<Pointer> get() = world.previousInput.pointers
 }

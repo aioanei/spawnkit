@@ -1,5 +1,26 @@
 # SpawnKit progress
 
+## Current checkpoint — C4a rule-ready gameplay facilities (2026-11-20)
+
+- **Merged.** PR #50 (C3 builder shell) as `cba603f`, after a pre-PR self-review that added inline validation
+  messages, keyboard shortcuts and a horizontal-scroll fix; issue #47 is closed. At the owner's request, PR #25
+  (architecture reassessment) as `07ae1d6`, after merging main into it: main's current plan and guidance were kept,
+  and its "waiting for review" notes were reworded as reviewed.
+- **Branch and issue.** Branch `feat/49-gameplay-facilities`; [issue #49](https://github.com/aioanei/spawnkit/issues/49).
+  An earlier untested WIP commit for this issue was dropped and rebuilt test-first.
+- **Added.**
+  - `core/program`: the `Destroy` statement (atomic, end-of-tick, removes children, faults on stale targets) and
+    `HostCallContext.world`.
+  - `core/runtime`: `InputView.previousPointers`; pointers are documented as world units.
+  - `core/graphics` and `render`: `Text2D`, drawn by the shared renderer, with a pixel test.
+  - New module `core/gameplay`: `Tag`, `NumberValue`, seeded random, `touching`, `tapped`, `firstTagged`,
+    `countTagged`, `textOf`, `random`, `tick`, standard input actions and `StandardEngine`. The builder now uses
+    `StandardEngine`.
+  - Docs: [gameplay](docs/gameplay.md), plus updates to programs, input, 2D graphics and builder docs.
+- **Next step.** Gates, PR, review, merge. Then C4b: attach rules to workspace objects (unique program IDs per
+  object), submit keyboard and world-space pointer input from the play view, and build the touch-friendly
+  When / If / Do editor on top of `StandardEngine`'s catalog.
+
 ## Current checkpoint — C3 builder shell (2026-11-20)
 
 - **C2 is done.** PR #48 merged as `955d589`; the C3 branch already sits on that merge.

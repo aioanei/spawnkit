@@ -217,6 +217,43 @@ class InputTest {
         assertEquals(listOf(1), taps)
     }
 
+    @Test
+    fun previousPointersLetRulesDetectPressesAndSurviveCheckpoints() {
+        val builder = RuntimeBuilder()
+        val seen = mutableListOf<Pair<List<Pointer>, List<Pointer>>>()
+        builder.system("test:presses") {
+            object : CheckpointSystem {
+                override fun update(
+                    world: World,
+                    commands: WorldCommands,
+                ) {
+                    seen += world.input.previousPointers to world.input.pointers
+                }
+
+                override fun captureState(context: StateCaptureContext): StateValue = StateValue.Null
+
+                override fun restoreState(
+                    state: StateValue,
+                    context: StateRestoreContext,
+                ) {}
+            }
+        }
+        val runtime = builder.build()
+        val world = runtime.createWorld()
+        val press = listOf(Pointer(1, 3.0, 4.0, true))
+        world.submitInput(InputFrame(pointers = press))
+        world.step()
+        val snapshot = world.snapshot()
+        world.submitInput(InputFrame())
+        world.step()
+        assertEquals(listOf(emptyList<Pointer>() to press, press to emptyList()), seen)
+        val restored = runtime.restore(snapshot)
+        assertEquals(press, restored.input.pointers)
+        restored.submitInput(InputFrame())
+        restored.step()
+        assertEquals(press to emptyList(), seen.last(), "The previous frame is restored from the checkpoint")
+    }
+
     /** Recorded on JVM; every target must reproduce it. */
     private companion object {
         const val GOLDEN_HASH = -8903530279068901628L

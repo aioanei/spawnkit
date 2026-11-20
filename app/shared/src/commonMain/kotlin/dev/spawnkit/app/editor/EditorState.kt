@@ -11,23 +11,10 @@ import dev.spawnkit.editing.Editor
 import dev.spawnkit.editing.OperationResult
 import dev.spawnkit.editing.Project
 import dev.spawnkit.editing.SceneWorld
+import dev.spawnkit.gameplay.StandardEngine
 import dev.spawnkit.graphics.CameraView
-import dev.spawnkit.graphics.Graphics2D
 import dev.spawnkit.graphics.RenderList
 import dev.spawnkit.graphics.renderList
-import dev.spawnkit.runtime.Runtime
-import dev.spawnkit.runtime.RuntimeBuilder
-
-/** The engine packages installed in the builder. Exported players install the same packages. */
-class BuilderEngine {
-    private val builder = RuntimeBuilder()
-
-    /** 2D presentation package. */
-    val graphics = Graphics2D(builder)
-
-    /** Frozen runtime used for editing, preview and play. */
-    val runtime: Runtime = builder.build()
-}
 
 /** A ready-made object the creator can drop into the scene. */
 data class ObjectPreset(
@@ -74,7 +61,8 @@ class PlaySession(
  */
 @Stable
 class EditorState(
-    val engine: BuilderEngine = BuilderEngine(),
+    /** The same engine exported players install, so play in the builder matches the released game. */
+    val engine: StandardEngine = StandardEngine(),
     project: Project = Project.blank(),
 ) {
     val editor = Editor(engine.runtime, project)

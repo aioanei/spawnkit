@@ -25,7 +25,8 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
   bindings for programs.
 - **Now:** the [contest delivery track](docs/plans/2026-11-20-engine-foundation-revision.md#contest-delivery-track),
   C1–C8, from C1 (2D presentation) onward.
-- **Open for owner review:** PR #25 (architecture reassessment). It is not merged autonomously.
+- **Reviewed:** the owner merged the [architecture reassessment](docs/design/2026-11-20-engine-alternatives-review.md)
+  (PR #25); it records the alternatives behind the current direction.
 - **Preserve:** completed work and player checkpoint `b2bf830` on `feat/6-player-shells`.
 - **Do not:** resume old Tasks 11–12, or treat unselected libraries as approved. JSON remains allowed for
   storage and transport, but its schema and a closed list of gameplay mechanics cannot define engine capability.
@@ -58,7 +59,8 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
 | `core/engine` | KMP, all targets | preserved tested platformer runtime and compatibility regression baseline |
 | `core/runtime` | KMP, all targets | provisional headless world/component/scheduler and explicit checkpoint/replay APIs; no legacy model dependency |
 | `core/program` | KMP, all targets | portable program executor: typed programs, type checking, resumable bytecode VM, atomic segments, checkpointed waits |
-| `core/graphics` | KMP, all targets | general 2D presentation: transform, shape, sprite and camera components with descriptors; render lists, hit testing, view transforms |
+| `core/graphics` | KMP, all targets | general 2D presentation: transform, shape, sprite, text and camera components with descriptors; render lists, hit testing, view transforms |
+| `core/gameplay` | KMP, all targets | tags, numbers, seeded random, touching/tapping and rule functions; `StandardEngine` installs presentation, gameplay, input actions and rules for builder and players |
 | `samples/runtimeProbe` | KMP, all targets | separately compiled public-API consumer and cross-target extension evidence |
 | `benchmarks/runtimeStorage` | KMP executable (jvm, js, wasmJs, mingwX64, linuxX64) | unshipped runtime storage benchmark harness; public `World` API only |
 | `core/validation` | KMP, all targets | integrity checks, reachability solver, playtest, economy check |

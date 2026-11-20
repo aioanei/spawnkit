@@ -30,6 +30,14 @@ public interface HostCallContext {
     /** Read-only input for the current tick (R2d). */
     public val input: InputView
 
+    /**
+     * The world the program runs in, so host functions can find objects and read their components. Host functions
+     * must not change components or structure here; programs change the world through statements, which stay atomic.
+     * Advancing a host-owned resource such as a random generator is allowed: it is deterministic, but it is not
+     * rolled back if the calling segment later faults.
+     */
+    public val world: World
+
     /** Reads a registered property, or `null` when the entity is stale or lacks the component. */
     public fun read(
         entity: EntityHandle,

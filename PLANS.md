@@ -14,7 +14,8 @@ is reconciled in the [gap analysis](docs/design/2026-11-20-product-vision-gap-an
 
 Current work is the
 [contest delivery track](docs/plans/2026-11-20-engine-foundation-revision.md#contest-delivery-track) C1–C8 (deadline
-7 Dec 2026). PR #25 (architecture reassessment) awaits owner review. All product features and mandatory technologies
+7 Dec 2026). The owner reviewed and merged the [architecture reassessment](docs/design/2026-11-20-engine-alternatives-review.md)
+(PR #25). All product features and mandatory technologies
 remain on the roadmap.
 
 - Engine ownership, guided creation and usability requirements: [General-purpose engine design](docs/design/2026-11-20-general-purpose-engine.md).

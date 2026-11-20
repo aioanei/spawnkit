@@ -13,8 +13,13 @@ import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.sp
 import dev.spawnkit.graphics.Affine2D
 import dev.spawnkit.graphics.CameraView
 import dev.spawnkit.graphics.DrawItem
@@ -54,6 +59,7 @@ fun RuntimeCanvas(
     selection: Set<EntityHandle> = emptySet(),
     style: CanvasStyle = CanvasStyle(),
 ) {
+    val textMeasurer = rememberTextMeasurer()
     Canvas(modifier) {
         drawRenderList(
             frame,
@@ -61,17 +67,22 @@ fun RuntimeCanvas(
             images,
             selection,
             style,
+            textMeasurer,
         )
     }
 }
 
-/** Draws [frame] through [view] into this scope; usable from custom canvases and offscreen rendering. */
+/**
+ * Draws [frame] through [view] into this scope; usable from custom canvases and offscreen rendering. Text items are
+ * drawn only when a [textMeasurer] is supplied (from `rememberTextMeasurer()`); [RuntimeCanvas] always supplies one.
+ */
 fun DrawScope.drawRenderList(
     frame: RenderList,
     view: ViewTransform,
     images: Map<String, ImageBitmap> = emptyMap(),
     selection: Set<EntityHandle> = emptySet(),
     style: CanvasStyle = CanvasStyle(),
+    textMeasurer: TextMeasurer? = null,
 ) {
     drawRect(style.background)
     if (style.showGrid) drawGrid(view, style.gridColor)
@@ -90,6 +101,10 @@ fun DrawScope.drawRenderList(
                 is DrawItem.Sprite -> {
                     drawSprite(item, images[item.asset], topLeft, box)
                 }
+
+                is DrawItem.Text -> {
+                    if (textMeasurer != null) drawLabel(item, textMeasurer)
+                }
             }
             if (item.entity in selection) {
                 val pixelScale = sqrt(abs(screen.a * screen.d - screen.b * screen.c)).coerceAtLeast(1e-6)
@@ -97,6 +112,28 @@ fun DrawScope.drawRenderList(
             }
         }
     }
+}
+
+/** Font size text is laid out at before scaling into world units; large enough for crisp glyph outlines. */
+private val TEXT_REFERENCE_SIZE = 64.sp
+
+/** Draws [item] centred on the origin, scaled so one line is exactly the item's height in world units. */
+private fun DrawScope.drawLabel(
+    item: DrawItem.Text,
+    measurer: TextMeasurer,
+) {
+    val layout =
+        measurer.measure(
+            item.text,
+            TextStyle(color = argb(item.color), fontSize = TEXT_REFERENCE_SIZE),
+            maxLines = 1,
+            softWrap = false,
+        )
+    val lineHeight = layout.size.height.toFloat()
+    if (lineHeight <= 0f) return
+    val scale = (item.height / lineHeight).toFloat()
+    val toText = Affine2D(scale.toDouble(), 0.0, 0.0, scale.toDouble(), -layout.size.width * scale / 2.0, -item.height / 2.0)
+    withTransform({ transform(toText.toMatrix()) }) { drawText(layout) }
 }
 
 private fun DrawScope.drawSprite(

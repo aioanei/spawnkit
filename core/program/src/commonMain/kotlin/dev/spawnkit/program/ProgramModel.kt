@@ -372,6 +372,17 @@ public sealed interface Stmt {
         override val source: SourceRef,
     ) : Stmt
 
+    /**
+     * Removes an object, with its children, when the segment commits. Removal happens at the end of the tick, after
+     * every system has run, so other rules still see the object during this tick. A segment that faults removes
+     * nothing; removing an object that no longer exists faults with [FaultKind.MissingProperty].
+     */
+    public data class Destroy(
+        /** Object to remove. */
+        public val entity: Expr,
+        override val source: SourceRef,
+    ) : Stmt
+
     /** Requests a registered external effect with a deterministic ID, committed with the segment. */
     public data class RequestEffect(
         /** Registered effect name. */

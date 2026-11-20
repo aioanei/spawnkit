@@ -125,6 +125,41 @@ class Graphics2DTest {
     }
 
     @Test
+    fun textIsDrawnInLayerOrderWithEstimatedBoundsForHitTesting() {
+        val fixture = Fixture()
+        val back = fixture.box(Transform2D(), Shape2D(width = 10.0, height = 10.0))
+        val label = fixture.world.spawn()
+        fixture.world.set(label, fixture.graphics.transform, Transform2D(x = 2.0))
+        fixture.world.set(label, fixture.graphics.text, Text2D("Score: 12", size = 1.0, layer = 3))
+        val hidden = fixture.world.spawn()
+        fixture.world.set(hidden, fixture.graphics.text, Text2D("secret", visible = false))
+        val list = fixture.graphics.renderList(fixture.world)
+        assertEquals(listOf(back, label), list.items.map { it.entity })
+        val item = assertIs<DrawItem.Text>(list.items.last())
+        assertEquals("Score: 12", item.text)
+        assertEquals(1.0, item.height)
+        assertTrue(item.width > 4.0 && item.width < 9.0, "Width is estimated from the length (${item.width})")
+        assertEquals(label, list.hitTest(2.0 + item.width / 2 - 0.1, 0.0), "Text is hit within its estimated box")
+        assertEquals(back, list.hitTest(2.0, 0.8))
+    }
+
+    @Test
+    fun textIsEditableAndCheckpointed() {
+        val fixture = Fixture()
+        val label = fixture.world.spawn()
+        fixture.world.set(label, fixture.graphics.text, Text2D())
+        assertEquals(EditResult.Applied(""), fixture.runtime.edit(fixture.world, label, "graphics:text", "text", "Coins"))
+        assertIs<EditResult.Rejected>(fixture.runtime.edit(fixture.world, label, "graphics:text", "size", -1.0))
+        assertEquals(EditResult.Applied(0xFFFFFFFF), fixture.runtime.edit(fixture.world, label, "graphics:text", "color", 0xFFFFC107))
+        val restored = fixture.runtime.restore(fixture.world.snapshot())
+        assertEquals(
+            Text2D("Coins", color = 0xFFFFC107),
+            restored.get(restored.entities(fixture.graphics.text).single(), fixture.graphics.text),
+        )
+        assertEquals(fixture.world.stateHash(), restored.stateHash())
+    }
+
+    @Test
     fun invalidCameraZoomIsIgnoredOrClampedAndDeepHierarchiesRender() {
         val fixture = Fixture()
         val broken = fixture.world.spawn()
