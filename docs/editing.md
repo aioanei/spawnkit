@@ -33,6 +33,11 @@ editor session has used, so neither undo nor an imported project with a stale co
 Re-applying an identical value creates no undo step. Values are coerced by the value kind; for example,
 an integer typed into a decimal field is accepted. Object-reference properties are not authorable yet.
 
+C7a describes the operations that have builder controls in an [operation catalog](operation-catalog.md). The same
+entries generate agent tools, and a parity test checks each one by hand and by agent tool (ADR-0009).
+`Editor.apply(BuildResult)` applies a catalog-built operation; `Editor.catalogContext()` is what arguments are checked
+against.
+
 ## Editor
 
 `Editor(runtime, project)`:

@@ -67,11 +67,11 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
 | `core/runtime` | KMP, all targets | provisional headless world/component/scheduler and explicit checkpoint/replay APIs; no legacy model dependency |
 | `core/program` | KMP, all targets | portable program executor: typed programs, type checking, resumable bytecode VM, atomic segments, checkpointed waits |
 | `core/graphics` | KMP, all targets | general 2D presentation: transform, shape, sprite, text and camera components with descriptors; render lists, hit testing, view transforms |
-| `core/gameplay` | KMP, all targets | tags, numbers, seeded random, touching/tapping and rule functions; friendly rule blocks (`RuleBlocks`); `StandardEngine` installs presentation, gameplay, input actions and rules for builder and players |
+| `core/gameplay` | KMP, all targets | tags, numbers, seeded random, touching/tapping and rule functions; friendly rule blocks (`RuleBlocks`) with their catalog (`RuleBlockCatalog`) and `RuleOperations`; `StandardEngine` installs presentation, gameplay, input actions and rules, and exposes the operation catalog; depends on `core/editing` |
 | `samples/runtimeProbe` | KMP, all targets | separately compiled public-API consumer and cross-target extension evidence |
 | `benchmarks/runtimeStorage` | KMP executable (jvm, js, wasmJs, mingwX64, linuxX64) | unshipped runtime storage benchmark harness; public `World` API only |
 | `core/validation` | KMP, all targets | integrity checks, reachability solver, playtest, economy check |
-| `core/editing` | KMP, all targets | workspace model (project/scenes/objects/component values/rules), typed validated operations, undo/redo, scene→world building with identity mapping |
+| `core/editing` | KMP, all targets | workspace model (project/scenes/objects/component values/rules), typed validated operations, undo/redo, scene→world building with identity mapping; operation catalog, parameter metadata and derived JSON-Schema agent tools ([catalog](docs/operation-catalog.md)) |
 | `core/api` | KMP, all targets | client/server DTOs |
 | `render` | KMP + Compose | shared `RuntimeCanvas` for general-runtime frames (editor and players); legacy platformer `GameView` |
 | `ai` | KMP | planned Koog engine/editor capability tools, media providers, record/replay executors |

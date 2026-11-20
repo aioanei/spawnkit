@@ -7,5 +7,6 @@ kotlin {
         api(project(":core:runtime"))
         api(project(":core:graphics"))
         api(project(":core:program"))
+        api(project(":core:editing"))
     }
 }

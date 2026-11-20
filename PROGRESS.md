@@ -1,6 +1,25 @@
 # SpawnKit progress
 
-## Current checkpoint — C6 started: game package (2026-11-20)
+## Current checkpoint — C7a operation and rule block catalogs (2026-11-21)
+
+- **Branch.** `feat/69-operation-catalog`, from `main` while CI ran on PR #67 (C6c–C6d) and PR #70 (ADR-0009 docs).
+  [Issue #69](https://github.com/aioanei/spawnkit/issues/69), first requirement of C7.
+- **Added.** Parameter metadata and an operation catalog in `core/editing`. Builder controls and JSON-Schema agent
+  tools are derived from the same entries. `RuleBlockCatalog` covers every block, and `RuleOperations` adds,
+  changes, moves, duplicates and removes rules and blocks (`core/gameplay`, which now depends on `core/editing`).
+  The block dialog is generated from the catalog, and rule cards gain Move up, Move down and Duplicate. See the
+  [operation catalog](docs/operation-catalog.md).
+- **Parity.** `OperationParityTest` does each of the 15 catalog entries with real builder taps and with the derived
+  JSON tool. Both give the same workspace, validation, capability check and undo. `AddScene`, `RenameScene` and
+  `ReparentObject` have no builder control, so they stay out of the agent catalog.
+- **Evidence.** Toolchain: `check ktlint` is clean. `test -p jvm -p android` passes 555 tests with 0 failed, and
+  `-p mingwX64` passes 248. Gradle: `spotlessCheck allJvmAndWebTests localNativeTests` is `BUILD SUCCESSFUL`. Of
+  those, editing ran 155 and gameplay 100 across JVM, Android host, JS, Wasm and mingwX64, and the builder ran 17.
+- **Next.** C7b: the `ai` module with staged changesets (`StagedChanges`), the agent toolbox (derived tools, project
+  inspection, headless rule traces, clarifying questions), session recording and labelled replay, and the Koog 1.3.0
+  adapter. Then C7c: the assistant UI in compact and expanded layouts, plus a publish confirmation.
+
+## Previous checkpoint — C6 started: game package (2026-11-20)
 
 - **Branch.** `feat/64-release-arcade`, stacked on the K1 branch (`chore/58-kotlin-toolchain`, PR #65), because the
   web player will be a Kotlin Toolchain `wasm-js/app`. [Issue #64](https://github.com/aioanei/spawnkit/issues/64).

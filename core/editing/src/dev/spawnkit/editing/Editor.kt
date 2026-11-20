@@ -71,6 +71,16 @@ public class Editor(
         return result
     }
 
+    /** Applies a built catalog operation as one undoable step; a [BuildResult.Rejected] changes nothing. */
+    public fun apply(result: BuildResult): OperationResult =
+        when (result) {
+            is BuildResult.Ready -> apply(result.operation)
+            is BuildResult.Rejected -> OperationResult.Rejected(result.message)
+        }
+
+    /** The current project and installed capabilities, for building catalog operations ([OperationCatalog.build]). */
+    public fun catalogContext(): CatalogContext = CatalogContext(project, runtime)
+
     /** Reverts the last step. Returns `false` when there is nothing to undo. */
     public fun undo(): Boolean {
         val (previous, label) = undoStack.removeLastOrNull() ?: return false
