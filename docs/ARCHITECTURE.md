@@ -45,6 +45,8 @@ The [R2b increment](runtime-hierarchy.md) adds an ordered scene hierarchy, typed
 deterministic `SeededRandom`. All three are checkpointed, and existing hashes are unchanged.
 In R2c, programs can bind component descriptors directly, so rule writes obey the same constraints as inspector
 edits.
+[R2d input](runtime-input.md) adds registered actions and axes, host-submitted per-tick input frames, edges, and
+checkpointed, replayable input.
 
 This is R1 evidence, not the complete R4 language or a visual editor. Those remain
 explicit acceptance gates in the revised plan.

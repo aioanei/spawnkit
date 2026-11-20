@@ -45,7 +45,34 @@ internal fun hashCapturedWorld(state: CapturedWorld): Long {
             hash.state(value)
         }
     }
+    state.input?.let { input ->
+        hash.text("input")
+        hashFrame(hash, input.current)
+        hashFrame(hash, input.previous)
+        hash.number(if (input.pending == null) 0L else 1L)
+        input.pending?.let { hashFrame(hash, it) }
+    }
     return hash.result
+}
+
+private fun hashFrame(
+    hash: SnapshotHash,
+    frame: CapturedFrame,
+) {
+    hash.number(frame.down.size.toLong())
+    frame.down.forEach(hash::text)
+    hash.number(frame.axes.size.toLong())
+    frame.axes.forEach { (id, value) ->
+        hash.text(id)
+        hash.number(value.toRawBits())
+    }
+    hash.number(frame.pointers.size.toLong())
+    frame.pointers.forEach {
+        hash.number(it.id.toLong())
+        hash.number(it.x.toRawBits())
+        hash.number(it.y.toRawBits())
+        hash.number(if (it.pressed) 1L else 0L)
+    }
 }
 
 private class SnapshotHash {

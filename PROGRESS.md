@@ -1,6 +1,20 @@
 # SpawnKit progress
 
-## Current checkpoint — R2c descriptor-derived program bindings (2026-11-20, autonomous overnight session)
+## Current checkpoint — R2d deterministic input (2026-11-20, autonomous overnight session)
+
+- **R2c is done.** PR #35 merged as `4bb8295`. The review found nothing blocking; descriptor bindings now register
+  atomically.
+- **Branch and issue.** Branch `feat/36-input`; [issue #36](https://github.com/aioanei/spawnkit/issues/36).
+- **Added.** `RuntimeBuilder.action`/`axis`, `InputFrame`/`Pointer`, `World.submitInput` and `World.input`
+  (isDown/wasPressed/wasReleased/axis/pointers). Checkpointed current/previous/pending frames, with a hash section
+  only when inputs are registered. Recorded replay matches the live hash on all targets. Docs:
+  [input](docs/runtime-input.md).
+- **Next step.** Gates, PR, review, merge. Then:
+  - scene-instance identity (authoring IDs mapped to runtime handles);
+  - program input host functions;
+  - R3 presentation facilities (transforms, camera, drawables), extracted from the legacy renderer.
+
+## Previous checkpoint — R2c descriptor-derived program bindings (2026-11-20, autonomous overnight session)
 
 - **R2b is done.** PR #33 merged as `e2ac0f9`. The review found nothing blocking; hierarchy position validation now
   runs before any change.
