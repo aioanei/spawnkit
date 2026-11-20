@@ -1,0 +1,4 @@
+# Project-scoped Codex configuration (loaded for trusted projects). Mirrors .mcp.json for Claude Code.
+# Official Kotlin documentation MCP server from Kotlin/kotlin-agent-skills (issue #58).
+[mcp_servers.kotlinlang]
+url = "https://mcp.kotlinlang.org/mcp"
