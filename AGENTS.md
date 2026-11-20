@@ -25,7 +25,8 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
   bindings for programs.
 - **Now:** the [contest delivery track](docs/plans/2026-11-20-engine-foundation-revision.md#contest-delivery-track),
   C1–C8, from C1 (2D presentation) onward.
-- **Open for owner review:** PR #25 (architecture reassessment). It is not merged autonomously.
+- **Reviewed:** the owner merged the [architecture reassessment](docs/design/2026-11-20-engine-alternatives-review.md)
+  (PR #25); it records the alternatives behind the current direction.
 - **Preserve:** completed work and player checkpoint `b2bf830` on `feat/6-player-shells`.
 - **Do not:** resume old Tasks 11–12, or treat unselected libraries as approved. JSON remains allowed for
   storage and transport, but its schema and a closed list of gameplay mechanics cannot define engine capability.
