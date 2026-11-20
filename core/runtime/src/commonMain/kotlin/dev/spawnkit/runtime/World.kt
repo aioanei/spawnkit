@@ -42,6 +42,8 @@ public class World internal constructor(
 
     internal val checkpointIdentity: Any get() = owner
 
+    internal val registryIdentity: Any get() = registry
+
     /** Creates an empty entity, reusing free slots in deterministic last-freed-first order. */
     public fun spawn(): EntityHandle {
         requireStructuralEdit()

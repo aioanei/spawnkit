@@ -74,7 +74,7 @@ Suggested boundary: evolve `core/engine` incrementally while retaining an explic
 
 - [ ] Generation-checked handles, entity/component lifecycle, optional hierarchy, resource references and scene-instance identity.
 - [ ] Open component/behavior factories; typed property/function/event metadata using explicit common Kotlin registration.
-- [ ] Separate executable signatures from authoring presentation metadata: names, explanations, categories, defaults, units, constraints, reference pickers, examples, contextual help and basic/advanced visibility. No serializer- or genre-specific inspector switch.
+- [ ] Separate executable signatures from authoring presentation metadata: names, explanations, categories, defaults, units, constraints, reference pickers, examples, contextual help and basic/advanced visibility. No serializer- or genre-specific inspector switch. Progress: R2a / [issue #30](https://github.com/aioanei/spawnkit/issues/30) covers component property descriptors, a catalog, a generic inspector model and validated edits ([descriptors](../runtime-descriptors.md)); function/event descriptors and program-binding derivation remain.
 - [ ] Ordered single-threaded scheduler with fixed-tick and presentation boundaries; event/structural command ordering; independent world instances.
 - [ ] General input actions/axes/pointers, seeded RNG, timers, runtime inspection and scenario stepping.
 - [ ] Snapshot/hash coverage for all new deterministic state; missing capabilities/dependencies return diagnostics.

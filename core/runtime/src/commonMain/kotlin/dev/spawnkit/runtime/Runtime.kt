@@ -26,6 +26,7 @@ public class RuntimeBuilder {
     private val registry = Any()
     private val components = mutableMapOf<String, ComponentType<*>>()
     private val systems = mutableMapOf<String, SystemRegistration>()
+    private val descriptors = mutableMapOf<String, ComponentDescriptor<*>>()
     private var built = false
 
     /**
@@ -60,12 +61,33 @@ public class RuntimeBuilder {
         systems[id] = SystemRegistration(id, phase, before.toSet(), after.toSet(), create)
     }
 
+    /**
+     * Adds authoring metadata for a component registered by this builder: friendly properties with value kinds,
+     * defaults and visibility, plus a factory. Editors and agents discover it through [Runtime.catalog].
+     */
+    public fun <T : Any> describe(
+        component: ComponentType<T>,
+        configure: ComponentDescriptorBuilder<T>.() -> Unit,
+    ): ComponentDescriptor<T> {
+        check(!built) { "Runtime registration has closed" }
+        require(components[component.id] === component) { "Component '${component.id}' belongs to another runtime" }
+        require(component.id !in descriptors) { "Component '${component.id}' is already described" }
+        val descriptor = ComponentDescriptorBuilder(component).apply(configure).build()
+        for (property in descriptor.properties) {
+            val kind = property.kind
+            if (kind is ValueKind.ObjectReference) {
+                kind.requires.forEach { require(components[it.id] === it) { "Reference filter '${it.id}' belongs to another runtime" } }
+            }
+        }
+        return descriptor.also { descriptors[component.id] = it }
+    }
+
     /** Validates the complete schedule and freezes registrations. No game document or player is involved. */
     public fun build(): Runtime {
         check(!built) { "Runtime registration has closed" }
         val schedule = orderSystems(systems.values.toList())
         built = true
-        return Runtime(registry, components.values.sortedBy { it.id }, schedule)
+        return Runtime(registry, components.values.sortedBy { it.id }, schedule, descriptors.values.sortedBy { it.component.id })
     }
 }
 
@@ -74,7 +96,18 @@ public class Runtime internal constructor(
     private val registry: Any,
     private val components: List<ComponentType<*>>,
     private val schedule: List<SystemRegistration>,
+    private val descriptors: List<ComponentDescriptor<*>>,
 ) {
+    /** Described components in ID order, for palettes, inspectors and agent capability discovery. */
+    public val catalog: List<ComponentDescriptor<*>> get() = descriptors.toList()
+
+    /** The descriptor of [component], or `null` when it has no authoring metadata. */
+    @Suppress("UNCHECKED_CAST") // Descriptors are registered under their own component's ID.
+    public fun <T : Any> descriptor(component: ComponentType<T>): ComponentDescriptor<T>? =
+        descriptors.firstOrNull { it.component === component } as ComponentDescriptor<T>?
+
+    internal fun owns(world: World): Boolean = world.registryIdentity === registry
+
     /** Effective fixed-tick system order; returned as a copy so callers cannot mutate the installed schedule. */
     public val systemOrder: List<String> get() = schedule.map { it.id }
 
