@@ -5,7 +5,8 @@ import dev.spawnkit.program.Handler
 /**
  * Authored values of one component on an object, keyed by descriptor property ID. Properties not listed use the
  * descriptor's default. Values have the Kotlin type of the property's value kind (`Long`, `Double`, `Boolean`,
- * `String`); they are validated by every operation that sets them.
+ * `String`); they are validated by every operation that sets them. Persistence can also retain opaque JSON values
+ * for unavailable capabilities; these are preserved, and execution is blocked until the matching capability exists.
  */
 public data class ComponentDoc(
     /** Installed component ID, for example `graphics:shape`. */

@@ -46,6 +46,12 @@ public class Editor(
     /** Label of the step [redo] would reapply, or `null`. */
     public val redoLabel: String? get() = redoStack.lastOrNull()?.second
 
+    /**
+     * Immutable persistence snapshot. Its counter includes IDs retired by undo, so save/restart cannot hand out an
+     * identifier that this editing session already used. Undo history itself is deliberately not serialized.
+     */
+    public fun saveSnapshot(): Project = project.copy(nextId = maxOf(project.nextId, idFloor, project.maxIdSuffix() + 1))
+
     /** Registers a change listener, called after every applied change. Returns a function that unregisters it. */
     public fun onChange(listener: (Project) -> Unit): () -> Unit {
         listeners += listener
@@ -88,6 +94,12 @@ public class Editor(
         redoStack.clear()
         commit(project)
     }
+
+    /**
+     * Builds an unstepped preview using available components and valid values. Unavailable data remains in [project];
+     * [capabilityProblems] explains omissions. A preview never executes rules and is not a substitute for [buildWorld].
+     */
+    public fun buildPreview(sceneId: String): SceneWorld = buildSceneWorld(runtime, project.previewProjection(runtime), sceneId)
 
     /** Validates a single authored value as [EditOperation.SetProperty] would, without applying anything. */
     public fun validate(
@@ -134,6 +146,8 @@ public fun buildSceneWorld(
     sceneId: String,
     programs: ProgramFeature? = null,
 ): SceneWorld {
+    val problems = project.capabilityProblems(runtime)
+    require(problems.isEmpty()) { problems.first() }
     val scene = requireNotNull(project.scene(sceneId)) { "Unknown scene '$sceneId'" }
     val objects =
         orderedForTemplate(scene).map { obj ->
