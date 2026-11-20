@@ -72,6 +72,63 @@ class ComponentStorageTest {
         assertEquals(all.map { it.index }.sorted(), all.map { it.index })
     }
 
+    /** Randomized check of both query strategies against a brute-force filter at densities either side of 1/16. */
+    @Test
+    fun queriesMatchABruteForceReferenceUnderRandomChurn() {
+        val builder = RuntimeBuilder()
+        val common = builder.component<Int>("test:common", AuthoringInfo("Common"))
+        val rare = builder.component<Int>("test:rare", AuthoringInfo("Rare"))
+        val veryRare = builder.component<Int>("test:very-rare", AuthoringInfo("Very rare"))
+        val world = builder.build().createWorld()
+        var seed = 12345L
+
+        fun next(bound: Int): Int {
+            seed = seed * 6364136223846793005L + 1442695040888963407L
+            return ((seed ushr 33) % bound).toInt()
+        }
+        val types = listOf(common, rare, veryRare)
+        val queries = listOf(listOf(rare), listOf(veryRare), listOf(common, rare), listOf(veryRare, common), listOf(rare, veryRare))
+        repeat(3_000) { step ->
+            val live = world.entities()
+            when (next(10)) {
+                0, 1, 2 -> {
+                    world.spawn().also { if (next(2) == 0) world.set(it, common, step) }
+                }
+
+                3 -> {
+                    if (live.isNotEmpty()) world.destroy(live[next(live.size)])
+                }
+
+                4 -> {
+                    if (live.isNotEmpty()) world.set(live[next(live.size)], rare, step)
+                }
+
+                5 -> {
+                    if (live.isNotEmpty() && next(5) == 0) world.set(live[next(live.size)], veryRare, step)
+                }
+
+                6 -> {
+                    if (live.isNotEmpty()) world.remove(live[next(live.size)], types[next(3)])
+                }
+
+                else -> {
+                    if (live.isNotEmpty()) world.set(live[next(live.size)], common, step)
+                }
+            }
+            if (step % 50 == 0) {
+                val all = world.entities()
+                for (query in queries) {
+                    val expected = all.filter { entity -> query.all { world.get(entity, it) != null } }
+                    assertEquals(expected, world.entities(*query.toTypedArray()), "step $step, query ${query.map { it.id }}")
+                }
+            }
+        }
+        // Both strategies must actually have been exercised by the final state.
+        val slots = world.entities().last().index + 1
+        assertTrue(world.entities(veryRare).size * 16 < slots)
+        assertTrue(world.entities(common).size * 16 >= slots)
+    }
+
     @Test
     fun queriesForUnusedOrEmptiedComponentsAreEmpty() {
         val builder = RuntimeBuilder()

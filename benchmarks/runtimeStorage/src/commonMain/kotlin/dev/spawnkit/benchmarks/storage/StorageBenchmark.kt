@@ -2,6 +2,7 @@ package dev.spawnkit.benchmarks.storage
 
 import dev.spawnkit.runtime.RuntimeBuilder
 import dev.spawnkit.runtime.World
+import dev.spawnkit.samples.runtimeprobe.Link
 import dev.spawnkit.samples.runtimeprobe.StorageScenario
 import kotlin.time.TimeSource
 
@@ -97,6 +98,20 @@ private val cases =
             Prepared(world) { ops ->
                 var total = 0L
                 repeat(ops) { total += world.entities(scenario.marker).size }
+                total
+            }
+        },
+        // Query over a rare component (2% of entities), below the 1/16 scan threshold. One operation = one query.
+        Case("query rare (link, 2%)", operations = { maxOf(1, 20_000 / it) }) { size ->
+            val (scenario, pair) = scenarioWorld(size, 0)
+            val world = pair.second
+            val entities = world.entities()
+            for (i in entities.indices step 50) {
+                world.set(entities[i], scenario.link, Link(entities[(i + 1) % entities.size]))
+            }
+            Prepared(world) { ops ->
+                var total = 0L
+                repeat(ops) { total += world.entities(scenario.link).size }
                 total
             }
         },
