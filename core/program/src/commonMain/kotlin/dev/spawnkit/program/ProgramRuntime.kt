@@ -216,6 +216,9 @@ public class ProgramFeature(
             val prepared = lookup(text(fields.getValue("program")), integer(fields.getValue("fingerprint")))
             return ProgramInstance(prepared).apply {
                 this.state = sequence(fields.getValue("state")).map { decode(it, context) }
+                require(
+                    this.state.size == prepared.stateNames.size,
+                ) { "Checkpointed state does not match program '${prepared.program.id}'" }
                 sequence(fields.getValue("threads")).mapTo(threads) { decodeThread(it, context) }
                 nextThreadId = integer(fields.getValue("nextThread"))
                 segments = integer(fields.getValue("segments"))
@@ -385,7 +388,20 @@ private class Segment(
             val targets = world.entities(feature.behavior).map { checkNotNull(world.get(it, feature.behavior)) }
             for ((event, payload) in events) {
                 for (target in targets) {
-                    if (target.fault == null && target.program.handlers.any { (it.trigger as? Trigger.OnEvent)?.event == event }) {
+                    if (target.fault != null) continue
+                    val handler = target.program.handlers.firstOrNull { (it.trigger as? Trigger.OnEvent)?.event == event } ?: continue
+                    if (target.inbox.size >= limits.maxInboxEvents) {
+                        // Deterministic overflow rule: the receiving instance stops, so event cascades cannot multiply.
+                        target.fault =
+                            ProgramFault(
+                                FaultKind.MessageLimitExceeded,
+                                handler.source,
+                                "More than ${limits.maxInboxEvents} '$event' events arrived before they could be handled",
+                                world.tick,
+                            )
+                        target.threads.clear()
+                        target.inbox.clear()
+                    } else {
                         target.inbox += event to payload
                     }
                 }
@@ -401,7 +417,20 @@ private class Segment(
     private fun readProperty(
         entity: EntityHandle,
         index: Int,
-    ): ProgramValue? = writes[entity to index] ?: feature.host.properties[index].read(world, entity)
+    ): ProgramValue? {
+        writes[entity to index]?.let { return it }
+        val binding = feature.host.properties[index]
+        val value = binding.read(world, entity) ?: return null
+        if (!conforms(value, binding.type) || value.textTooLong()) {
+            throw FaultSignal(
+                FaultKind.HostFailure,
+                "Property '${binding.name}' produced ${describe(value.type)} instead of ${describe(binding.type)}",
+            )
+        }
+        return value
+    }
+
+    private fun ProgramValue.textTooLong(): Boolean = this is TextValue && value.length > limits.maxTextLength
 
     /** Interprets until the outermost handler ends (returns `null`) or a wait suspends (returns its resume tick). */
     private fun run(
@@ -579,7 +608,7 @@ private class Segment(
             } finally {
                 hostArguments = emptyList()
             }
-        if (result.type != function.returns) {
+        if (!conforms(result, function.returns) || result.textTooLong()) {
             throw FaultSignal(
                 FaultKind.HostFailure,
                 "'${function.name}' returned ${describe(result.type)} instead of ${describe(function.returns)}",
@@ -637,22 +666,68 @@ private class Segment(
         right: ProgramValue,
     ): ProgramValue =
         when (op) {
-            BinaryOp.Equal -> {
-                BoolValue(left == right)
-            }
-
-            BinaryOp.NotEqual -> {
-                BoolValue(left != right)
+            BinaryOp.Equal, BinaryOp.NotEqual -> {
+                // Comparison work scales with value size, so large lists or texts cannot be compared for free.
+                charge(weight(left) + weight(right))
+                BoolValue(valueEquals(left, right) == (op == BinaryOp.Equal))
             }
 
             else -> {
                 when (left) {
-                    is IntegerValue -> integerOp(op, left.value, (right as IntegerValue).value)
-                    is DecimalValue -> decimalOp(op, left.value, (right as DecimalValue).value)
-                    is TextValue -> TextValue(left.value + (right as TextValue).value)
-                    else -> error("Unexpected operands for $op")
+                    is IntegerValue -> {
+                        integerOp(op, left.value, (right as IntegerValue).value)
+                    }
+
+                    is DecimalValue -> {
+                        decimalOp(op, left.value, (right as DecimalValue).value)
+                    }
+
+                    is TextValue -> {
+                        val other = (right as TextValue).value
+                        val length = left.value.length.toLong() + other.length
+                        if (length > limits.maxTextLength) {
+                            throw FaultSignal(
+                                FaultKind.AllocationExceeded,
+                                "A text would be longer than ${limits.maxTextLength} characters",
+                            )
+                        }
+                        allocate(length, 0)
+                        TextValue(left.value + other)
+                    }
+
+                    else -> {
+                        error("Unexpected operands for $op")
+                    }
                 }
             }
+        }
+
+    /** Equality with IEEE-754 semantics for decimals (NaN ≠ NaN, 0.0 = -0.0), applied through lists. */
+    private fun valueEquals(
+        left: ProgramValue,
+        right: ProgramValue,
+    ): Boolean =
+        when (left) {
+            is DecimalValue -> {
+                right is DecimalValue && left.value == right.value
+            }
+
+            is ListValue -> {
+                right is ListValue && left.items.size == right.items.size &&
+                    left.items.indices.all { valueEquals(left.items[it], right.items[it]) }
+            }
+
+            else -> {
+                left == right
+            }
+        }
+
+    /** Fuel weight of comparing a value: one plus its list elements, or one per 32 text characters. */
+    private fun weight(value: ProgramValue): Long =
+        when (value) {
+            is ListValue -> 1L + value.items.sumOf { weight(it) }
+            is TextValue -> 1L + value.value.length / 32
+            else -> 1L
         }
 
     private fun integerOp(

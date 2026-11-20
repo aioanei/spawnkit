@@ -36,8 +36,12 @@ public class PreparedProgram internal constructor(
     internal val stateInitial: List<ProgramValue>,
     internal val stateNames: List<String>,
 ) {
-    /** Deterministic fingerprint of the compiled code, checked when checkpointed instances are restored. */
-    public val fingerprint: Long = units.fold(FNV_OFFSET) { hash, unit -> mix(hash, unit.describe()) }
+    /**
+     * Deterministic fingerprint of the compiled code plus its declarations (state fields and initial values,
+     * handler triggers, function signatures), checked when checkpointed instances are restored.
+     */
+    public val fingerprint: Long =
+        units.fold(mix(FNV_OFFSET, signature(program))) { hash, unit -> mix(hash, unit.describe()) }
 
     internal fun handlerUnit(index: Int): Int = functionCount + index
 
@@ -207,12 +211,16 @@ private class ProgramCompiler(
     private val functionIndex = mutableMapOf<String, Int>()
     private val stateIndex = mutableMapOf<String, Int>()
     private lateinit var unit: UnitBuilder
+    private var depth = 0
 
     fun compile(): PrepareResult {
         program.state.forEachIndexed { index, field ->
             if (field.name in stateIndex) error(field.source, "State field '${field.name}' is declared twice")
             stateIndex[field.name] = index
-            if (field.initial is EntityValue) error(field.source, "State field '${field.name}' cannot start as an entity")
+            if (containsEntity(field.initial)) error(field.source, "State field '${field.name}' cannot start with an object")
+            if (!conforms(field.initial, field.initial.type)) {
+                error(field.source, "State field '${field.name}' starts with list items of the wrong type")
+            }
         }
         program.functions.forEachIndexed { index, function ->
             if (function.name in functionIndex) error(function.source, "Function '${function.name}' is declared twice")
@@ -289,6 +297,22 @@ private class ProgramCompiler(
     }
 
     private fun statement(
+        stmt: Stmt,
+        scope: Scope,
+    ) {
+        if (++depth > MAX_NESTING) {
+            if (depth == MAX_NESTING + 1) error(stmt.source, "Rules are nested too deeply (more than $MAX_NESTING levels)")
+            depth--
+            return
+        }
+        try {
+            statementBody(stmt, scope)
+        } finally {
+            depth--
+        }
+    }
+
+    private fun statementBody(
         stmt: Stmt,
         scope: Scope,
     ) {
@@ -465,10 +489,28 @@ private class ProgramCompiler(
         expr: Expr,
         scope: Scope,
     ): ProgramType {
+        if (++depth > MAX_NESTING) {
+            if (depth == MAX_NESTING + 1) error(expr.source, "Rules are nested too deeply (more than $MAX_NESTING levels)")
+            depth--
+            unit.emit(Op.Push(NothingValue), expr.source)
+            return NothingType
+        }
+        try {
+            return expressionBody(expr, scope)
+        } finally {
+            depth--
+        }
+    }
+
+    private fun expressionBody(
+        expr: Expr,
+        scope: Scope,
+    ): ProgramType {
         val src = expr.source
         return when (expr) {
             is Expr.Literal -> {
-                if (expr.value is EntityValue) error(src, "Entity constants are not allowed; use a query or Self")
+                if (containsEntity(expr.value)) error(src, "Object constants are not allowed; use a query or Self")
+                if (!conforms(expr.value, expr.value.type)) error(src, "This list contains items of the wrong type")
                 unit.emit(Op.Push(expr.value), src)
                 expr.value.type
             }
@@ -709,6 +751,8 @@ private class ProgramCompiler(
         }
 
     private companion object {
+        const val MAX_NESTING = 64
+
         val COMPARISONS =
             setOf(
                 BinaryOp.Equal,
@@ -746,4 +790,39 @@ private fun canonical(value: ProgramValue): String =
         is ListValue -> "l:${value.element}[${value.items.joinToString(",") { canonical(it) }}]"
         is TextValue -> "t:${value.value.length}:${value.value}"
         else -> value.toString()
+    }
+
+/** Whether [value] structurally has [type], including every nested list item. */
+internal fun conforms(
+    value: ProgramValue,
+    type: ProgramType,
+): Boolean =
+    when (value) {
+        is ListValue -> type is ListType && value.element == type.element && value.items.all { conforms(it, type.element) }
+        else -> value.type == type
+    }
+
+/** Whether [value] contains an entity anywhere; entity constants are not allowed in program source. */
+internal fun containsEntity(value: ProgramValue): Boolean =
+    value is EntityValue || (value is ListValue && value.items.any(::containsEntity))
+
+/** Canonical declaration text: state fields with initial values, handler triggers and function signatures. */
+private fun signature(program: Program): String =
+    buildString {
+        append(program.id).append('|')
+        program.state.forEach {
+            append("s:")
+                .append(it.name)
+                .append('=')
+                .append(canonical(it.initial))
+                .append(';')
+        }
+        program.handlers.forEach { handler ->
+            val trigger = handler.trigger
+            append("h:").append(if (trigger is Trigger.OnEvent) "event:" + trigger.event else "tick").append(';')
+        }
+        program.functions.forEach { function ->
+            append("f:").append(function.name).append('(')
+            append(function.parameters.joinToString(",") { "${it.name}:${it.type}" }).append("):").append(function.returns).append(';')
+        }
     }

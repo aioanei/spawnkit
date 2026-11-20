@@ -129,6 +129,9 @@ failure, which faults the world.
 | Maximum list size | 10,000 |
 | Suspended waits per instance | 32 |
 | Events plus effects per segment | 256 |
+| Characters in one text value | 10,000 (text concatenation also counts toward the allocation budget) |
+| Events waiting in one inbox | 256; overflow stops the receiving instance, so event cascades cannot multiply |
+| Rule nesting depth at preparation | 64; deeper trees get a diagnostic instead of overflowing the stack |
 
 There is no wall-clock watchdog. Fault kinds:
 
@@ -139,6 +142,10 @@ There is no wall-clock watchdog. Fault kinds:
 - `HostFailure`.
 
 `Long.MIN_VALUE / -1` is defined to wrap identically on every target instead of relying on platform traps.
+Equality follows IEEE-754 for decimals (NaN ≠ NaN, 0.0 = -0.0), including inside lists, and its fuel cost scales
+with value size. Literals and state initial values are checked deeply: list items must match the declared element
+type, and object constants are rejected even inside lists. Property-reader and host-function results are checked
+the same way at run time; a mismatch faults with `HostFailure` instead of escaping as a crash.
 
 **Waits and checkpoints.** `wait` commits the segment and stores the continuation as plain data: frames (unit,
 program counter, locals) plus the operand stack. A `ProgramInstance` is checkpointed by its R1b `StateCodec`,
@@ -153,8 +160,9 @@ including:
 
 Entity values remap through the restore context. Restore re-associates each instance with its registered
 `PreparedProgram` by ID and code fingerprint. A missing or changed program fails with a clear message. The
-fingerprint hashes canonical instruction text, with decimals written as raw bits, so it does not depend on the
-platform.
+fingerprint hashes canonical instruction text plus declarations (state names and initial values, handler
+triggers, function signatures), with decimals written as raw bits, so it does not depend on the platform. Restore
+also checks that the checkpointed state matches the program's field count.
 
 **Effects.** A committed request gets ID `"{slot}.{generation}:{segment}:{n}"`. Replay from a checkpoint therefore
 reproduces the same IDs, so an external sink can deduplicate. The host reads `pendingEffects` and calls
@@ -164,7 +172,7 @@ delivered.
 ## Evidence
 
 Tests are in [`core/program/src/commonTest`](../core/program/src/commonTest/kotlin/dev/spawnkit/program). Each test
-runs unchanged on JVM, Android host, Node JS, Node Wasm and mingwX64 (19 tests per target); Linux and iOS run in CI.
+runs unchanged on JVM, Android host, Node JS, Node Wasm and mingwX64 (30 tests per target); Linux and iOS run in CI.
 
 - **Acceptance fixture** (`ProgramCheckpointTest`):
   - The `collector` program calls a user function `weight` for every queried object.
@@ -174,7 +182,7 @@ runs unchanged on JVM, Android host, Node JS, Node Wasm and mingwX64 (19 tests p
   - Checkpoints taken at ticks 1, 2, 4 and 5 restore and replay to tick 12. Ticks 1 and 2 are mid-wait; ticks 4 and
     5 come after a resume. Replay matches the uninterrupted run's state hash, pending effects (IDs and payloads)
     and fuel.
-  - Golden, recorded on JVM and identical on every target: fuel `3044`, hash `-6742793091452028421`.
+  - Golden, recorded on JVM and identical on every target: fuel `3044`, hash `-1990361367860152568`.
 - **Diagnostics** (`ProgramCompileTest`): each error is reported at its exact node, and all errors are reported in
   source order. Covers type errors, an unknown variable, host argument types, an unknown property, a missing return
   path, wrong arity, event payload mismatches and an unknown event trigger.
@@ -188,6 +196,20 @@ runs unchanged on JVM, Android host, Node JS, Node Wasm and mingwX64 (19 tests p
   - Reads see the segment's own buffered writes.
   - Fuel charges are deterministic and include host costs.
   - Effects are acknowledged in order.
+- **Hardening** (`ProgramHardeningTest`), added after independent review:
+  - deep type checks of list literals and state, including object constants hidden inside lists;
+  - bounded text growth;
+  - the inbox limit stopping a self-amplifying event cascade;
+  - fingerprints changing with triggers, state fields and initial values;
+  - wrongly typed property readers faulting instead of crashing;
+  - suspended-wait and message limits;
+  - `MIN / -1` and `MIN % -1`;
+  - short-circuit `and`/`or` skipping the right side;
+  - IEEE NaN equality;
+  - zero-tick waits;
+  - stale objects faulting with `MissingProperty`;
+  - slot reuse across nested blocks and for-each;
+  - excessive nesting reported as a diagnostic.
 
 ## Evidence gaps and follow-up
 

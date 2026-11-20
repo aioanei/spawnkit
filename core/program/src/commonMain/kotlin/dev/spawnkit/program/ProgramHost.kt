@@ -102,10 +102,15 @@ public data class ProgramLimits(
     public val maxSuspendedThreads: Int = 32,
     /** Maximum events plus effect requests per segment. */
     public val maxMessagesPerSegment: Int = 256,
+    /** Maximum characters in one text value. */
+    public val maxTextLength: Int = 10_000,
+    /** Maximum events waiting in one instance's inbox; more in one tick stops the receiving instance. */
+    public val maxInboxEvents: Int = 256,
 ) {
     init {
         require(fuelPerSegment > 0 && maxCallDepth > 0 && allocationPerSegment > 0) { "Limits must be positive" }
         require(maxListSize > 0 && maxSuspendedThreads > 0 && maxMessagesPerSegment > 0) { "Limits must be positive" }
+        require(maxTextLength > 0 && maxInboxEvents > 0) { "Limits must be positive" }
     }
 }
 

@@ -14,8 +14,8 @@
   and `ProgramFeature` runtime integration. It covers deterministic limits, atomic segments, checkpointed waits and
   effect IDs that replay deterministically.
 - **Checkpoints.** `a9bbf05` (executor and tests), `1ab0eee` (platform-independent fingerprints).
-- **Tests.** 19 tests pass on each of JVM, Android host, JS, Wasm and mingwX64. The cross-target golden is fuel
-  3044, hash `-6742793091452028421`. Decision note: [runtime programs](docs/runtime-programs.md).
+- **Tests.** 30 tests pass on each of JVM, Android host, JS, Wasm and mingwX64. The cross-target golden is fuel
+  3044, hash `-1990361367860152568`. Decision note: [runtime programs](docs/runtime-programs.md).
 - **Next step.** Run the full gates, open the PR, get an independent review, then merge on green CI. After that,
   R1 is complete except for focused rendering/collision choices, which the plan allows to stay open until R3.
   Next is R2: general world, resources and execution metadata. Start with typed property/function/event

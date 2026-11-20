@@ -180,6 +180,6 @@ class ProgramCheckpointTest {
     private companion object {
         const val TICKS = 12
         const val GOLDEN_FUEL = 3044L
-        const val GOLDEN_HASH = -6742793091452028421L
+        const val GOLDEN_HASH = -1990361367860152568L
     }
 }
