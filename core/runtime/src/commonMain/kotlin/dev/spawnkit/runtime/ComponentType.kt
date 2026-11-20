@@ -26,6 +26,8 @@ public class ComponentType<T : Any> internal constructor(
     public val authoring: AuthoringInfo,
     internal val registry: Any,
     private val checkpoint: StateCodec<T>?,
+    /** Registration order within [registry]; indexes the world's component columns. */
+    internal val ordinal: Int,
 ) {
     internal val supportsCheckpoint: Boolean get() = checkpoint != null
 

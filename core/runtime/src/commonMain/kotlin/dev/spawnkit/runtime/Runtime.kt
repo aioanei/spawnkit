@@ -40,7 +40,7 @@ public class RuntimeBuilder {
         check(!built) { "Runtime registration has closed" }
         requireCapabilityId(id)
         require(id !in components) { "Duplicate component '$id'" }
-        return ComponentType<T>(id, authoring, registry, checkpoint).also { components[id] = it }
+        return ComponentType<T>(id, authoring, registry, checkpoint, components.size).also { components[id] = it }
     }
 
     /**
