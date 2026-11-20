@@ -79,7 +79,23 @@ class GamePlayerUiTest {
             val broken = Handler(Trigger.EveryTick, listOf(Stmt.Evaluate(Expr.Variable("missing", source), source)), source)
             val scene = demo.scenes.single()
             val withBrokenRule =
-                demo.copy(scenes = listOf(scene.copy(objects = scene.objects.map { if (it.name == "Box") it.copy(rules = listOf(broken)) else it })))
+                demo.copy(
+                    scenes =
+                        listOf(
+                            scene.copy(
+                                objects =
+                                    scene.objects.map {
+                                        if (it.name ==
+                                            "Box"
+                                        ) {
+                                            it.copy(rules = listOf(broken))
+                                        } else {
+                                            it
+                                        }
+                                    },
+                            ),
+                        ),
+                )
             mainClock.autoAdvance = false
             setContent { GamePlayer(GamePackage.of(withBrokenRule), touchControls = false) }
             mainClock.advanceTimeBy(100)

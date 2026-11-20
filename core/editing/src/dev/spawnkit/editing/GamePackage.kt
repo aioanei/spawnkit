@@ -96,7 +96,12 @@ public object GamePackageCodec {
                 }
             val declared =
                 (root["requiredComponents"] as? JsonArray ?: damaged("its capability list is missing"))
-                    .map { (it as? JsonPrimitive)?.takeIf { value -> value.isString }?.content ?: damaged("its capability list is invalid") }
+                    .map {
+                        (it as? JsonPrimitive)
+                            ?.takeIf { value ->
+                                value.isString
+                            }?.content ?: damaged("its capability list is invalid")
+                    }
             if (declared != project.requiredComponents()) damaged("its contents do not match")
             val title = root.string("title")?.trim()?.takeIf { it.isNotEmpty() && it.length <= GamePackage.MAX_TITLE_LENGTH }
             val start = root.string("startScene")?.takeIf { project.scene(it) != null }

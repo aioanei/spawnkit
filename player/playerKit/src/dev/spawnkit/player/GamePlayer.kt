@@ -98,13 +98,20 @@ internal fun ruleProblem(
     pkg: GamePackage,
 ): String? {
     val world = session.scene.world
-    val objects = pkg.project.scene(pkg.startScene)?.objects.orEmpty().associateBy { it.id }
+    val objects =
+        pkg.project
+            .scene(pkg.startScene)
+            ?.objects
+            .orEmpty()
+            .associateBy { it.id }
     for (entity in world.entities(engine.programs.behavior)) {
         world.get(entity, engine.programs.behavior)?.fault ?: continue
         val name = session.scene.objectId(entity)?.let { objects[it]?.name } ?: "An object"
         return "$name's rules stopped working, so it no longer reacts"
     }
-    val broken = session.scene.diagnostics.keys.mapNotNull { objects[it]?.name }
+    val broken =
+        session.scene.diagnostics.keys
+            .mapNotNull { objects[it]?.name }
     if (broken.isEmpty()) return null
     return "${broken.joinToString()} ${if (broken.size == 1) "has rules that can't run" else "have rules that can't run"}, so " +
         "${if (broken.size == 1) "it plays" else "they play"} without them"
