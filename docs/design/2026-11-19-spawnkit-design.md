@@ -6,7 +6,7 @@
 > Product features and mandatory technologies remain; old architecture claims and daily estimates are not current
 > implementation instructions; the contest deadline is no longer an architectural constraint. Local gate commands
 > in AGENTS.md take precedence over the historical `allTests` example below.
-> The 2026-11-20 product clarification also supersedes §5.5/§5.6/§7. The creator is first-class on Android and
+> The 2026-11-20 product clarification also supersedes §5.5/§5.6/§5.8/§7. The creator is first-class on Android and
 > desktop, agents run in-process on both, and release happens from the builder: see
 > [ADR-0007](../adr/0007-mobile-builder-and-in-builder-release.md) and the
 > [gap analysis](2026-11-20-product-vision-gap-analysis.md).

@@ -30,13 +30,13 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
 - **Do not:** resume old Tasks 11–12, or treat unselected libraries as approved. JSON remains allowed for
   storage and transport, but its schema and a closed list of gameplay mechanics cannot define engine capability.
 
+## Product non-negotiables
+
 - The builder is first-class on Android and desktop (then iOS and web). Every editor screen needs a compact,
   touch-first layout as well as an expanded one; a desktop-only layout fails review. A creator must never need a
   desktop computer.
 - Creators release independent games from the builder (web export and Arcade first, Android export next). They
   never use Gradle, an IDE or a terminal, and credentials never enter projects, logs or exports.
-
-
 - SpawnKit owns the runtime, gameplay APIs, behavior execution, editor capabilities and extension SDK. Focused
   libraries are allowed; another complete engine cannot become the foundation.
 - Guided visual creation is the default: blank projects or optional examples, drag-and-drop objects, friendly
@@ -113,7 +113,8 @@ unavailable on most machines. Use the aggregates above.
 
 ## Guardrails
 
-- Never commit secrets: `.env`, API keys, keystores, signing certificates. Keys are read from the environment.
+- Never commit secrets: `.env`, API keys, keystores, signing certificates. Keys come from the environment (development, CI, desktop) or the platform's secure storage on devices, never
+  from project files, exports or logs.
 - Only the coordinating session edits `settings.gradle.kts`, `gradle/libs.versions.toml` and `core/model` while
   parallel work is in progress; other agents request changes to those files.
 - If a quality gate fails, read the failure and fix the cause. Do not retry blindly, weaken a test, add `@Ignore`,
@@ -124,8 +125,9 @@ unavailable on most machines. Use the aggregates above.
 
 ## Workflow
 
-1. Continue from the documented checkpoint in the revised R0–R9 dependency order and the lowest open milestone
-   on GitHub, `priority:high` issues first. Continue unfinished R1 evidence work before moving to R2.
+1. Continue from the documented checkpoint: the contest delivery track C1–C8 in the plan, respecting each item's
+   stated dependencies. It delivers R3–R9 subsets; the remaining R-step work stays planned. Within that, take
+   `priority:high` issues first.
    Each task has an issue with an objective, requirements and acceptance criteria.
 2. Branch from `main`: `feat|fix|chore|docs|test/<issue-number>-<slug>`.
 3. Test first where practical; keep commits small, using Conventional Commits (`feat(engine): …`).

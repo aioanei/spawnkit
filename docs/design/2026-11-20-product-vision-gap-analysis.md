@@ -23,8 +23,8 @@ decisions that change the plan. The full requirement list lives in the owner's c
 | Genuine general-purpose 2D engine, not JSON-driven | **Partially implemented, direction correct** | `core/runtime` provides open components, scheduled systems, checkpoints, sparse-set storage, descriptors, hierarchy, resources, input and scene templates. `core/program` provides the portable logic executor. No JSON in the engine contract. Legacy `core/model`/`core/engine` stays as the platformer baseline. |
 | Rendering, sprites, camera, layers, collisions, physics | **Planned (R3), missing in the general runtime** | Exists only in the legacy platformer renderer and engine. |
 | Animation, audio, tilemaps, particles | **Missing / planned (R3–R5)** | Not in the general runtime. |
-| Events, timers, game state, custom logic | **Implemented (R1d, R2e)** | Program events, waits, state, input functions, bounded atomic segments. |
-| Inventory, economy, quests, dialogue, story | **Missing; expressible later** | To be built as program and component packages, not engine special cases. |
+| Events, timers, game state, custom logic | **Implemented at runtime level (R1d, R2e)**; no authoring UI; records, maps and traces still missing | Program events, waits, state, input functions, bounded atomic segments. |
+| Inventory, economy, quests, dialogue, story | **Missing.** An economy demo is part of C8; the rest is deferred after the contest (R5–R6 packages) | To be built as program and component packages, not engine special cases. |
 | Prefabs and scenes | **Partially implemented** | R2f templates and instance identity. No editor, persistence or transitions yet. |
 | Full builder on Android **and** desktop | **In conflict with the earlier contest design; missing** | The design's §5.5 scoped the creator to desktop and web, with AI in-process on desktop only. The creator app is a 53-line shell. |
 | Touch-first editor interactions | **Missing** | No editor exists yet. |

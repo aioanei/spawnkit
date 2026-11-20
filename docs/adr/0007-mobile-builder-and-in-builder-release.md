@@ -24,7 +24,9 @@ players through Gradle. [Gap analysis](../design/2026-11-20-product-vision-gap-a
   The UI, Koog tools and tests all use the same typed operations, undo/redo and play-world instantiation.
 - **Every editor increment is verified on Android and desktop.** iOS compiles in CI; the web creator follows.
 - **Release uses a universal player plus a prepared project package.**
-  - Exported games embed the SpawnKit runtime and the project content, and never need the creator app.
+  - The universal player runs content, portable programs and the capabilities compiled into it. Games that need
+    additional compiled native extensions require a target build of a player including them; that build is remote
+    for platforms needing official toolchains.  - Exported games embed the SpawnKit runtime and the project content, and never need the creator app.
   - Web export and Arcade publishing are implemented first. Android standalone export comes next, by repacking and
     signing a prebuilt template player APK on the device.
   - Platforms that need official toolchains (iOS, desktop native, store submission) use remote build services

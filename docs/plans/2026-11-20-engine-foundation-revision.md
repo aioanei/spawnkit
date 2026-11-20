@@ -1,6 +1,6 @@
 # SpawnKit — revised engine foundation and delivery plan
 
-Status: **accepted requirements; R0 complete, R1 evidence in progress**, 2026-11-20. The owner confirmed engine ownership, guided visual creation and milestone-based delivery, then authorized merging plan PR #20 and continuing implementation. The initial R1a lifecycle/scheduling increment does not complete R1 or the visual editor.
+Status: **accepted requirements; R0–R1 complete, R2a–R2f merged, contest delivery track in progress**, 2026-11-20. The owner confirmed engine ownership, guided visual creation and milestone-based delivery, then authorized merging plan PR #20 and continuing implementation. The initial R1a lifecycle/scheduling increment does not complete R1 or the visual editor.
 
 Design: [general-purpose engine revision](../design/2026-11-20-general-purpose-engine.md). Decision record: [ADR-0006](../adr/0006-general-purpose-engine-and-editor.md).
 
@@ -195,7 +195,22 @@ not replace them: each item delivers part of the named R-step, and unfinished pa
 | C7 | Koog AI Studio (R7) | Character Forge and level assistant agents using editor operations and validation, with progress, cancel, cost and accept/reject. Labelled replay without keys. |
 | C8 | Demos and submission (R6, R9) | At least two mechanically different games built in the builder on the same engine. README with run instructions for all targets, screencast script, essay. |
 
-Order of work: C1 → C2 → C3 → C4 → C5 → C6 → C7 → C8, with documentation kept current per PR. Each increment gets its
+Order of work: C1 → C2 → C3 → C4 → C5 → C6 → C7 → C8, with documentation kept current per PR. Each C-item takes only
+the subset of its R-step needed by the slice, and its stated dependencies must be done first:
+
+- C2 needs C1.
+- C3 needs C1 and C2.
+- C4 needs C2 and C3.
+- C5 needs C2.
+- C6 needs C1 and C5.
+- C7 needs C2–C4.
+- C8 needs all of the above.
+
+C5 (an R5 subset) is needed by R4's save/reopen usability loop. C6 before C7 orders independent work; Koog depends on
+editor operations, not on publishing.
+
+The deadline orders the slice only. R-step gates, capability and usability requirements stay unchanged, and nothing
+leaves the roadmap. Each increment gets its
 own issue and PR. If time runs short, cut depth within an increment (fewer drawables, fewer rule blocks) before
 cutting increments. The Android-plus-desktop builder, the in-builder release and Koog use are not cut.
 
