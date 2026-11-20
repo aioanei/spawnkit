@@ -62,7 +62,7 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
 | `samples/runtimeProbe` | KMP, all targets | separately compiled public-API consumer and cross-target extension evidence |
 | `benchmarks/runtimeStorage` | KMP executable (jvm, js, wasmJs, mingwX64, linuxX64) | unshipped runtime storage benchmark harness; public `World` API only |
 | `core/validation` | KMP, all targets | integrity checks, reachability solver, playtest, economy check |
-| `core/editing` | KMP, all targets | planned real workspace operations, undo/redo, transactions and changesets |
+| `core/editing` | KMP, all targets | workspace model (project/scenes/objects/component values), typed validated operations, undo/redo, scene→world building with identity mapping |
 | `core/api` | KMP, all targets | client/server DTOs |
 | `render` | KMP + Compose | shared `RuntimeCanvas` for general-runtime frames (editor and players); legacy platformer `GameView` |
 | `ai` | KMP | planned Koog engine/editor capability tools, media providers, record/replay executors |

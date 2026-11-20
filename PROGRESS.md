@@ -1,5 +1,20 @@
 # SpawnKit progress
 
+## Current checkpoint — C2 editing core (2026-11-20)
+
+- **C1 is done.** PR #45 merged after an independent review; zoom guard, bounded grid and a real layer-order pixel
+  check were fixed before merge.
+- **Branch and issue.** Branch `feat/46-editing-workspace`; [issue #46](https://github.com/aioanei/spawnkit/issues/46).
+  It adds module `core/editing`:
+  - immutable Project/SceneDoc/ObjectDoc/ComponentDoc;
+  - typed validated `EditOperation`s;
+  - `Editor`, with snapshot undo/redo, revisions and listeners;
+  - `buildSceneWorld`, with identity mapping for selection and play isolation.
+- **Tests.** 7 common tests pass on JVM, Android host, JS, Wasm and mingwX64. Docs: [editing](docs/editing.md).
+- **Next step.** PR, review, merge. C3 (builder shell) is already implemented on `feat/47-builder-shell`, stacked on
+  this branch: Compose UI tests at phone and desktop sizes pass and the Android debug APK builds. Android emulator
+  verification is in progress.
+
 ## Current checkpoint — C1 2D presentation (2026-11-20)
 
 - **Vision reconciliation done.** PR #43 merged after an independent review, with its fixes applied before merge.
