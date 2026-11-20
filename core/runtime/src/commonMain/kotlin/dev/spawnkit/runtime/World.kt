@@ -175,13 +175,15 @@ public class World internal constructor(
         parent?.let(::requireEntity)
         template.objects.forEach { obj -> obj.components.forEach { requireComponent(it.component) } }
         check(instanceCounter < Long.MAX_VALUE) { "Scene instance counter exhausted" }
+        // Create every component value first: a failing factory then leaves the world untouched.
+        val values = template.objects.map { obj -> obj.components.map { seed -> seed to seed.create() } }
         val number = ++instanceCounter
         val handles = LinkedHashMap<String, EntityHandle>()
-        for (obj in template.objects) {
+        for ((i, obj) in template.objects.withIndex()) {
             val entity = spawn()
             handles[obj.id] = entity
             slots[entity.index].identity = ObjectIdentity(template.id, number, obj.id)
-            obj.components.forEach { attachSeed(entity, it) }
+            values[i].forEach { (seed, value) -> attachValue(entity, seed, value) }
         }
         for (obj in template.objects) {
             val target = obj.parent?.let(handles::getValue) ?: parent ?: continue
@@ -196,10 +198,12 @@ public class World internal constructor(
         return slots[entity.index].identity
     }
 
-    private fun <T : Any> attachSeed(
+    @Suppress("UNCHECKED_CAST") // [value] was produced by this seed's own typed factory.
+    private fun <T : Any> attachValue(
         entity: EntityHandle,
         seed: ComponentSeed<T>,
-    ) = set(entity, seed.component, seed.create())
+        value: Any,
+    ) = set(entity, seed.component, value as T)
 
     /** Returns the world's value of a registered resource. */
     @Suppress("UNCHECKED_CAST") // Each table entry was created by its own typed resource factory.

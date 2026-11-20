@@ -72,6 +72,34 @@ class SceneTemplateTest {
         val world = fixture.runtime.createWorld()
         assertFailsWith<IllegalArgumentException> { world.instantiate(foreign.enemy) }
         assertEquals(0, world.entityCount, "A rejected template creates nothing")
+        val failing =
+            SceneTemplate(
+                "failing",
+                listOf(
+                    TemplateObject("ok", components = listOf(ComponentSeed(fixture.label) { "fine" })),
+                    TemplateObject("broken", components = listOf(ComponentSeed(fixture.health) { error("factory failed") })),
+                ),
+            )
+        assertFailsWith<IllegalStateException> { world.instantiate(failing) }
+        assertEquals(0, world.entityCount, "A failing factory creates nothing")
+        assertEquals(1L, world.instantiate(fixture.enemy).number, "A failed instantiation consumes no instance number")
+        assertFailsWith<IllegalArgumentException> {
+            SceneTemplate(
+                "twice",
+                listOf(
+                    TemplateObject(
+                        "a",
+                        components =
+                            listOf(
+                                ComponentSeed(fixture.label) {
+                                    "x"
+                                },
+                                ComponentSeed(fixture.label) { "y" },
+                            ),
+                    ),
+                ),
+            )
+        }
     }
 
     @Test

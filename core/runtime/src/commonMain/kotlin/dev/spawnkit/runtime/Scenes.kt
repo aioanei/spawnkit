@@ -14,9 +14,11 @@ public class TemplateObject(
     public val id: String,
     /** Authoring ID of the parent object, or `null` for a template root. */
     public val parent: String? = null,
-    /** Components to attach, in order. */
-    public val components: List<ComponentSeed<*>> = emptyList(),
-)
+    components: List<ComponentSeed<*>> = emptyList(),
+) {
+    /** Components to attach, in order; a private copy. */
+    public val components: List<ComponentSeed<*>> = components.toList()
+}
 
 /**
  * A reusable arrangement of objects (a scene or prefab) that can be instantiated any number of times. Objects are
@@ -37,11 +39,15 @@ public class SceneTemplate(
         require(ids.toSet().size == ids.size) { "Template object IDs must be unique in '$id'" }
         val parents = this.objects.associate { it.id to it.parent }
         for (obj in this.objects) {
+            val types = obj.components.map { it.component }
+            require(types.toSet().size == types.size) { "Object '${obj.id}' adds the same component twice" }
+        }
+        for (obj in this.objects) {
             obj.parent?.let { require(it in parents) { "Object '${obj.id}' has unknown parent '$it'" } }
             var cursor = obj.parent
             var steps = 0
             while (cursor != null) {
-                require(cursor != obj.id && steps++ <= ids.size) { "Object '${obj.id}' is inside itself" }
+                require(cursor != obj.id && steps++ <= ids.size) { "The parents of object '${obj.id}' form a cycle" }
                 cursor = parents[cursor]
             }
         }
