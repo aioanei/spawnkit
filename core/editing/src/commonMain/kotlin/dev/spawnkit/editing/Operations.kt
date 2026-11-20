@@ -190,7 +190,11 @@ internal class OperationApplier(
             is EditOperation.AddComponent -> {
                 val descriptor = descriptor(operation.componentId)
                 editObject(project, operation.sceneId, operation.objectId) { obj ->
-                    if (obj.component(operation.componentId) != null) reject("${obj.name} already has ${descriptor.component.authoring.name}")
+                    if (obj.component(operation.componentId) !=
+                        null
+                    ) {
+                        reject("${obj.name} already has ${descriptor.component.authoring.name}")
+                    }
                     obj.copy(components = obj.components + ComponentDoc(operation.componentId))
                 }
             }
@@ -205,7 +209,9 @@ internal class OperationApplier(
             is EditOperation.SetProperty -> {
                 val normalized = validateValue(operation.componentId, operation.propertyId, operation.value)
                 editObject(project, operation.sceneId, operation.objectId) { obj ->
-                    val doc = obj.component(operation.componentId) ?: reject("${obj.name} has no ${descriptor(operation.componentId).component.authoring.name}")
+                    val doc =
+                        obj.component(operation.componentId)
+                            ?: reject("${obj.name} has no ${descriptor(operation.componentId).component.authoring.name}")
                     val updated = doc.copy(values = doc.values + (operation.propertyId to normalized))
                     obj.copy(components = obj.components.map { if (it.componentId == operation.componentId) updated else it })
                 }
@@ -227,20 +233,21 @@ internal class OperationApplier(
             }
         val id = "obj-${project.nextId}"
         created += id
-        val next = editScene(project, operation.sceneId) { scene ->
-            operation.parent?.let { requireObject(scene, it) }
-            val obj = ObjectDoc(id, operation.name.trim(), operation.parent, components)
-            if (operation.index < 0) {
-                scene.copy(objects = scene.objects + obj)
-            } else {
-                // Insert before the index-th existing sibling, keeping authoring order meaningful.
-                val siblings = scene.childrenOf(operation.parent)
-                if (operation.index > siblings.size) reject("Position ${operation.index} is outside 0..${siblings.size}")
-                val anchor = siblings.getOrNull(operation.index)
-                val at = if (anchor == null) scene.objects.size else scene.objects.indexOf(anchor)
-                scene.copy(objects = scene.objects.toMutableList().apply { add(at, obj) })
+        val next =
+            editScene(project, operation.sceneId) { scene ->
+                operation.parent?.let { requireObject(scene, it) }
+                val obj = ObjectDoc(id, operation.name.trim(), operation.parent, components)
+                if (operation.index < 0) {
+                    scene.copy(objects = scene.objects + obj)
+                } else {
+                    // Insert before the index-th existing sibling, keeping authoring order meaningful.
+                    val siblings = scene.childrenOf(operation.parent)
+                    if (operation.index > siblings.size) reject("Position ${operation.index} is outside 0..${siblings.size}")
+                    val anchor = siblings.getOrNull(operation.index)
+                    val at = if (anchor == null) scene.objects.size else scene.objects.indexOf(anchor)
+                    scene.copy(objects = scene.objects.toMutableList().apply { add(at, obj) })
+                }
             }
-        }
         return next.copy(nextId = next.nextId + 1)
     }
 

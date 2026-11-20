@@ -84,11 +84,7 @@ public class Editor(
         componentId: String,
         propertyId: String,
         value: Any,
-    ): String? =
-        when (val result = applier.apply(project, EditOperation.Batch(emptyList(), "check")).second) {
-            is OperationResult.Rejected -> result.message
-            is OperationResult.Applied -> runCatching { applier.validateValue(componentId, propertyId, value) }.exceptionOrNull()?.message
-        }
+    ): String? = runCatching { applier.validateValue(componentId, propertyId, value) }.exceptionOrNull()?.message
 
     /**
      * Builds a fresh world containing scene [sceneId] of the current project. The same function serves the editor
@@ -139,7 +135,10 @@ private fun seedFor(
     runtime: Runtime,
     doc: ComponentDoc,
 ): ComponentSeed<*> {
-    val descriptor = requireNotNull(runtime.catalog.firstOrNull { it.component.id == doc.componentId }) { "Component '${doc.componentId}' is not installed" }
+    val descriptor =
+        requireNotNull(
+            runtime.catalog.firstOrNull { it.component.id == doc.componentId },
+        ) { "Component '${doc.componentId}' is not installed" }
     return seed(descriptor, doc)
 }
 
