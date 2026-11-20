@@ -63,6 +63,11 @@ Platform adapters in `app/shared` supply local storage and Android/desktop file 
 replacing a workspace, preserves missing-capability data, blocks unsupported execution, and autosaves authoring state.
 World handles, platform permission handles and play state are not stored in portable project files.
 
+C7a adds the [operation and rule block catalogs](operation-catalog.md) required by
+[ADR-0009](adr/0009-agentic-parity.md). Parameter metadata in `core/editing` generates builder controls and
+JSON-Schema agent tools. `core/gameplay` contributes rule operations and depends on `core/editing`, as an extension
+that adds editor capabilities would. A Compose parity test checks every entry by hand and by agent tool.
+
 This is still a subset of R4–R5. Per-resource storage, dependency locks, broader extension proof, complete language
 authoring and the novice usability studies remain acceptance gates in the revised plan.
 

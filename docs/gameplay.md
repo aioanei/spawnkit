@@ -73,6 +73,14 @@ to agents. A `Rule` is a When block, optional And-if blocks and Do blocks; it is
 - **Timing.** The world counts ticks from 1: "Game starts" is `tick() == 1` and "Every N seconds" is
   `tick() % (60·N) == 0`.
 
+## Catalog and rule operations (C7a)
+
+[`RuleBlockCatalog`](operation-catalog.md#rule-block-catalog-coregameplay-ruleblockcatalog) describes every block:
+its name, help, parameters with limits and starting values, and examples. The builder's block dialog is generated
+from it, and agents receive the same entries as tool parameters. `RuleOperations` adds, changes, moves, duplicates
+and removes rules and blocks as one `SetRules` step each, for the Rules panel and agents alike.
+`StandardEngine.operations` is the combined operation catalog. Rule numbers in the catalog start at 1.
+
 ## Evidence
 
 `GameplayTest` (common, all core targets):

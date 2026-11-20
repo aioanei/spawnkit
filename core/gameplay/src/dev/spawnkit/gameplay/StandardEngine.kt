@@ -1,5 +1,7 @@
 package dev.spawnkit.gameplay
 
+import dev.spawnkit.editing.EditingOperations
+import dev.spawnkit.editing.OperationCatalog
 import dev.spawnkit.graphics.Graphics2D
 import dev.spawnkit.program.ProgramFeature
 import dev.spawnkit.program.ProgramHost
@@ -60,6 +62,12 @@ public class StandardEngine(
 
     /** The frozen runtime used for editing, preview, play and export. */
     public val runtime: Runtime = builder.build()
+
+    /**
+     * Everything creators and agents can do to a project of this engine: the general editor operations plus rule edits.
+     * The builder's controls and the agent tools both use these entries (ADR-0009).
+     */
+    public val operations: OperationCatalog = EditingOperations.catalog + RuleOperations.catalog
 
     /** Engine defaults. */
     public companion object {
