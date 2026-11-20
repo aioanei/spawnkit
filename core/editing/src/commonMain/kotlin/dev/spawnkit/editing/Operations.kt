@@ -1,5 +1,6 @@
 package dev.spawnkit.editing
 
+import dev.spawnkit.program.Handler
 import dev.spawnkit.runtime.ComponentDescriptor
 import dev.spawnkit.runtime.Runtime
 import dev.spawnkit.runtime.ValueKind
@@ -89,6 +90,17 @@ public sealed interface EditOperation {
         public val sceneId: String,
         public val name: String,
         override val label: String = "Rename scene",
+    ) : EditOperation
+
+    /**
+     * Replaces an object's rules as one undoable step. Rules are not type-checked here, so creators can save rules that
+     * are still being built; worlds report their problems ([SceneWorld.diagnostics]).
+     */
+    public data class SetRules(
+        public val sceneId: String,
+        public val objectId: String,
+        public val rules: List<Handler>,
+        override val label: String = "Change rules",
     ) : EditOperation
 
     /** Applies [operations] in order as one undoable step; any rejection rejects the whole batch. */
@@ -207,6 +219,11 @@ internal class OperationApplier(
                     if (obj.component(operation.componentId) == null) reject("${obj.name} has no such component")
                     obj.copy(components = obj.components.filter { it.componentId != operation.componentId })
                 }
+            }
+
+            is EditOperation.SetRules -> {
+                if (operation.rules.size > MAX_RULES) reject("An object can have at most $MAX_RULES rules")
+                editObject(project, operation.sceneId, operation.objectId) { it.copy(rules = operation.rules.toList()) }
             }
 
             is EditOperation.SetProperty -> {
@@ -342,6 +359,8 @@ internal class OperationApplier(
 private fun reject(message: String): Nothing = throw Rejection(message)
 
 private const val MAX_NAME = 80
+
+private const val MAX_RULES = 200
 
 /** Largest numeric suffix among `scene-N` and `obj-N` IDs in the project, or 0. */
 internal fun Project.maxIdSuffix(): Long =
