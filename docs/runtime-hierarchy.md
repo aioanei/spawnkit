@@ -59,3 +59,37 @@ on JVM, Android host, JS, Wasm and mingwX64. It covers:
 - missing-codec failures;
 - cross-target goldens for the random sequence (longs, bounded ints, double bits) and a resource and hierarchy
   checkpoint hash.
+
+## Scene templates and instance identity (R2f)
+
+Tracked by [issue #40](https://github.com/aioanei/spawnkit/issues/40).
+
+A `SceneTemplate` is a reusable arrangement of authored objects, such as a scene or prefab. Each `TemplateObject`
+has a stable ID, an optional parent ID and `ComponentSeed` factories. Templates reject:
+
+- duplicate IDs;
+- unknown parents;
+- parent cycles.
+
+`World.instantiate(template, parent)` creates the objects in declaration order with fresh component values. It
+reproduces the hierarchy, places roots under `parent`, and returns a `SceneInstance` that maps authoring IDs to this
+instance's handles. Components are validated before anything is created. `WorldCommands.instantiate` does the same
+at commit and passes the instance to a callback.
+
+Every created entity records `ObjectIdentity(templateId, instance, objectId)`, available from `World.identity`. The
+editor and diagnostics can therefore map a runtime object back to what the creator authored. Instance numbers are
+per world and start at 1. Destroying an entity clears its identity. The counter and identities are checkpointed and
+hashed once any template has been instantiated.
+
+Evidence: [`SceneTemplateTest`](../core/runtime/src/commonTest/kotlin/dev/spawnkit/runtime/SceneTemplateTest.kt)
+covers:
+
+- validation and atomic rejection;
+- independent instances;
+- hierarchy and parenting;
+- identities, and identity clearing on destroy;
+- commands-based instantiation;
+- snapshot/restore/replay;
+- a cross-target golden.
+
+Asset references and authoring-workspace persistence of templates come with R4/R5.

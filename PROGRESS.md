@@ -1,6 +1,16 @@
 # SpawnKit progress
 
-## Current checkpoint — R2e input functions for rules (2026-11-20, autonomous overnight session)
+## Current checkpoint — R2f scene templates and instance identity (2026-11-20, autonomous overnight session)
+
+- **R2e is done.** PR #39 merged as `175b432`. Review fixes: atomic registration, and foreign inputs fault the rule.
+- **Branch and issue.** Branch `feat/40-scene-templates`; [issue #40](https://github.com/aioanei/spawnkit/issues/40).
+  Adds `SceneTemplate`/`TemplateObject`/`ComponentSeed`, `World.instantiate`, `WorldCommands.instantiate`,
+  `SceneInstance` and `World.identity`, with a checkpointed counter and identities.
+- **Next step.** Gates, PR, review, merge. R2 then has only small remaining items: asset resource references and
+  scenario stepping helpers. Then R3: extract the legacy renderer's viewport/camera/input-cancellation/
+  interpolation into generic observations, and add transforms and drawable/layer APIs over `core/runtime`.
+
+## Previous checkpoint — R2e input functions for rules (2026-11-20, autonomous overnight session)
 
 - **R2d is done.** PR #37 merged as `6d6e8fe`. Review fixes: defensive frame copies, and checkpointing of
   pointer-only input.

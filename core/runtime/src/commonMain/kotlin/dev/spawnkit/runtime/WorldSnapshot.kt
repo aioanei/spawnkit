@@ -33,6 +33,8 @@ internal data class CapturedWorld(
     val resources: List<Pair<String, StateValue>> = emptyList(),
     /** Input frames, present only when the runtime registers actions or axes. */
     val input: CapturedInput? = null,
+    /** Scene-instance counter and identities, present once any template was instantiated. */
+    val scenes: CapturedScenes? = null,
 )
 
 internal data class CapturedSlot(
@@ -55,4 +57,9 @@ internal data class CapturedInput(
     val current: CapturedFrame,
     val previous: CapturedFrame,
     val pending: CapturedFrame?,
+)
+
+internal data class CapturedScenes(
+    val counter: Long,
+    val identities: List<Pair<Int, ObjectIdentity>>,
 )
