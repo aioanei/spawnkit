@@ -34,8 +34,10 @@ data class CanvasStyle(
     val showGrid: Boolean = false,
     /** Grid line color. */
     val gridColor: Color = Color(0x22FFFFFF),
-    /** Selection outline color. */
-    val selectionColor: Color = Color(0xFF4FC3F7),
+    /** Selection outline color; white contrasts with every swatch color. */
+    val selectionColor: Color = Color.White,
+    /** Selection outline width in pixels; pass a density-scaled value on high-density screens. */
+    val selectionWidthPx: Float = 2f,
 )
 
 /**
@@ -91,7 +93,7 @@ fun DrawScope.drawRenderList(
             }
             if (item.entity in selection) {
                 val pixelScale = sqrt(abs(screen.a * screen.d - screen.b * screen.c)).coerceAtLeast(1e-6)
-                drawRect(style.selectionColor, topLeft, box, style = Stroke(width = (2.0 / pixelScale).toFloat()))
+                drawRect(style.selectionColor, topLeft, box, style = Stroke(width = (style.selectionWidthPx / pixelScale).toFloat()))
             }
         }
     }
@@ -157,7 +159,7 @@ private fun DrawScope.drawGrid(
     }
 }
 
-private const val MIN_GRID_PX = 8.0
+private const val MIN_GRID_PX = 32.0
 private const val MAX_GRID_LINES = 1_000L
 
 /** A camera safe to render: an invalid zoom (non-finite or not positive) falls back to 1. */

@@ -21,14 +21,16 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
 import dev.spawnkit.graphics.ViewTransform
 import dev.spawnkit.render.CanvasStyle
 import dev.spawnkit.render.RuntimeCanvas
 
-/** Pixels per world unit at zoom 1 in the editor and in play. */
-const val PIXELS_PER_UNIT = 48.0
+/** Density-independent size of one world unit at zoom 1, so scenes look the same size on phones and desktops. */
+const val UNIT_DP = 48f
 
 /**
  * The scene viewport. Gestures work with touch and with mouse/trackpad:
@@ -42,6 +44,9 @@ fun Viewport(
     modifier: Modifier = Modifier,
 ) {
     var size by remember { mutableStateOf(IntSize.Zero) }
+    val pixelsPerUnit = with(LocalDensity.current) { UNIT_DP.dp.toPx().toDouble() }
+    val ppu by rememberUpdatedState(pixelsPerUnit)
+    val selectionPx = with(LocalDensity.current) { 2.5.dp.toPx() }
     val session = state.play
     if (session != null) {
         PlayLoop(session)
@@ -51,7 +56,7 @@ fun Viewport(
             state.frame(session.scene),
             modifier.fillMaxSize().testTag("viewport"),
             camera = state.frame(session.scene).camera ?: state.camera,
-            pixelsPerUnit = PIXELS_PER_UNIT.toFloat(),
+            pixelsPerUnit = pixelsPerUnit.toFloat(),
         )
         return
     }
@@ -68,7 +73,7 @@ fun Viewport(
             .pointerInput(Unit) {
                 awaitEachGesture {
                     val s = current
-                    val view = ViewTransform(s.camera, size.width.toDouble(), size.height.toDouble(), PIXELS_PER_UNIT)
+                    val view = ViewTransform(s.camera, size.width.toDouble(), size.height.toDouble(), ppu)
                     val down = awaitFirstDown(requireUnconsumed = false)
                     val (wx, wy) = view.toWorld(down.position.x.toDouble(), down.position.y.toDouble())
                     val built = s.previewWorld()
@@ -89,13 +94,13 @@ fun Viewport(
                             val zoom = event.calculateZoom()
                             val pan = event.calculatePan()
                             val centroid = event.calculateCentroid()
-                            s.camera = zoomAround(s, size, centroid, zoom, pan)
+                            s.camera = zoomAround(s, size, ppu, centroid, zoom, pan)
                             moved = true
                         } else {
                             val delta = pressed.first().positionChange()
                             if (delta != Offset.Zero) {
                                 moved = true
-                                val scale = PIXELS_PER_UNIT * s.camera.zoom
+                                val scale = ppu * s.camera.zoom
                                 val id = dragId
                                 if (id != null) {
                                     val (lx, ly) = s.localDelta(built, id, delta.x / scale, delta.y / scale)
@@ -129,7 +134,7 @@ fun Viewport(
                         if (event.type == PointerEventType.Scroll) {
                             val change = event.changes.first()
                             val factor = if (change.scrollDelta.y > 0) 1 / 1.15f else 1.15f
-                            current.camera = zoomAround(current, size, change.position, factor, Offset.Zero)
+                            current.camera = zoomAround(current, size, ppu, change.position, factor, Offset.Zero)
                             change.consume()
                         }
                     }
@@ -140,9 +145,9 @@ fun Viewport(
             frame,
             Modifier.fillMaxSize(),
             camera = state.camera,
-            pixelsPerUnit = PIXELS_PER_UNIT.toFloat(),
+            pixelsPerUnit = pixelsPerUnit.toFloat(),
             selection = setOfNotNull(selected),
-            style = CanvasStyle(showGrid = true),
+            style = CanvasStyle(showGrid = true, selectionWidthPx = selectionPx),
         )
     }
 }
@@ -151,14 +156,15 @@ fun Viewport(
 private fun zoomAround(
     state: EditorState,
     size: IntSize,
+    pixelsPerUnit: Double,
     focus: Offset,
     factor: Float,
     pan: Offset,
 ): dev.spawnkit.graphics.CameraView {
-    val before = ViewTransform(state.camera, size.width.toDouble(), size.height.toDouble(), PIXELS_PER_UNIT)
+    val before = ViewTransform(state.camera, size.width.toDouble(), size.height.toDouble(), pixelsPerUnit)
     val (fx, fy) = before.toWorld(focus.x.toDouble(), focus.y.toDouble())
     val zoom = (state.camera.zoom * factor).coerceIn(0.1, 10.0)
-    val scale = PIXELS_PER_UNIT * zoom
+    val scale = pixelsPerUnit * zoom
     // Keep (fx, fy) under the focus point after zooming, then apply the pan.
     val centerX = fx - (focus.x - size.width / 2.0) / scale - pan.x / scale
     val centerY = fy - (focus.y - size.height / 2.0) / scale - pan.y / scale
