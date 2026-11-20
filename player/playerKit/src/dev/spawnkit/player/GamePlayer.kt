@@ -1,0 +1,83 @@
+package dev.spawnkit.player
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import dev.spawnkit.editing.GamePackage
+import dev.spawnkit.editing.buildSceneWorld
+import dev.spawnkit.editing.capabilityProblems
+import dev.spawnkit.gameplay.StandardEngine
+import dev.spawnkit.graphics.CameraView
+
+/** World units are drawn this many density-independent pixels wide, the same scale the builder uses. */
+const val PLAYER_UNIT_DP: Float = 48f
+
+/**
+ * Plays [pkg] as a standalone game with the same engine, rules and input path as the builder's Play mode. A game
+ * that needs capabilities this player does not install is explained instead of being run with parts missing.
+ */
+@Composable
+fun GamePlayer(
+    pkg: GamePackage,
+    touchControls: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val engine = remember { StandardEngine() }
+    val problems = remember(pkg) { pkg.project.capabilityProblems(engine.runtime) }
+    if (problems.isNotEmpty()) {
+        PlayerMessage("${pkg.title} can't run in this player", problems, modifier)
+        return
+    }
+    val session =
+        remember(pkg) { PlaySession(buildSceneWorld(engine.runtime, pkg.project, pkg.startScene, engine.programs), engine.actions) }
+    val focus = remember { FocusRequester() }
+    val pixelsPerUnit = with(LocalDensity.current) { PLAYER_UNIT_DP.dp.toPx().toDouble() }
+    Box(
+        modifier
+            .fillMaxSize()
+            .background(PlayerBackground)
+            .testTag("game-player")
+            .focusRequester(focus)
+            .focusable()
+            .onKeyEvent { session.handlePlayKey(it) },
+    ) {
+        PlaySurface(session, engine.graphics, CameraView(zoom = 1.0), pixelsPerUnit, touchControls, focus)
+    }
+    LaunchedEffect(session) { focus.requestFocus() }
+}
+
+/** A full-screen explanation shown instead of a game, for example when the game file is missing or unsupported. */
+@Composable
+fun PlayerMessage(
+    title: String,
+    details: List<String> = emptyList(),
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier.fillMaxSize().background(PlayerBackground).padding(24.dp), contentAlignment = Alignment.Center) {
+        Column(Modifier.widthIn(max = 560.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(title, color = Color.White, fontSize = 22.sp, modifier = Modifier.testTag("player-message"))
+            details.forEach { Text(it, color = Color(0xFFCFD8DC), fontSize = 16.sp) }
+        }
+    }
+}
+
+private val PlayerBackground = Color(0xFF1B1D23)

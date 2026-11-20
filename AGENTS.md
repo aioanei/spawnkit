@@ -76,7 +76,9 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
 | `render` | KMP + Compose | shared `RuntimeCanvas` for general-runtime frames (editor and players); legacy platformer `GameView` |
 | `ai` | KMP | planned Koog engine/editor capability tools, media providers, record/replay executors |
 | `app/shared` + `app/*App` | KMP + Compose | creator app: responsive builder (viewport, hierarchy, generated inspector, play) on Android/desktop/iOS/web, plus platform entry points |
-| `player/shared` + `player/*App` | KMP + Compose | exported-game shells (single game / arcade gallery) |
+| `player/playerKit` | KMP + Compose | shared game player (play session, loop, surface, touch controls) used by the builder and exported players; `GamePlayer(pkg)` |
+| `player/webPlayer` | Toolchain `wasm-js/app` | universal web player that plays `game.spawnkit.json` beside its `index.html` |
+| `player/shared` + `player/*App` | KMP + Compose | preserved legacy exported-game shells checkpoint (`b2bf830`), adapted at R6 |
 | `server` | Ktor (JVM) | publishing, arcade hosting, validation |
 
 This table distinguishes existing responsibilities where affected; it is not a claim that planned modules exist.

@@ -1,0 +1,26 @@
+# Shared game player (C6, issue #64): the play session, fixed-step loop, play surface, touch controls and play keys
+# used by the builder's Play mode and by exported players, so a released game behaves as it did in the builder.
+product:
+  type: kmp/lib
+  platforms: [ jvm, android, iosArm64, iosSimulatorArm64, js, wasmJs ]
+
+apply:
+  - //toolchain/kotlin.module-template.yaml
+  - //toolchain/android.module-template.yaml
+  - //toolchain/compose.module-template.yaml
+  - //toolchain/compose-library.module-template.yaml
+  - //toolchain/lint.module-template.yaml
+
+dependencies:
+  - //core/editing: exported
+  - //core/gameplay: exported
+  - //render: exported
+
+# Compose UI tests of the player.
+test-dependencies@jvm:
+  - $libs.compose.uiTest
+  - $compose.desktop.currentOs
+
+settings:
+  android:
+    namespace: dev.spawnkit.player.playerkit

@@ -1,0 +1,13 @@
+# Universal web player (C6, issue #64): plays the game.spawnkit.json package served next to its index.html, without
+# the creator app. A Kotlin Toolchain module only (ADR-0008: new modules are Toolchain modules first); the Release
+# Manager ships its build output with web exports and the Arcade serves it for every published game.
+product: wasm-js/app
+
+apply:
+  - //toolchain/kotlin.module-template.yaml
+  - //toolchain/compose.module-template.yaml
+  - //toolchain/lint.module-template.yaml
+
+dependencies:
+  - //player/playerKit
+  - $libs.compose.ui

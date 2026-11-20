@@ -11,9 +11,16 @@
 - **Evidence.** `GamePackageTest` (5 tests); `editing` passes 25/25 on JVM, Android host and mingwX64 (Toolchain)
   and on JS and Wasm (Gradle Node). The new ktlint plugin caught over-long test lines, and `ktlintFormat` fixed them.
   `spotlessCheck` passes.
+- **Added (C6b).**
+  - `player/playerKit` holds the builder's play session, loop, surface, touch controls and play keys, moved
+    unchanged; the builder now uses it. `GamePlayer(pkg)` refuses games with missing capabilities.
+  - `player/webPlayer` (Toolchain-only `wasm-js/app`) plays `game.spawnkit.json` from beside its page.
+  - Docs: [release](docs/release.md).
+- **Evidence (C6b).**
+  - `GamePlayerUiTest` 2/2. The builder's 16 UI tests still pass on the moved code.
+  - In headless Chrome, the Toolchain-built web player plays the sample package, and shows an explanation when the
+    file is missing (`docs/media/web-player-*.png`).
 - **Next steps.**
-  - C6b: extract the builder's play session and play view into a shared player library. Add a universal web player
-    (`wasm-js/app`, Toolchain-only module) that loads `game.spawnkit.json` next to its `index.html`.
   - C6c: Release Manager screen with web export (player bundle plus package) on Android and desktop.
   - C6d: Ktor Arcade publish/list/get with limits and `/play/{slug}`.
 
