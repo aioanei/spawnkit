@@ -70,6 +70,72 @@ public data class ArcadeGame(
     public val playUrl: String,
 )
 
+/** A SpawnKit server's accounts and Arcade, as the builder uses them (C11b). [AccountClient] is the real one. */
+public interface AccountService {
+    /** What the server offers. */
+    public suspend fun status(): ServerStatus
+
+    /** Starts an account; a code is emailed. Returns what to tell the creator. */
+    public suspend fun register(
+        email: String,
+        password: String,
+        displayName: String,
+    ): String
+
+    /** Finishes sign-up with the emailed [code]. */
+    public suspend fun verify(
+        email: String,
+        code: String,
+    ): AccountSession
+
+    /** Signs in. */
+    public suspend fun signIn(
+        email: String,
+        password: String,
+    ): AccountSession
+
+    /** Ends the session of [token]. */
+    public suspend fun signOut(token: String)
+
+    /** Asks for a reset code. Returns what to tell the creator. */
+    public suspend fun requestReset(email: String): String
+
+    /** Sets a new password with the emailed [code]; other sessions end. */
+    public suspend fun reset(
+        email: String,
+        code: String,
+        newPassword: String,
+    ): AccountSession
+
+    /** The account signed in with [token]. */
+    public suspend fun me(token: String): AccountProfile
+
+    /** Deletes the account signed in with [token]. Its published games stay playable, unowned. */
+    public suspend fun deleteAccount(token: String)
+
+    /** Games the account of [token] published. */
+    public suspend fun myGames(token: String): List<ArcadeGame>
+
+    /** Publishes [packageJson], owned by the account of [token], or unowned without one. */
+    public suspend fun publish(
+        token: String?,
+        packageJson: String,
+    ): ArcadeGame
+
+    /** Replaces the owned game [slug] with [packageJson]; its play link stays the same. */
+    public suspend fun republish(
+        token: String,
+        slug: String,
+        packageJson: String,
+    ): ArcadeGame
+
+    /** Unpublishes the owned game [slug]. */
+    public suspend fun unpublish(
+        token: String,
+        slug: String,
+    )
+}
+
 /**
  * The builder's client for a SpawnKit server's accounts and Arcade (C11b, ADR-0010): sign-up with an emailed code,
  * sign-in, reset, sign-out, deletion, and publishing as the owner with My games. Refusals and connection problems
@@ -78,76 +144,63 @@ public data class ArcadeGame(
 public class AccountClient(
     baseUrl: String,
     private val http: HttpClient,
-) {
+) : AccountService {
     private val base = baseUrl.trim().trimEnd('/')
 
-    /** What the server offers. */
-    public suspend fun status(): ServerStatus {
+    override suspend fun status(): ServerStatus {
         val json = call(HttpMethod.Get, "/api/server").obj()
         return ServerStatus(json.bool("emailSignIn"), json.bool("aiAvailable"), json.text("ai"))
     }
 
-    /** Starts an account; a code is emailed. Returns what to tell the creator. */
-    public suspend fun register(
+    override suspend fun register(
         email: String,
         password: String,
         displayName: String,
     ): String = call(HttpMethod.Post, "/api/auth/register", body("email" to email, "password" to password, "displayName" to displayName)).obj().text("message")
 
-    /** Finishes sign-up with the emailed [code]. */
-    public suspend fun verify(
+    override suspend fun verify(
         email: String,
         code: String,
     ): AccountSession = session(call(HttpMethod.Post, "/api/auth/verify", body("email" to email, "code" to code)))
 
-    /** Signs in. */
-    public suspend fun signIn(
+    override suspend fun signIn(
         email: String,
         password: String,
     ): AccountSession = session(call(HttpMethod.Post, "/api/auth/sign-in", body("email" to email, "password" to password)))
 
-    /** Ends the session of [token]. */
-    public suspend fun signOut(token: String) {
+    override suspend fun signOut(token: String) {
         call(HttpMethod.Post, "/api/auth/sign-out", token = token)
     }
 
-    /** Asks for a reset code. Returns what to tell the creator. */
-    public suspend fun requestReset(email: String): String = call(HttpMethod.Post, "/api/auth/reset", body("email" to email)).obj().text("message")
+    override suspend fun requestReset(email: String): String = call(HttpMethod.Post, "/api/auth/reset", body("email" to email)).obj().text("message")
 
-    /** Sets a new password with the emailed [code]; other sessions end. */
-    public suspend fun reset(
+    override suspend fun reset(
         email: String,
         code: String,
         newPassword: String,
     ): AccountSession = session(call(HttpMethod.Post, "/api/auth/reset/confirm", body("email" to email, "code" to code, "password" to newPassword)))
 
-    /** The account signed in with [token]. */
-    public suspend fun me(token: String): AccountProfile = profile(call(HttpMethod.Get, "/api/me", token = token).obj())
+    override suspend fun me(token: String): AccountProfile = profile(call(HttpMethod.Get, "/api/me", token = token).obj())
 
-    /** Deletes the account signed in with [token]. Its published games stay playable, unowned. */
-    public suspend fun deleteAccount(token: String) {
+    override suspend fun deleteAccount(token: String) {
         call(HttpMethod.Delete, "/api/me", token = token)
     }
 
-    /** Games the account of [token] published. */
-    public suspend fun myGames(token: String): List<ArcadeGame> =
+    override suspend fun myGames(token: String): List<ArcadeGame> =
         (call(HttpMethod.Get, "/api/me/games", token = token) as? JsonArray ?: unreadable()).map { game(it.obj()) }
 
-    /** Publishes [packageJson], owned by the account of [token], or unowned without one. */
-    public suspend fun publish(
+    override suspend fun publish(
         token: String?,
         packageJson: String,
     ): ArcadeGame = game(call(HttpMethod.Post, "/api/games", packageJson, token).obj())
 
-    /** Replaces the owned game [slug] with [packageJson]; its play link stays the same. */
-    public suspend fun republish(
+    override suspend fun republish(
         token: String,
         slug: String,
         packageJson: String,
     ): ArcadeGame = game(call(HttpMethod.Put, "/api/games/${checkedSlug(slug)}", packageJson, token).obj())
 
-    /** Unpublishes the owned game [slug]. */
-    public suspend fun unpublish(
+    override suspend fun unpublish(
         token: String,
         slug: String,
     ) {
