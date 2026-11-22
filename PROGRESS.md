@@ -18,6 +18,8 @@
     Targets and Maze Run, run out the Tap Targets timer and restart the maze on a wall. Green on JVM, Android host,
     JS, Wasm and mingwX64.
   - `PresetRecipesTest` 1 (a changed recipe fails it), `NewGamePickerTest` 6, including phone and desktop pickers.
+  - On the API 36 emulator, real taps opened New game, picked Coin Dash, played from its title screen and collected a
+    coin with the on-screen arrow (`docs/media/android-presets-*.png`).
 - **Next.** C11 accounts ([#76](https://github.com/aioanei/spawnkit/issues/76)), which needs the public host, a
   Google OAuth client and SMTP from the owner.
 

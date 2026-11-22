@@ -41,6 +41,10 @@ show one column; wider screens show two.
   says so.
 - **Outside the editing catalog.** Starting from a preset is a project-file action like New and Open, so it has no
   agent tool and no parity case (ADR-0009). An agent builds the same content through the catalog's operations.
+- **Evidence.** [Desktop picker](media/presets-picker-desktop.png). On the Android emulator,
+  `tools/android-preset-smoke.py` used real taps: [the picker](media/android-presets-picker.png), then
+  [Coin Dash's title screen playing](media/android-presets-title-play.png). Holding the on-screen Right arrow then
+  [collected a coin](media/android-presets-coin.png).
 
 New and Open ask before replacing unsaved changes. Save and continue, Discard changes, and Cancel are explicit.
 Cancelling a picker, opening a bad file, and a failed write keep the current project and its undo history. Opening a
