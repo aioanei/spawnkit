@@ -1,6 +1,27 @@
 # SpawnKit progress
 
-## Current checkpoint — C9 title screens (2026-11-22)
+## Current checkpoint — C10 preset games (2026-11-22)
+
+- **Branch.** `feat/75-preset-games`, stacked on C9 (PR #80). Plan:
+  [C10 preset games](docs/plans/2026-11-22-c10-preset-games.md).
+  [Issue #75](https://github.com/aioanei/spawnkit/issues/75).
+- **Added.**
+  - Project → **New game…** opens a picker: Blank, Coin Dash, Tap Targets and Maze Run, each with a picture and a
+    pitch. Phones get one column, wider screens two.
+  - Presets are normal project files in `presets/`, each with a title screen, embedded by the new `core/presets`
+    module. The `embedded-templates` generator gained `directory` and `objectName` settings in both builds.
+  - The presets were made with the builder's own calls, in recipes that a test checks the files against.
+  - A preset loads as a copy with no file, after the unsaved-changes question, so Save never overwrites another
+    file.
+- **Evidence.**
+  - `PresetGamesTest` 8: catalog, no problems, Play on each title, and scripted players that win Coin Dash, Tap
+    Targets and Maze Run, run out the Tap Targets timer and restart the maze on a wall. Green on JVM, Android host,
+    JS, Wasm and mingwX64.
+  - `PresetRecipesTest` 1 (a changed recipe fails it), `NewGamePickerTest` 6, including phone and desktop pickers.
+- **Next.** C11 accounts ([#76](https://github.com/aioanei/spawnkit/issues/76)), which needs the public host, a
+  Google OAuth client and SMTP from the owner.
+
+## Previous checkpoint — C9 title screens (2026-11-22)
 
 - **Branch.** `feat/74-title-screens`, stacked on C7c (PR #79). Plan:
   [C9 title screens](docs/plans/2026-11-22-c9-title-screens.md).

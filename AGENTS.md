@@ -27,8 +27,9 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
   PRs #54 and #55 are merged.
 - **Done:** C5, project persistence (PR #57).
 - **Done:** K1 Kotlin Toolchain adoption, C6 Release Manager and Arcade, and C7a–C7b (catalogs and AI Studio core).
-- **Done:** C7c, the assistant UI; C9, title screens (scene list, Go to scene, Add title screen).
-- **Now:** C10 preset games. Then, C10 presets, C11 accounts and C12 test ads (owner decision
+- **Done:** C7c, the assistant UI; C9, title screens (scene list, Go to scene, Add title screen); C10, preset games
+  (New game picker with Coin Dash, Tap Targets and Maze Run).
+- **Now:** C11 accounts. Then C12 test ads (owner decision
   2026-11-22, [design](docs/design/2026-11-22-title-screens-presets-accounts-ads.md),
   [ADR-0010](docs/adr/0010-accounts-on-ktor.md)), and C8 last, in the
   [contest delivery track](docs/plans/2026-11-20-engine-foundation-revision.md#contest-delivery-track). Track K
