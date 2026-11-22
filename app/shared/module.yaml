@@ -16,6 +16,7 @@ dependencies:
   - //ai
   - //core/editing
   - //core/gameplay
+  - //core/presets
   - //render
   - //player/playerKit
   - $libs.compose.uiToolingPreview
