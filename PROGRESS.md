@@ -1,6 +1,29 @@
 # SpawnKit progress
 
-## Current checkpoint — plan additions C9–C12 (2026-11-22)
+## Current checkpoint — C7c assistant UI (2026-11-22)
+
+- **Branch.** `feat/69-assistant-ui`, stacked on the docs PR #78. Plan:
+  [C7c assistant UI](docs/plans/2026-11-22-c7c-assistant-ui.md).
+- **Added.**
+  - The Assistant tab (expanded) and AI tab (phones): review, accept and undo, reject, progress, cancel, cost, and
+    questions.
+  - Ask AI on Rules and Properties.
+  - The labelled keyless scripted demo (`DemoModel`).
+  - Keys in a platform `SecretStore`: Android Keystore, Windows DPAPI through JNA 5.19.1, the macOS keychain and
+    the Linux Secret Service.
+  - A publish confirmation.
+
+  See [AI Studio](docs/ai-studio.md#assistant-ui-c7c).
+- **Evidence.**
+  - New tests: `DemoModelTest` 5, `AssistantStateTest` 9, `DesktopSecretStoreTest` 4, `AssistantUiTest` 5, and
+    `ReleaseUiTest` +1.
+  - On the API 36 emulator, real taps built Score + collect and arrow-key movement through the demo. Each was
+    accepted after review, and play reached "Score: 1" (`docs/media/android-assistant-*.png`).
+- **Not live.** No live model was called: no key was available, and recording a live session needs the owner's
+  consent.
+- **Next.** C9 title screens ([#74](https://github.com/aioanei/spawnkit/issues/74)).
+
+## Previous checkpoint — plan additions C9–C12 (2026-11-22)
 
 - **Merged.** On the owner's instruction, #67 (C6c–C6d), #70 (ADR-0009) and #72 (C7b, which includes #71, C7a) are
   merged into `main`. Before merging, the combination passed:

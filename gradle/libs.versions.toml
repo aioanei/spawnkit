@@ -15,6 +15,7 @@ junit = "4.13.2"
 kotlin = "2.4.21"
 kotlin-wrappers = "2026.11.2"
 koog = "1.3.0"
+jna = "5.19.1"
 kotlinx-coroutines = "1.11.0"
 kotlinx-serialization = "1.13.0"
 kotlinx-collections-immutable = "0.5.2"
@@ -51,6 +52,7 @@ ktor-serverCore = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor
 ktor-serverNetty = { module = "io.ktor:ktor-server-netty-jvm", version.ref = "ktor" }
 ktor-serverTestHost = { module = "io.ktor:ktor-server-test-host-jvm", version.ref = "ktor" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
 koog-anthropic = { module = "ai.koog:prompt-executor-anthropic-client", version.ref = "koog" }
 koog-executor = { module = "ai.koog:prompt-executor-model", version.ref = "koog" }
 koog-httpKtor = { module = "ai.koog:http-client-ktor", version.ref = "koog" }

@@ -35,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +45,12 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import dev.spawnkit.ai.AgentModel
+import dev.spawnkit.ai.KoogModel
+import dev.spawnkit.app.assistant.AssistantPanel
+import dev.spawnkit.app.assistant.AssistantState
+import dev.spawnkit.app.assistant.SecretStore
+import dev.spawnkit.app.assistant.rememberSecretStore
 import dev.spawnkit.app.persistence.ProjectDialogs
 import dev.spawnkit.app.persistence.ProjectMenu
 import dev.spawnkit.app.persistence.ProjectSession
@@ -51,6 +58,9 @@ import dev.spawnkit.app.release.ReleaseManager
 import dev.spawnkit.app.release.ReleasePlatform
 import dev.spawnkit.app.release.rememberReleasePlatform
 import dev.spawnkit.editing.ObjectDoc
+
+/** Tabs of the expanded layout's right panel. */
+private enum class SidePanel { Properties, Rules, Assistant }
 
 /** Below this width the builder uses the compact (phone) layout. */
 private val CompactWidth = 720.dp
@@ -62,13 +72,17 @@ fun EditorScreen(
     modifier: Modifier = Modifier,
     projectSession: ProjectSession? = null,
     releasePlatform: ReleasePlatform = rememberReleasePlatform(),
+    secrets: SecretStore = rememberSecretStore(),
+    liveModel: (String) -> AgentModel = { KoogModel.anthropic(it) },
 ) {
     var releasing by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val assistant = remember(state, secrets) { AssistantState(state, secrets, scope, liveModel) }
     BoxWithConstraints(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).safeDrawingPadding()) {
         if (maxWidth < CompactWidth) {
-            CompactLayout(state, projectSession) { releasing = true }
+            CompactLayout(state, projectSession, assistant) { releasing = true }
         } else {
-            ExpandedLayout(state, projectSession) { releasing = true }
+            ExpandedLayout(state, projectSession, assistant) { releasing = true }
         }
     }
     if (projectSession != null) ProjectDialogs(projectSession)
@@ -79,6 +93,7 @@ fun EditorScreen(
 private fun ExpandedLayout(
     state: EditorState,
     session: ProjectSession?,
+    assistant: AssistantState,
     onRelease: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
@@ -94,17 +109,24 @@ private fun ExpandedLayout(
             }
             Viewport(state, Modifier.weight(1f).fillMaxHeight())
             Panel(Modifier.width(340.dp).fillMaxHeight()) {
-                var rules by remember { mutableStateOf(false) }
+                var panel by remember { mutableStateOf(SidePanel.Properties) }
+                val askAi = { prompt: String ->
+                    assistant.prompt = prompt
+                    panel = SidePanel.Assistant
+                }
                 Column {
                     Row(Modifier.padding(start = 4.dp, top = 4.dp)) {
-                        TextButton({ rules = false }, Modifier.testTag("panel:Properties")) {
-                            Text("Properties", fontWeight = if (!rules) FontWeight.Bold else FontWeight.Normal)
-                        }
-                        TextButton({ rules = true }, Modifier.testTag("panel:Rules")) {
-                            Text("Rules", fontWeight = if (rules) FontWeight.Bold else FontWeight.Normal)
+                        SidePanel.entries.forEach { entry ->
+                            TextButton({ panel = entry }, Modifier.testTag("panel:${entry.name}")) {
+                                Text(entry.name, fontWeight = if (panel == entry) FontWeight.Bold else FontWeight.Normal)
+                            }
                         }
                     }
-                    if (rules) RulesPanel(state, Modifier.weight(1f)) else Inspector(state, Modifier.weight(1f))
+                    when (panel) {
+                        SidePanel.Properties -> Inspector(state, Modifier.weight(1f), onAskAi = askAi)
+                        SidePanel.Rules -> RulesPanel(state, Modifier.weight(1f), onAskAi = askAi)
+                        SidePanel.Assistant -> AssistantPanel(assistant, Modifier.weight(1f))
+                    }
                 }
             }
         }
@@ -116,10 +138,16 @@ private fun ExpandedLayout(
 private fun CompactLayout(
     state: EditorState,
     session: ProjectSession?,
+    assistant: AssistantState,
     onRelease: () -> Unit,
 ) {
     var tab by remember { mutableIntStateOf(0) }
     var expanded by remember { mutableStateOf(true) }
+    val askAi = { prompt: String ->
+        assistant.prompt = prompt
+        tab = 4
+        expanded = true
+    }
     Column(Modifier.fillMaxSize()) {
         Toolbar(state, compact = true, session, onRelease)
         Viewport(state, Modifier.weight(1f).fillMaxWidth(), touchControls = true)
@@ -129,7 +157,7 @@ private fun CompactLayout(
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         TabRow(tab, Modifier.weight(1f)) {
-                            listOf("Add", "Scene", "Object", "Rules").forEachIndexed { index, title ->
+                            listOf("Add", "Scene", "Object", "Rules", "AI").forEachIndexed { index, title ->
                                 Tab(
                                     tab == index,
                                     {
@@ -153,8 +181,9 @@ private fun CompactLayout(
                             when (tab) {
                                 0 -> Palette(state)
                                 1 -> Hierarchy(state, Modifier.fillMaxSize())
-                                2 -> Inspector(state, Modifier.fillMaxSize())
-                                else -> RulesPanel(state, Modifier.fillMaxSize())
+                                2 -> Inspector(state, Modifier.fillMaxSize(), onAskAi = askAi)
+                                3 -> RulesPanel(state, Modifier.fillMaxSize(), onAskAi = askAi)
+                                else -> AssistantPanel(assistant, Modifier.fillMaxSize())
                             }
                         }
                     }

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
@@ -259,11 +260,31 @@ private fun ArcadeCard(
             label = { Text("Arcade server address") },
             placeholder = { Text("https://arcade.example.org") },
         )
+        var confirming by remember { mutableStateOf(false) }
         Button(
-            { session.release(Destination.Arcade) },
+            { confirming = true },
             Modifier.testTag("release-publish"),
             enabled = enabled && session.address.isNotBlank(),
         ) { Text("Publish game") }
+        // Publishing is outward-facing, so it always needs an explicit confirmation (ADR-0009).
+        if (confirming) {
+            AlertDialog(
+                onDismissRequest = { confirming = false },
+                modifier = Modifier.testTag("publish-confirm"),
+                title = { Text("Publish to the Arcade?") },
+                text = { Text("Publish \"${session.title.trim()}\" to ${session.address.trim()}? Anyone with the play link can play it.") },
+                confirmButton = {
+                    Button(
+                        {
+                            confirming = false
+                            session.release(Destination.Arcade)
+                        },
+                        Modifier.testTag("publish-confirm-yes"),
+                    ) { Text("Publish") }
+                },
+                dismissButton = { TextButton({ confirming = false }, Modifier.testTag("publish-confirm-no")) { Text("Cancel") } },
+            )
+        }
         if (session.active == Destination.Arcade) ReleaseProgress(session.progress, session::cancel)
         session.arcadeResult?.let { result ->
             ResultText(result)

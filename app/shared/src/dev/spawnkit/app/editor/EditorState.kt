@@ -2,6 +2,7 @@ package dev.spawnkit.app.editor
 
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -295,8 +296,13 @@ class EditorState(
             .filter { it.isNotEmpty() }
             .distinct()
 
+    /** Counts loaded projects, so work tied to one project (an assistant proposal) can tell when it was replaced. */
+    var projectGeneration by mutableIntStateOf(0)
+        private set
+
     /** Replaces the workspace only after decoding succeeded; transient play/selection/camera state is reset. */
     fun loadProject(project: Project) {
+        projectGeneration++
         play = null
         dragging = null
         selection = null
