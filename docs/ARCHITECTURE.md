@@ -143,6 +143,7 @@ JS, Wasm, mingwX64, linuxX64 and the iOS simulator. See [ADR-0004](adr/0004-dete
 | Engine/editor/programming/extension foundation | broader R1 comparisons and R2–R9 work remain unfinished |
 | Guided creation, accessibility and novice-usability release gate | builder slice exists; complete novice study and remaining accessibility gates are not claimed |
 | Browser deployment, editor, validation, AI Studio, publishing | preserved roadmap, revised R0–R9 dependency order |
+| Agentic parity: every manual capability (rules first) operable by prompt | accepted requirement ([ADR-0009](adr/0009-agentic-parity.md)); planned with C7/R7, not implemented |
 
 The targeted [renderer browser smoke check](../tools/render-smoke/README.md) runs an isolated headless Chrome
 against the real Wasm preview. It checks keyboard/coin/jump behavior, actual tab focus loss, simultaneous touch

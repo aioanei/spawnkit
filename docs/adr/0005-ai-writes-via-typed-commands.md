@@ -5,6 +5,7 @@
 Revision note (2026-11-20): typed editing, user acceptance, real-engine validation and honest replay remain. The new
 direction permits agents to discover/invoke actual editor capabilities and author custom programs. Small specs remain
 an optional frontend, not an exclusive JSON/configuration generation contract. See [ADR-0006](0006-general-purpose-engine-and-editor.md).
+[ADR-0009](0009-agentic-parity.md) adds completeness: every manual capability, rules first, is operable by agents from prompts.
 
 ## Context
 

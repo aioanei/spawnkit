@@ -47,6 +47,12 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
   libraries are allowed; another complete engine cannot become the foundation.
 - Guided visual creation is the default: blank projects or optional examples, drag-and-drop objects, friendly
   behaviors and visual When / If / Do rules. AI, coding and technical IDs are not prerequisites.
+- Agentic parity ([ADR-0009](docs/adr/0009-agentic-parity.md)): everything a creator can do by hand, rules first of
+  all, is also operable by an AI agent from a prompt.
+  - It goes through the same typed operation, as a staged and validated changeset the creator accepts or rejects.
+  - Agent tools are derived from the operation, descriptor and rule block catalogs.
+  - Outward-facing actions need explicit confirmation. Agents never receive any credentials, including model API
+    keys, through tool inputs or outputs. AI stays optional.
 - Basic/advanced tools, agents and extensions share one executable model. Metadata must generate usable property
   controls/behavior forms for installed capabilities; custom inspectors are optional enhancements.
 - Contextual help, previews, undo/redo, autosave/recovery, explainable errors, keyboard access and scalable text
@@ -146,6 +152,10 @@ unavailable on most machines. Use the aggregates above.
 - UI, agents and plugins use actual typed editor operations and real-engine inspection/validation. Specs may be
   tool inputs, but do not limit agents to generating document JSON or predefined game configurations.
   Stage AI edits and commit only a user-accepted changeset against the expected workspace revision.
+- Never add a UI-only or agent-only editing path (ADR-0009). A new operation, component property, rule block or
+  extension capability needs complete catalog metadata (name, help, parameters, constraints, examples). That metadata
+  generates both its controls and, from C7/R7 on, its agent tool. From C7/R7 on, add a parity test that applies it
+  through the UI path and through the agent tool. Before C7, record the missing agent coverage in the issue.
 - Tests use `kotlin.test` in `commonTest` unless a platform API is under test. No live LLM/image API calls in tests;
   use the replaying executor and recorded fixtures.
 
@@ -196,6 +206,8 @@ unavailable on most machines. Use the aggregates above.
 ## Definition of done
 
 - Acceptance criteria of the issue met and demonstrated (test, screenshot or command output in the PR).
+- From C7/R7 on, every manual builder capability added or changed has its derived agent tool and a passing parity
+  test (ADR-0009). Before C7, record the gap in the issue instead.
 - `spotlessCheck`, `allJvmAndWebTests`, `kotlin check ktlint` and the Toolchain tests above green; new public API
   documented.
 - Docs updated when behavior, commands or architecture changed (`docs/ARCHITECTURE.md`, ADRs, README).

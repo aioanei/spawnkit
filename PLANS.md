@@ -24,6 +24,9 @@ Manager's build engine. That work is the plan's
 [ADR-0008](docs/adr/0008-kotlin-toolchain.md), [migration status](docs/kotlin-toolchain.md) and the
 [Release Manager build architecture](docs/design/2026-11-20-release-manager-kotlin-toolchain.md).
 
+Agentic parity ([ADR-0009](docs/adr/0009-agentic-parity.md), 2026-11-20): everything a creator does by hand, rules
+first of all, must also be operable by AI agents from prompts, through the same reviewed operations.
+
 - Engine ownership, guided creation and usability requirements: [General-purpose engine design](docs/design/2026-11-20-general-purpose-engine.md).
 - Revised implementation sequence: [Engine foundation revision](docs/plans/2026-11-20-engine-foundation-revision.md).
 - Decision record: [ADR-0006](docs/adr/0006-general-purpose-engine-and-editor.md).
