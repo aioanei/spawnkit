@@ -29,7 +29,9 @@ On 2026-11-22 the owner added title screens (C9), preset games (C10), accounts w
 [design](docs/design/2026-11-22-title-screens-presets-accounts-ads.md). Later that day they added brain-rot presets
 with How it works guidance (C10b, #84) and made SpawnKit **AI-first** (C13, #85). In C13 the AI builds whole games
 with the builder's tools, through a model proxy on the server that is free with a $20 monthly cap
-([ADR-0011](docs/adr/0011-hosted-ai-model-proxy.md)). On 2026-11-23 the owner asked for **complete games** from the chat:
+([ADR-0011](docs/adr/0011-hosted-ai-model-proxy.md)).
+
+On 2026-11-23 the owner asked for **complete games** from the chat:
 - a home screen, levels, ad spots and in-game purchases;
 - C14 adds game-wide values, spawning and randomness;
 - C12 adds test-mode purchases.
