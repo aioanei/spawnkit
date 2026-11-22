@@ -22,6 +22,7 @@ import dev.spawnkit.graphics.CameraView
 import dev.spawnkit.graphics.RenderList
 import dev.spawnkit.graphics.renderList
 import dev.spawnkit.player.PlaySession
+import dev.spawnkit.player.playSession
 import dev.spawnkit.program.PrepareResult
 import dev.spawnkit.program.Program
 import dev.spawnkit.program.prepareProgram
@@ -199,7 +200,7 @@ class EditorState(
             return
         }
         selection = null
-        play = PlaySession(editor.buildWorld(sceneId), engine.actions)
+        play = engine.playSession(editor.project, sceneId)
     }
 
     /**
@@ -208,15 +209,18 @@ class EditorState(
      */
     fun playProblem(): String? {
         val session = play ?: return null
+        session.message?.let { return it }
+        // Play may have moved to another scene with "Go to scene"; name objects from the scene being played.
+        val playing = session.sceneId?.let(project::scene) ?: scene
         val world = session.scene.world
         for (entity in world.entities(engine.programs.behavior)) {
             val fault = world.get(entity, engine.programs.behavior)?.fault ?: continue
-            val name = session.scene.objectId(entity)?.let { scene.find(it)?.name } ?: "An object"
+            val name = session.scene.objectId(entity)?.let { playing.find(it)?.name } ?: "An object"
             return "$name's rules stopped: ${fault.message}"
         }
         val broken =
             session.scene.diagnostics.keys
-                .mapNotNull { scene.find(it)?.name }
+                .mapNotNull { playing.find(it)?.name }
         if (broken.isEmpty()) return null
         return "${broken.joinToString()} ${if (broken.size == 1) "has" else "have"} rule problems and play without rules: " +
             session.scene.diagnostics.values

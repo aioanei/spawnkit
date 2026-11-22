@@ -2,21 +2,44 @@ package dev.spawnkit.player
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import dev.spawnkit.editing.Project
 import dev.spawnkit.editing.SceneWorld
+import dev.spawnkit.editing.buildSceneWorld
+import dev.spawnkit.gameplay.StandardEngine
 import dev.spawnkit.runtime.InputAction
 import dev.spawnkit.runtime.InputFrame
 import dev.spawnkit.runtime.Pointer
+import dev.spawnkit.runtime.World
 
 /**
  * A running play session: an isolated world built from a scene, plus the input the player is giving it. Keyboard
  * keys, on-screen controls and pointers are combined into one [InputFrame] per tick. The builder's Play mode and
  * exported players share this class, so a released game behaves exactly as it did while it was being made.
+ *
+ * After each tick, [afterTick] asks [sceneRequest] whether a rule asked for another scene ("Go to scene") and then
+ * switches to a fresh world from [buildScene]. Create sessions with [StandardEngine.playSession].
  */
 class PlaySession(
-    val scene: SceneWorld,
+    scene: SceneWorld,
     private val actions: Map<String, InputAction>,
+    startSceneId: String? = null,
+    private val sceneRequest: (World) -> String? = { null },
+    private val buildScene: (String) -> SceneWorld? = { null },
 ) {
+    /** The world being played; replaced when the game goes to another scene. */
+    var scene by mutableStateOf(scene)
+        private set
+
+    /** ID of the scene being played, when known. */
+    var sceneId by mutableStateOf(startSceneId)
+        private set
+
+    /** A plain-language problem with the last scene change, or `null`. */
+    var message by mutableStateOf<String?>(null)
+        private set
+
     /** Incremented after every presented frame so the play surface redraws. */
     var frame by mutableLongStateOf(0L)
 
@@ -69,6 +92,25 @@ class PlaySession(
         if (id in unsubmitted) releaseAfterSubmit += id else pointers -= id
     }
 
+    /**
+     * Acts on a "Go to scene" request from the tick that just ran: the game continues in a fresh world of that scene.
+     * Pointers pressed on the old scene are dropped, so a held finger does not tap the new scene.
+     */
+    fun afterTick() {
+        val requested = sceneRequest(scene.world) ?: return
+        val next = buildScene(requested)
+        if (next == null) {
+            message = "A rule asked for a scene that no longer exists."
+            return
+        }
+        scene = next
+        sceneId = requested
+        message = null
+        pointers.clear()
+        unsubmitted.clear()
+        releaseAfterSubmit.clear()
+    }
+
     /** The input for the next tick. */
     fun nextInput(): InputFrame {
         val frame = InputFrame(down = held.keys.mapNotNull(actions::get).toSet(), pointers = pointers.values.toList())
@@ -78,3 +120,18 @@ class PlaySession(
         return frame
     }
 }
+
+/**
+ * A play session of [project] starting at scene [sceneId], which follows "Go to scene" blocks to fresh worlds of the
+ * same project snapshot. The builder's Play and exported players both use it.
+ */
+fun StandardEngine.playSession(
+    project: Project,
+    sceneId: String,
+): PlaySession =
+    PlaySession(
+        buildSceneWorld(runtime, project, sceneId, programs),
+        actions,
+        sceneId,
+        ::takeSceneRequest,
+    ) { id -> project.scene(id)?.let { buildSceneWorld(runtime, project, it.id, programs) } }

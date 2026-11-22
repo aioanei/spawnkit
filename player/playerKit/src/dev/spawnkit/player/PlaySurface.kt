@@ -207,6 +207,7 @@ private fun PlayLoop(session: PlaySession) {
                     if (!session.scene.world.isFaulted) {
                         session.scene.world.submitInput(session.nextInput())
                         session.scene.world.step()
+                        session.afterTick()
                     }
                     accumulator -= stepNanos
                 }

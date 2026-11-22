@@ -24,7 +24,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.spawnkit.editing.GamePackage
-import dev.spawnkit.editing.buildSceneWorld
 import dev.spawnkit.editing.capabilityProblems
 import dev.spawnkit.gameplay.StandardEngine
 import dev.spawnkit.graphics.CameraView
@@ -49,7 +48,7 @@ fun GamePlayer(
         return
     }
     val session =
-        remember(pkg) { PlaySession(buildSceneWorld(engine.runtime, pkg.project, pkg.startScene, engine.programs), engine.actions) }
+        remember(pkg) { engine.playSession(pkg.project, pkg.startScene) }
     val focus = remember { FocusRequester() }
     val pixelsPerUnit = with(LocalDensity.current) { PLAYER_UNIT_DP.dp.toPx().toDouble() }
     Box(
@@ -97,10 +96,11 @@ internal fun ruleProblem(
     engine: StandardEngine,
     pkg: GamePackage,
 ): String? {
+    session.message?.let { return it }
     val world = session.scene.world
     val objects =
         pkg.project
-            .scene(pkg.startScene)
+            .scene(session.sceneId ?: pkg.startScene)
             ?.objects
             .orEmpty()
             .associateBy { it.id }
