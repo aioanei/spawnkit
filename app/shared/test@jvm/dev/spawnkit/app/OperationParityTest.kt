@@ -18,6 +18,7 @@ import dev.spawnkit.app.persistence.ProjectFile
 import dev.spawnkit.app.persistence.ProjectFilePicker
 import dev.spawnkit.app.persistence.ProjectFiles
 import dev.spawnkit.app.persistence.ProjectSession
+import dev.spawnkit.editing.EditOperation
 import dev.spawnkit.editing.OperationResult
 import dev.spawnkit.editing.Picked
 import dev.spawnkit.editing.Project
@@ -66,6 +67,8 @@ class OperationParityTest {
 
     private fun EditorState.id(name: String): String = scene.objects.first { it.name == name }.id
 
+    private fun EditorState.sceneNamed(name: String): String = project.scenes.first { it.name == name }.id
+
     private fun EditorState.target(name: String): Map<String, Any?> = mapOf("scene" to sceneId, "object" to id(name))
 
     private fun EditorState.select(name: String) {
@@ -100,6 +103,28 @@ class OperationParityTest {
                         tap("project-name-done")
                     },
                     tool = { mapOf("name" to "Coin Rush") },
+                ),
+            "add_scene" to Case(ui = { tap("scene-add") }, tool = { mapOf("name" to "Scene ${project.scenes.size + 1}") }),
+            "rename_scene" to
+                Case(
+                    ui = {
+                        tap("scene-rename")
+                        onNodeWithTag("scene-name").performTextReplacement("Forest")
+                        tap("scene-name-done")
+                    },
+                    tool = { mapOf("scene" to sceneId, "name" to "Forest") },
+                ),
+            "remove_scene" to
+                Case(
+                    { selectScene(sceneNamed("Bonus")) },
+                    { tap("scene-delete") },
+                    { mapOf("scene" to sceneNamed("Bonus")) },
+                ),
+            "move_scene" to
+                Case(
+                    { selectScene(sceneNamed("Bonus")) },
+                    { tap("scene-start") },
+                    { mapOf("scene" to sceneNamed("Bonus"), "to" to 1L) },
                 ),
             "add_object" to
                 Case(
@@ -240,6 +265,7 @@ class OperationParityTest {
         val session = ProjectSession(ParityFiles())
         val state = session.state
         for (name in listOf("Score", "Coin", "Player")) state.add(DefaultPresets.first { it.name == name })
+        state.apply(EditOperation.AddScene("Bonus"))
         case.setup(state)
         return session
     }

@@ -13,12 +13,15 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
@@ -103,7 +106,9 @@ private fun ExpandedLayout(
                 Column {
                     SectionTitle("Add objects")
                     Palette(state)
-                    SectionTitle("Scene")
+                    SectionTitle("Scenes")
+                    SceneList(state)
+                    SectionTitle("In this scene")
                     Hierarchy(state, Modifier.weight(1f))
                 }
             }
@@ -179,11 +184,29 @@ private fun CompactLayout(
                     if (expanded) {
                         Box(Modifier.height(280.dp).fillMaxWidth()) {
                             when (tab) {
-                                0 -> Palette(state)
-                                1 -> Hierarchy(state, Modifier.fillMaxSize())
-                                2 -> Inspector(state, Modifier.fillMaxSize(), onAskAi = askAi)
-                                3 -> RulesPanel(state, Modifier.fillMaxSize(), onAskAi = askAi)
-                                else -> AssistantPanel(assistant, Modifier.fillMaxSize())
+                                0 -> {
+                                    Palette(state)
+                                }
+
+                                1 -> {
+                                    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                                        SceneList(state)
+                                        SectionTitle("In this scene")
+                                        Hierarchy(state, Modifier.heightIn(max = 400.dp))
+                                    }
+                                }
+
+                                2 -> {
+                                    Inspector(state, Modifier.fillMaxSize(), onAskAi = askAi)
+                                }
+
+                                3 -> {
+                                    RulesPanel(state, Modifier.fillMaxSize(), onAskAi = askAi)
+                                }
+
+                                else -> {
+                                    AssistantPanel(assistant, Modifier.fillMaxSize())
+                                }
                             }
                         }
                     }

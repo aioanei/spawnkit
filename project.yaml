@@ -11,6 +11,7 @@ modules:
   - core/gameplay
   - core/graphics
   - core/model
+  - core/presets
   - core/program
   - core/runtime
   - core/templates

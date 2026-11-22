@@ -87,6 +87,8 @@ class OperationCatalogTest {
                 EditOperation.SetProperty("s", "o", "c", "p", 1L),
                 EditOperation.AddScene("x"),
                 EditOperation.RenameScene("s", "x"),
+                EditOperation.RemoveScene("s"),
+                EditOperation.MoveScene("s", 0),
                 EditOperation.SetRules("s", "o", emptyList()),
                 EditOperation.Batch(emptyList(), "x"),
             )
@@ -109,8 +111,16 @@ class OperationCatalogTest {
 
                     is EditOperation.SetProperty -> "set_property"
 
+                    is EditOperation.AddScene -> "add_scene"
+
+                    is EditOperation.RenameScene -> "rename_scene"
+
+                    is EditOperation.RemoveScene -> "remove_scene"
+
+                    is EditOperation.MoveScene -> "move_scene"
+
                     // No builder control yet; added to the catalog together with the control (ADR-0009).
-                    is EditOperation.ReparentObject, is EditOperation.AddScene, is EditOperation.RenameScene -> null
+                    is EditOperation.ReparentObject -> null
 
                     // Rule edits are catalogued by the rule block package (gameplay's rule operations).
                     is EditOperation.SetRules -> null

@@ -1,6 +1,51 @@
 # SpawnKit progress
 
-## Current checkpoint — C7c assistant UI (2026-11-22)
+## Current checkpoint — C10 preset games (2026-11-22)
+
+- **Branch.** `feat/75-preset-games`, stacked on C9 (PR #80). Plan:
+  [C10 preset games](docs/plans/2026-11-22-c10-preset-games.md).
+  [Issue #75](https://github.com/aioanei/spawnkit/issues/75).
+- **Added.**
+  - Project → **New game…** opens a picker: Blank, Coin Dash, Tap Targets and Maze Run, each with a picture and a
+    pitch. Phones get one column, wider screens two.
+  - Presets are normal project files in `presets/`, each with a title screen, embedded by the new `core/presets`
+    module. The `embedded-templates` generator gained `directory` and `objectName` settings in both builds.
+  - The presets were made with the builder's own calls, in recipes that a test checks the files against.
+  - A preset loads as a copy with no file, after the unsaved-changes question, so Save never overwrites another
+    file.
+- **Evidence.**
+  - `PresetGamesTest` 8: catalog, no problems, Play on each title, and scripted players that win Coin Dash, Tap
+    Targets and Maze Run, run out the Tap Targets timer and restart the maze on a wall. Green on JVM, Android host,
+    JS, Wasm and mingwX64.
+  - `PresetRecipesTest` 1 (a changed recipe fails it), `NewGamePickerTest` 6, including phone and desktop pickers.
+  - On the API 36 emulator, real taps opened New game, picked Coin Dash, played from its title screen and collected a
+    coin with the on-screen arrow (`docs/media/android-presets-*.png`).
+- **Next.** C11 accounts ([#76](https://github.com/aioanei/spawnkit/issues/76)), which needs the public host, a
+  Google OAuth client and SMTP from the owner.
+
+## Previous checkpoint — C9 title screens (2026-11-22)
+
+- **Branch.** `feat/74-title-screens`, stacked on C7c (PR #79). Plan:
+  [C9 title screens](docs/plans/2026-11-22-c9-title-screens.md).
+  [Issue #74](https://github.com/aioanei/spawnkit/issues/74).
+- **Added.**
+  - Scene operations `RemoveScene` and `MoveScene`, with catalog entries `add_scene`, `rename_scene`,
+    `remove_scene` and `move_scene`. Position 1 is the start scene, so the format is unchanged.
+  - A scene list in the builder: in the Scenes section (expanded) and the Scene tab (phones).
+  - A "Go to scene" block over a `goToScene` program effect. Players switch to a fresh world after the tick
+    (`StandardEngine.playSession`).
+  - "Add title screen" as one undoable `Batch`.
+  - Releases default to the first scene.
+- **Evidence.**
+  - New tests: `SceneOperationsTest` 3, `GoToSceneTest` 3, `PlaySessionScenesTest` 3, `SceneListUiTest` 3,
+    `TitleScreenTest` 2.
+  - `OperationParityTest` now covers all 19 entries.
+  - On the API 36 emulator, real taps added a title screen and played it. Tapping its Play button on the canvas
+    reached the level (`docs/media/android-title-*.png`).
+- **Cut.** Duplicate scene, from the cut line. Numbers do not carry across scenes yet.
+- **Next.** C10 preset games ([#75](https://github.com/aioanei/spawnkit/issues/75)).
+
+## Previous checkpoint — C7c assistant UI (2026-11-22)
 
 - **Branch.** `feat/69-assistant-ui`, stacked on the docs PR #78. Plan:
   [C7c assistant UI](docs/plans/2026-11-22-c7c-assistant-ui.md).

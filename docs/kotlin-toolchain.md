@@ -66,7 +66,7 @@ which have the environment requirements described below.
 | Kotlin 2.4.21, kotlinx.serialization 1.13.0 | **Supported** with explicit pins (Toolchain defaults: 2.4.10, 1.11.0) | `show settings`; `core/model` codec tests |
 | Compose Multiplatform 1.12.2 libraries (`render`, `app/shared`) | **Supported** (default 1.12.1, pinned) | `render` 19/19 on JVM and 17/17 on Android host; `shared` 16/16 Compose UI tests on JVM. Same counts as Gradle. |
 | Compose resources | **Supported.** The package is pinned to the Gradle-generated `spawnkit.render.generated.resources`. | Font present in APK assets and in the Wasm bundle |
-| Generated sources (embedded templates) | **Local plugin** | Template-loading tests pass; plugin unit tests 2/2 |
+| Generated sources (embedded templates) | **Local plugin** with `directory`, `packageName` and `objectName` settings; `core/templates` embeds `templates/`, `core/presets` embeds `presets/` (C10) | Template-loading and preset tests pass; plugin unit tests 3/3 |
 | ktlint / Spotless | **Local plugin**, enabled through a template | Zero violations repository-wide. A planted violation fails the check, and `ktlintFormat` fixes it. |
 | Ktor server | **Supported** (`settings.ktor`, BOM 3.6.1) | Test 1/1. The executable JAR answers `GET /health` with `200 ok`. |
 | Android creator app | **Supported**: debug APK (`build`), release AAB with R8 (`package`), keystore signing settings | Toolchain APK on the API 36 emulator: rules built with taps, then played to "Score: 1" ([capture](media/android-toolchain-rules-play.png)) |

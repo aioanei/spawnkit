@@ -14,7 +14,11 @@ import dev.spawnkit.editing.OperationResult
 import dev.spawnkit.editing.Project
 import dev.spawnkit.editing.SceneWorld
 import dev.spawnkit.editing.capabilityProblems
+import dev.spawnkit.gameplay.Action
 import dev.spawnkit.gameplay.BlockLocation
+import dev.spawnkit.gameplay.BlockPart
+import dev.spawnkit.gameplay.Condition
+import dev.spawnkit.gameplay.Rule
 import dev.spawnkit.gameplay.RuleBlocks
 import dev.spawnkit.gameplay.RuleItem
 import dev.spawnkit.gameplay.StandardEngine
@@ -22,6 +26,8 @@ import dev.spawnkit.graphics.CameraView
 import dev.spawnkit.graphics.RenderList
 import dev.spawnkit.graphics.renderList
 import dev.spawnkit.player.PlaySession
+import dev.spawnkit.player.playSession
+import dev.spawnkit.program.Handler
 import dev.spawnkit.program.PrepareResult
 import dev.spawnkit.program.Program
 import dev.spawnkit.program.prepareProgram
@@ -67,7 +73,13 @@ private fun shape(
     width: Double,
     height: Double,
     color: Long,
-) = ComponentDoc("graphics:shape", mapOf("form" to form, "width" to width, "height" to height, "color" to color))
+    layer: Long = 0,
+) = ComponentDoc("graphics:shape", mapOf("form" to form, "width" to width, "height" to height, "color" to color, "layer" to layer))
+
+private fun text(
+    value: String,
+    size: Double,
+) = listOf(ComponentDoc("graphics:text", mapOf("text" to value, "size" to size, "layer" to 2L)))
 
 /**
  * UI state of the builder, shared by every platform layout. All project changes go through [Editor] operations, so
@@ -105,6 +117,13 @@ class EditorState(
     init {
         editor.onChange {
             revision = editor.revision
+            // The scene being edited can disappear (deleted, or its creation undone): edit the first scene instead.
+            if (editor.project.scene(sceneId) == null) {
+                sceneId =
+                    editor.project.scenes
+                        .first()
+                        .id
+            }
             if (selection != null && editor.project.scene(sceneId)?.find(selection!!) == null) selection = null
         }
     }
@@ -128,6 +147,12 @@ class EditorState(
         message = (applied as? OperationResult.Rejected)?.message
         return applied
     }
+
+    /** Applies catalog operation [id] with [arguments], the same entry agents use (ADR-0009). */
+    fun applyCatalog(
+        id: String,
+        arguments: Map<String, Any?>,
+    ): OperationResult = apply(engine.operations.build(id, arguments, editor.catalogContext()))
 
     /** Adds [preset] at world point ([x], [y]) and selects it. */
     fun add(
@@ -199,7 +224,7 @@ class EditorState(
             return
         }
         selection = null
-        play = PlaySession(editor.buildWorld(sceneId), engine.actions)
+        play = engine.playSession(editor.project, sceneId)
     }
 
     /**
@@ -208,15 +233,18 @@ class EditorState(
      */
     fun playProblem(): String? {
         val session = play ?: return null
+        session.message?.let { return it }
+        // Play may have moved to another scene with "Go to scene"; name objects from the scene being played.
+        val playing = session.sceneId?.let(project::scene) ?: scene
         val world = session.scene.world
         for (entity in world.entities(engine.programs.behavior)) {
             val fault = world.get(entity, engine.programs.behavior)?.fault ?: continue
-            val name = session.scene.objectId(entity)?.let { scene.find(it)?.name } ?: "An object"
+            val name = session.scene.objectId(entity)?.let { playing.find(it)?.name } ?: "An object"
             return "$name's rules stopped: ${fault.message}"
         }
         val broken =
             session.scene.diagnostics.keys
-                .mapNotNull { scene.find(it)?.name }
+                .mapNotNull { playing.find(it)?.name }
         if (broken.isEmpty()) return null
         return "${broken.joinToString()} ${if (broken.size == 1) "has" else "have"} rule problems and play without rules: " +
             session.scene.diagnostics.values
@@ -286,7 +314,57 @@ class EditorState(
         val rules = scene.find(objectId)?.rules.orEmpty()
         if (rules.isEmpty()) return emptyList()
         val result = prepareProgram(Program("check.$objectId", handlers = rules), engine.host)
-        return (result as? PrepareResult.Invalid)?.diagnostics?.map { RuleBlocks.locate(it.source.nodeId) to it.message }.orEmpty()
+        val checked = (result as? PrepareResult.Invalid)?.diagnostics?.map { RuleBlocks.locate(it.source.nodeId) to it.message }.orEmpty()
+        return checked + missingScenes(rules)
+    }
+
+    /** "Go to scene" blocks whose scene was removed; playing ignores them with a message. */
+    private fun missingScenes(rules: List<Handler>): List<Pair<BlockLocation?, String>> =
+        RuleBlocks.decompile(rules).flatMapIndexed { index, item ->
+            val rule = (item as? RuleItem.Blocks)?.rule ?: return@flatMapIndexed emptyList()
+            rule.actions.mapIndexedNotNull { k, action ->
+                if (action is Action.GoToScene && project.scene(action.sceneId) == null) {
+                    BlockLocation(index, BlockPart.Action, k) to "Go to scene: that scene was removed. Choose another scene."
+                } else {
+                    null
+                }
+            }
+        }
+
+    /**
+     * Adds a title screen as one undoable step and opens it (C9). It is an ordinary scene made with catalog operations:
+     * a background, the game's name and a tagged Play button whose rule goes to the current start scene. The new scene
+     * becomes the start scene. Creators change everything afterwards with the inspector and rules.
+     */
+    fun addTitleScreen() {
+        val current = project
+        val next = current.nextId
+        val title = "scene-$next"
+        val button = "obj-${next + 3}"
+        val play = Rule(Condition.Tapped, actions = listOf(Action.GoToScene(current.scenes.first().id)))
+        val operations =
+            listOf(
+                EditOperation.AddScene("Title"),
+                EditOperation.AddObject(title, "Background", components = placed(0.0, 0.0) + shape("rectangle", 16.0, 9.0, 0xFF1A237E, -1)),
+                EditOperation.AddObject(title, "Title text", components = placed(0.0, -2.0) + text(current.name, 1.5)),
+                EditOperation.AddObject(
+                    title,
+                    "Play button",
+                    components = placed(0.0, 2.0) + shape("rectangle", 4.0, 1.5, 0xFF43A047, 1) + tag("play-button"),
+                ),
+                EditOperation.AddObject(title, "Play label", parent = button, components = placed(0.0, 0.0) + text("Play", 0.8)),
+                EditOperation.SetRules(title, button, RuleBlocks.compile(listOf(play))),
+                EditOperation.MoveScene(title, 0),
+            )
+        if (apply(EditOperation.Batch(operations, "Add title screen")) is OperationResult.Applied) selectScene(title)
+    }
+
+    /** Opens scene [id] for editing. */
+    fun selectScene(id: String) {
+        if (project.scene(id) == null || id == sceneId) return
+        sceneId = id
+        selection = null
+        dragging = null
     }
 
     /** Tags used in the current scene, for pickers. */

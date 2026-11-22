@@ -47,10 +47,11 @@ class RuleCatalogTest {
             Action.SetText(Target.Tagged("sign"), "Game over"),
             Action.ShowNumber(Target.Self, "Lives: "),
             Action.RemoveSelf,
+            Action.GoToScene("scene-2"),
         ).onEach {
             when (it) {
                 is Action.Move, is Action.ChangeNumber, is Action.SetNumber, is Action.SetText, is Action.ShowNumber,
-                Action.RemoveSelf,
+                Action.RemoveSelf, is Action.GoToScene,
                 -> Unit
             }
         }

@@ -8,6 +8,7 @@ import dev.spawnkit.editing.Project
 import dev.spawnkit.editing.ProjectCodec
 import dev.spawnkit.editing.ProjectJournal
 import dev.spawnkit.editing.RecoveryResult
+import dev.spawnkit.presets.GamePreset
 
 /** The pending destructive navigation, confirmed before the current workspace is replaced. */
 enum class ProjectAction { New, Open }
@@ -31,6 +32,13 @@ class ProjectSession(
         private set
     var busy by mutableStateOf(false)
         private set
+
+    /** The New game picker is open (C10). */
+    var choosing by mutableStateOf(false)
+        private set
+
+    /** What [ProjectAction.New] starts from: a preset, or `null` for a blank game. */
+    private var newFrom: GamePreset? = null
     var status by mutableStateOf("Changes are autosaved on this device")
         private set
     val dirty: Boolean get() = state.project != saved
@@ -72,6 +80,28 @@ class ProjectSession(
         autosave()
     }
 
+    /** Opens the New game picker. */
+    fun chooseNew() {
+        if (busy || state.play != null || recovery != null) return
+        choosing = true
+    }
+
+    /** Closes the picker without changing anything. */
+    fun closeChooser() {
+        choosing = false
+    }
+
+    /**
+     * Starts a new game from [preset], or a blank one when `null`. Unsaved changes are asked about first. A preset loads
+     * as a fresh copy with no file, so Save asks where to keep it. Choosing a preset is a project-file action like New and
+     * Open, outside the editing catalog (C10).
+     */
+    fun startNew(preset: GamePreset?) {
+        choosing = false
+        newFrom = preset
+        request(ProjectAction.New)
+    }
+
     fun request(action: ProjectAction) {
         if (busy || state.play != null || recovery != null) return
         if (dirty) pending = action else perform(action)
@@ -79,6 +109,7 @@ class ProjectSession(
 
     fun cancelNavigation() {
         pending = null
+        newFrom = null
     }
 
     fun discardAndContinue() {
@@ -144,11 +175,21 @@ class ProjectSession(
     private fun perform(action: ProjectAction) {
         when (action) {
             ProjectAction.New -> {
-                state.loadProject(Project.blank())
+                val preset = newFrom
+                newFrom = null
+                val project =
+                    try {
+                        preset?.project() ?: Project.blank()
+                    } catch (_: Exception) {
+                        state.message = "${preset?.name} could not be opened; your game is kept"
+                        return
+                    }
+                state.loadProject(project)
                 saved = state.project
                 target = null
                 autosaved = null
                 autosave()
+                if (preset != null) status = "Started from ${preset.name} · save a file to keep your own copy"
             }
 
             ProjectAction.Open -> {

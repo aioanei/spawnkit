@@ -131,6 +131,9 @@ public data class Picked(
 public object Suggestions {
     /** Tags used by objects in the current scene. */
     public const val TAGS: String = "tags"
+
+    /** Scenes of the project, offered by name; the value is the scene ID. */
+    public const val SCENES: String = "scenes"
 }
 
 /** The project and installed capabilities that catalog arguments are checked against. */

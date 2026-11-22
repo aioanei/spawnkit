@@ -21,6 +21,7 @@ kotlin {
             implementation(project(":ai"))
             implementation(project(":core:editing"))
             implementation(project(":core:gameplay"))
+            implementation(project(":core:presets"))
             implementation(project(":render"))
             implementation(project(":player:playerKit"))
             implementation(libs.compose.uiToolingPreview)

@@ -1,5 +1,6 @@
 package dev.spawnkit.gameplay
 
+import dev.spawnkit.editing.SceneDoc
 import dev.spawnkit.program.BinaryOp
 import dev.spawnkit.program.BoolValue
 import dev.spawnkit.program.DecimalValue
@@ -176,6 +177,12 @@ public sealed interface Action {
 
     /** Removes this object (and its children) at the end of the tick. */
     public data object RemoveSelf : Action
+
+    /** Switches the game to scene [sceneId] at the end of the tick; the new scene starts fresh. */
+    public data class GoToScene(
+        /** ID of the scene to go to. */
+        public val sceneId: String,
+    ) : Action
 }
 
 /** A visual rule: When [condition], and if every one of [alsoIf], do [actions] in order. Checked every tick. */
@@ -286,8 +293,14 @@ public object RuleBlocks {
             is Condition.CountIs -> "Count of ${condition.tag} ${condition.comparison.symbol} ${condition.value}"
         }
 
-    /** Plain-language description of an action block. */
-    public fun describe(action: Action): String =
+    /**
+     * Plain-language description of an action block. [scenes] names the project's scenes for "Go to scene"; without
+     * them the scene ID is shown.
+     */
+    public fun describe(
+        action: Action,
+        scenes: List<SceneDoc> = emptyList(),
+    ): String =
         when (action) {
             is Action.Move -> {
                 "Move ${action.direction.label} at ${number(action.speed)} per second"
@@ -311,6 +324,13 @@ public object RuleBlocks {
 
             Action.RemoveSelf -> {
                 "Remove this object"
+            }
+
+            is Action.GoToScene -> {
+                when {
+                    scenes.isEmpty() -> "Go to scene ${action.sceneId}"
+                    else -> scenes.firstOrNull { it.id == action.sceneId }?.let { "Go to scene ${it.name}" } ?: "Go to a removed scene"
+                }
             }
         }
 
@@ -419,6 +439,10 @@ public object RuleBlocks {
             Action.RemoveSelf -> {
                 Stmt.Destroy(Expr.Self(s), s)
             }
+
+            is Action.GoToScene -> {
+                Stmt.RequestEffect(GO_TO_SCENE, text(action.sceneId, s), s)
+            }
         }
 
     /** Extracts a candidate rule from a handler's shape; [decompile] then verifies it compiles back exactly. */
@@ -480,6 +504,10 @@ public object RuleBlocks {
             when {
                 stmt is Stmt.Destroy -> {
                     Action.RemoveSelf
+                }
+
+                stmt is Stmt.RequestEffect && stmt.effect == GO_TO_SCENE -> {
+                    Action.GoToScene(((stmt.payload as Expr.Literal).value as TextValue).value)
                 }
 
                 stmt is Stmt.SetProperty && stmt.property == NUMBER -> {
@@ -592,6 +620,9 @@ public object RuleBlocks {
     private val BLOCK_ID = Regex("rule(\\d+)\\.(if|do)(\\d+)")
     private const val NUMBER = "number"
     private const val TEXT = "text_text"
+
+    /** Effect a "Go to scene" block requests; its payload is the scene ID. Players act on it after the tick. */
+    public const val GO_TO_SCENE: String = "goToScene"
 }
 
 private const val TICKS_PER_SECOND = 60L

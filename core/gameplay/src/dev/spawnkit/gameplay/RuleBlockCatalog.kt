@@ -262,6 +262,27 @@ public object RuleBlockCatalog {
                 { Action.RemoveSelf },
                 { emptyMap() },
             ),
+            actionSpec<Action.GoToScene>(
+                "GoToScene",
+                AuthoringInfo(
+                    "Go to scene",
+                    "Switches the game to another scene, which starts fresh. Use it for a Play button on a title screen, a next level or a restart.",
+                    SCENES,
+                ),
+                listOf(
+                    Parameter(
+                        "scene",
+                        "Scene",
+                        "ID of the scene to go to, for example scene-2.",
+                        ParameterType.Value(ValueKind.Text(MAX_SCENE_ID), Suggestions.SCENES),
+                        default = "",
+                        required = false,
+                    ),
+                ),
+                listOf("When the Play button is tapped, go to the first level", "Restart the level when the player touches lava"),
+                { Action.GoToScene(it.text("scene")) },
+                { mapOf("scene" to it.sceneId) },
+            ),
         )
 
     /** Any condition block; values are [Picked] with the block ID in `block`. */
@@ -330,6 +351,7 @@ public object RuleBlockCatalog {
             is Action.SetText -> "SetText"
             is Action.ShowNumber -> "ShowNumber"
             Action.RemoveSelf -> "RemoveSelf"
+            is Action.GoToScene -> "GoToScene"
         }
 
     private fun condition(
@@ -413,6 +435,8 @@ public object RuleBlockCatalog {
     private const val NUMBERS = "Numbers"
     private const val MOVEMENT = "Movement"
     private const val TEXT = "Text"
+    private const val SCENES = "Scenes"
+    private const val MAX_SCENE_ID = 64
 
     /** Largest magnitude of numbers in blocks. */
     public const val MAX_VALUE: Long = 1_000_000_000L

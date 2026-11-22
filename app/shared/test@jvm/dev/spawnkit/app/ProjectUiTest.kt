@@ -146,6 +146,7 @@ class ProjectUiTest {
         assertEquals(expected, ProjectCodec.decode(files.file.read()))
         assertFalse(session.dirty)
         menu("project-new")
+        tap("new-blank")
         assertTrue(state.scene.objects.isEmpty())
         menu("project-open")
         assertEquals(expected, state.project)
@@ -177,6 +178,7 @@ class ProjectUiTest {
             val expected = state.project
             val undo = state.editor.undoLabel
             menu("project-new")
+            tap("new-blank")
             tap("changes-cancel")
             assertEquals(expected, state.project)
             files.choice = null

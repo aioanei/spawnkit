@@ -139,8 +139,7 @@ public class OperationCatalog(
 
 /**
  * Catalog entries for the general editor operations that the builder offers as controls. Operations without a builder
- * control yet ([EditOperation.AddScene], [EditOperation.RenameScene], [EditOperation.ReparentObject]) are added here
- * together with their controls, never for agents alone. Rule operations come from the package that defines rule blocks.
+ * control yet ([EditOperation.ReparentObject]) are added here together with their controls, never for agents alone. Rule operations come from the package that defines rule blocks.
  */
 public object EditingOperations {
     /** The entries. */
@@ -148,6 +147,10 @@ public object EditingOperations {
         OperationCatalog(
             listOf(
                 renameProject,
+                addScene,
+                renameScene,
+                removeScene,
+                moveScene,
                 addObject,
                 removeObject,
                 renameObject,
@@ -166,6 +169,54 @@ public object EditingOperations {
             listOf(nameParameter("New name of the game")),
             listOf("Call my game Coin Rush", "Rename the game to Space Hop"),
         ) { EditOperation.RenameProject(text("name")) }
+
+    private val addScene =
+        OperationSpec(
+            "add_scene",
+            AuthoringInfo("Add a scene", "Adds an empty scene at the end, for example a new level or a title screen.", SCENES),
+            listOf(nameParameter("Name of the new scene")),
+            listOf("Add a scene called Level 2", "Add a title screen scene"),
+        ) { EditOperation.AddScene(text("name")) }
+
+    private val renameScene =
+        OperationSpec(
+            "rename_scene",
+            AuthoringInfo("Rename a scene", "Changes a scene's name in the scene list.", SCENES),
+            listOf(sceneParameter(), nameParameter("New name of the scene")),
+            listOf("Call the first scene Forest"),
+        ) { EditOperation.RenameScene(text(SCENE), text("name"), "Rename scene ${scene().name}") }
+
+    private val removeScene =
+        OperationSpec(
+            "remove_scene",
+            AuthoringInfo("Delete a scene", "Deletes a scene with everything in it. A game always keeps at least one scene.", SCENES),
+            listOf(sceneParameter()),
+            listOf("Delete the bonus level"),
+        ) { EditOperation.RemoveScene(text(SCENE), "Delete scene ${scene().name}") }
+
+    private val moveScene =
+        OperationSpec(
+            "move_scene",
+            AuthoringInfo(
+                "Move a scene",
+                "Moves a scene to another position in the scene list. Position 1 is the start scene, which players see first.",
+                SCENES,
+            ),
+            listOf(
+                sceneParameter(),
+                Parameter(
+                    "to",
+                    "To",
+                    "New position, starting at 1; 1 makes it the start scene.",
+                    ParameterType.Value(ValueKind.WholeNumber(1, MAX_SCENES)),
+                ),
+            ),
+            listOf("Make the title screen the start scene", "Move Level 3 before Level 2"),
+        ) {
+            val to = whole("to").toInt()
+            val label = if (to == 1) "Make ${scene().name} the start scene" else "Move scene ${scene().name}"
+            EditOperation.MoveScene(text(SCENE), to - 1, label)
+        }
 
     private val addObject =
         OperationSpec(
@@ -290,6 +341,8 @@ private fun nameParameter(help: String) = Parameter("name", "Name", "$help, up t
 
 private const val OBJECT = "object"
 private const val PROJECT = "Project"
+private const val SCENES = "Scenes"
+private const val MAX_SCENES = 100L
 private const val OBJECTS = "Objects"
 private const val COMPONENTS = "Components"
 private val OPERATION_ID = Regex("[a-z][a-z0-9_]*")

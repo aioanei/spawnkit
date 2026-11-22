@@ -72,7 +72,13 @@ private class ReleaseSession(
     private val scope: CoroutineScope,
 ) {
     var title by mutableStateOf(state.project.name)
-    var sceneId by mutableStateOf(state.sceneId)
+
+    // Released games start where players should start: the first scene, for example a title screen.
+    var sceneId by mutableStateOf(
+        state.project.scenes
+            .first()
+            .id,
+    )
     var address by mutableStateOf("")
     var active by mutableStateOf<Destination?>(null)
     private var job: Job? = null
