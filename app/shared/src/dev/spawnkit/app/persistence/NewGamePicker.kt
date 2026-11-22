@@ -123,6 +123,15 @@ private fun Labels(
     Column(modifier) {
         Text(choice.name, style = MaterialTheme.typography.titleMedium)
         Text(choice.pitch, style = MaterialTheme.typography.bodySmall)
+        // The blocks the preset shows how to use, named as in the rule editor, so creators know what they will learn.
+        choice.preset?.teaches?.takeIf { it.isNotEmpty() }?.let {
+            Text(
+                "Uses: " + it.joinToString(" · "),
+                Modifier.padding(top = 4.dp),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
     }
 }
 

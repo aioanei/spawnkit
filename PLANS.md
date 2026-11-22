@@ -13,7 +13,7 @@ is reconciled in the [gap analysis](docs/design/2026-11-20-product-vision-gap-an
 - release directly from the builder.
 
 Current work is the
-[contest delivery track](docs/plans/2026-11-20-engine-foundation-revision.md#contest-delivery-track) C1–C14 (deadline
+[contest delivery track](docs/plans/2026-11-20-engine-foundation-revision.md#contest-delivery-track) C1–C18 (deadline
 7 Dec 2026). The owner reviewed and merged the [architecture reassessment](docs/design/2026-11-20-engine-alternatives-review.md)
 (PR #25). All product features and mandatory technologies
 remain on the roadmap.
@@ -31,10 +31,27 @@ with How it works guidance (C10b, #84) and made SpawnKit **AI-first** (C13, #85)
 with the builder's tools, through a model proxy on the server that is free with a $20 monthly cap
 ([ADR-0011](docs/adr/0011-hosted-ai-model-proxy.md)).
 
-On 2026-11-23 the owner asked for **complete games** from the chat:
-- a home screen, levels, ad spots and in-game purchases;
-- C14 adds game-wide values, spawning and randomness;
-- C12 adds test-mode purchases.
+On 2026-11-23 the owner asked for **complete games** from the chat, so users "build interesting things for their game
+like platforms":
+- C14 adds game-wide values, spawning, randomness, platform physics, camera follow and tycoon economy blocks, for
+  platformers, shooters and tycoon or clicker games;
+- C15 adds a home screen kit (buttons, text, images, grouping, layouts) and images in projects;
+- C12 adds test-mode purchases;
+- C17 adds three complete templates: Sky Hopper, Star Defender and Toaster Tycoon;
+- C16 turns a photo into game characters (pixel art, cartoon, chibi), from the builder and the chat; images share the
+  $20 monthly AI cap;
+- C18, 2.5D looks (parallax, layers, isometric view), is a stretch item built only if time remains.
+
+The owner's idea list (kept locally, not in the repository) is covered as follows:
+
+| Idea | Covered by |
+|---|---|
+| 1. A home screen the user can configure | C9 title screens, C15 home screen kit |
+| 2. User accounts and sign-in with a database | C11 (C11a server, C11b builder, C11c Google and sync) |
+| 3. Cool preset games made in the app | C10, C10b, C17 templates |
+| 4. Ads with pay analysis | C12 test ads and purchases with real counts |
+| 5. A conversation like Claude | C7c assistant, C13 AI-first chat |
+| 6. Characters from pictures in several versions, also from the agent | C16 Character Forge |
 
 Agentic parity ([ADR-0009](docs/adr/0009-agentic-parity.md), 2026-11-20): everything a creator does by hand, rules
 first of all, must also be operable by AI agents from prompts, through the same reviewed operations.

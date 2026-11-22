@@ -203,28 +203,38 @@ Games already stored as files are imported as unowned.
 
 ## 8. Schedule and cut line
 
-C7c, C9, C10 and C10b were all finished on 22 Nov, ahead of the first schedule. The schedule from 23 Nov, after the
-owner asked for complete games:
+C7c, C9, C10 and C10b were all finished on 22 Nov, ahead of the first schedule. On 23 Nov the owner widened the
+work to complete games of three kinds (platformer, shooter, tycoon or clicker), a home screen kit with images,
+characters from photos and a template library (§10 and §12–§15). The schedule from 23 Nov:
 
 | Dates | Work |
 |---|---|
-| 23–26 Nov | C11 accounts, with the hosted AI proxy |
-| 27–28 Nov | C14 game-wide values, spawning and randomness |
-| 29 Nov – 1 Dec | C12 test ads and test purchases |
-| 2–4 Dec | C13 AI-first building of complete games; public deployment; live AI recordings |
+| 23 Nov | Finish C11a, the accounts server and the hosted AI proxy |
+| 24 Nov | C11b: sign-in, hosted AI and My games in the builder |
+| 25–26 Nov | C14 game blocks (§10) |
+| 27–28 Nov | C15 home screen kit and images (§12) |
+| 29 Nov | C12 test ads and test purchases |
+| 30 Nov | C17 templates (§14); **checkpoint with the owner** |
+| 1 Dec | C16 Character Forge from photos (§13) |
+| 2–3 Dec | C13 AI-first building of complete games |
+| 4 Dec | C11c: Google sign-in, sync, the Arcade page and public deployment |
 | 5–7 Dec | C8 |
+| If time remains | C18 2.5D looks (§15, stretch), never inside C8's days |
 
-No buffer day is left. The order puts C13 last before C8, so the AI can build with everything the other increments
-add.
+No buffer day is left; the estimate is about 23 working days of work in these 15. The owner is sure it fits and
+does not want anything trimmed. The order puts the core first: hosted AI, game blocks, the kit, monetization,
+templates, then the AI building complete games with all of them. On 30 Nov the owner hears what is done and what is
+at risk, and decides.
 
 The owner decided that nothing is trimmed. The cut order below is only a safety net: it is used only if C8's reserved
 days are at risk, and the owner is told first. High scores and Apple are already out.
-1. Google sign-in. Email stays.
-2. The interstitial placement.
-3. The What if estimate.
-4. My played games.
-5. Duplicate and reorder in the scene list.
-6. Public deployment, falling back to a local demo that is stated as such.
+1. C18, the 2.5D stretch item.
+2. Google sign-in. Email stays.
+3. The interstitial placement.
+4. The What if estimate.
+5. My played games.
+6. Duplicate and reorder in the scene list.
+7. Public deployment, falling back to a local demo that is stated as such.
 
 ## 9. C13 — AI-first building and hosted AI
 
@@ -275,7 +285,7 @@ The decision is [ADR-0011](../adr/0011-hosted-ai-model-proxy.md).
 - UI tests of prompt-first New game and Revert, in both layouts.
 - Android emulator screenshots.
 
-## 10. C14 — Game-wide values, spawning and randomness ([#88](https://github.com/aioanei/spawnkit/issues/88))
+## 10. C14 — Game blocks for complete games ([#88](https://github.com/aioanei/spawnkit/issues/88))
 
 Complete games need three general capabilities the engine lacks today. Each gets rule blocks with catalog entries,
 agent tools and parity tests (ADR-0009), and none is specific to a genre (ADR-0006):
@@ -286,6 +296,24 @@ agent tools and parity tests (ADR-0009), and none is specific to a genre (ADR-00
 - **Randomness.** Random positions and numbers in blocks, from the engine's seeded random generator, so tests repeat
   exactly on every target.
 
+**Expanded on 2026-11-23** so platformers, shooters and tycoon or clicker games can be built from general blocks:
+- **Game-wide values in detail.** The project gets named numbers (Coins, Lives, Level, Income). The play session
+  carries them into the new world on "Go to scene". Existing blocks gain a "game value" target, and Show value writes
+  one onto a text object. `ProjectCodec` moves to v2 with a migration.
+- **Spawning in detail.** "Spawn a copy of ⟨object⟩ at ⟨this object / a tagged object / a position⟩", optionally
+  moving in a direction, through `World.instantiate`. The original can be a hidden template. A "Leaves the screen"
+  condition removes stray copies, such as shots.
+- **Platform physics.** A body component (velocity, gravity, bounce) and a solid component, run by one deterministic
+  gameplay system: gravity, then movement, then axis-by-axis box collision against solids, with only `+` and `*`
+  (ADR-0004). Blocks: "On the ground", "Jump (speed)" and "Set velocity / push". Platforms move with today's patrol
+  pattern. The old platformer engine (`core/engine`) is a reference only.
+- **Camera follow.** A camera property that follows a tagged object, for levels wider than the screen.
+- **Tycoon economy.** "Add one value to another" for income per second (with "Every … seconds"), and "Number is ≥
+  value" for affordability.
+
+Tests: a value kept across two levels; spawned copies running their rules; a seeded run repeating on every core
+target; landing, jumping, walls and moving platforms; a parity case for each new block.
+
 **C12 in-game purchases (test mode)**, added to §7:
 - A shop is an ordinary scene. Items are objects with a price and a "Buy" rule that grants something through a
   game-wide value, such as a skin, extra lives or a level.
@@ -293,7 +321,71 @@ agent tools and parity tests (ADR-0009), and none is specific to a genre (ADR-00
   and appear in the creator's earnings view next to test ads, with revenue $0.00.
 - Real payments (Google Play Billing, App Store, Stripe) plug in behind the same host interface after launch.
 
-## 11. Left to the builder
+## 12. C15 — Home screen kit and images ([#89](https://github.com/aioanei/spawnkit/issues/89))
+
+The owner (2026-11-23): "configure your home screen with multiple entities", with their own images.
+- **Palette pieces.** A Button (a shape plus a label, with a "When tapped → Go to scene ⟨picked⟩" rule), Text, and an
+  Image (a sprite from a project asset).
+- **Grouping.** `ReparentObject` gets a catalog entry and builder controls ("Move into…", and dragging in the scene
+  list), so a label moves with its button.
+- **Images in projects** (ADR-0012, written with the increment). The project format stores PNG assets (ID, name,
+  content hash, Base64 data) with per-image and total limits; file, package and Arcade limits rise together. Import
+  uses a picker on Android and desktop. Images are decoded once per hash and given to every `RuntimeCanvas`: builder,
+  Play, the web player and the Arcade. A "pixelated" option keeps pixel art crisp.
+- **"+ Title screen" layouts.** Play only; Play + Levels; Play + Shop + Levels + How it works. "Levels" builds a
+  level-select scene from the game's scenes.
+
+Evidence: a codec migration test, an image round trip through save, export and the Arcade, a UI test of the kit and
+grouping in both layouts, and an emulator screenshot of a home screen with an imported logo.
+
+## 13. C16 — Character Forge from photos ([#90](https://github.com/aioanei/spawnkit/issues/90))
+
+The owner's idea 6: "gamify characters from pictures in multiple versions, like pixeled … the customer gives the
+picture and says make this person a character". ADR-0013 is written with the increment.
+- **Flow.** "Make a character from a photo" → pick a photo → confirm "This is me, or this person agreed" → pick
+  versions (Pixel art, Cartoon, Chibi). The server's `/api/ai/character` (signed in, the shared $20 cap) calls OpenAI
+  image editing once per style with a transparent background. Pixel art is post-processed on the server into a crisp
+  grid (downscale and palette quantization) in deterministic Kotlin. The PNGs become project assets (§12); the chosen
+  one becomes a Character object (sprite, body and player rules) usable in any template.
+- **From the chat.** The same capability is an agent tool (ADR-0009). Uploading leaves the device and costs money, so
+  the chat asks first.
+- **Privacy.** The photo is resized and stripped of metadata on the device, sent only to the image model, never
+  stored or logged by our server, and kept in the project only if the creator chooses. Refusals are shown plainly.
+  Each image records its provider, model and date; the creator owns the outputs.
+- **Cost.** Images share the monthly cap and the per-account limit with text AI. The original design recorded
+  gpt-image prices of $0.006 (low) and $0.053 (medium) per 1024² image.
+
+Evidence: fake image gateway tests (consent, limits, refusals, deterministic pixels) and an emulator run from photo to
+playable character. Owner action: `OPENAI_API_KEY` in the server environment.
+
+## 14. C17 — Template library ([#91](https://github.com/aioanei/spawnkit/issues/91))
+
+The owner: "as many templates as possible and complicated ones with home page and everything". Three complete
+templates, made with recipes of builder calls like the presets. Each has a kit home screen (Play / Levels / Shop / How
+it works), several levels or stages, game-wide values, a shop with test purchases and test ad spots, win and lose
+scenes, and How it works.
+
+| Template | Kind | Uses |
+|---|---|---|
+| Sky Hopper | Platformer, 3 levels | Physics, moving platforms, patrolling enemies, coins and lives across levels, camera follow, a double jump or skin in the shop |
+| Star Defender | Shooter, 3 waves | Spawned enemies and shots, random positions, upgrades bought in the shop |
+| Toaster Tycoon | Tycoon | Tap to earn, income per second, upgrades that raise income, areas unlocked by value, brain-rot style |
+
+The picker groups "Complete games" and "Starters" (the existing presets). Scripted bots finish each template. More
+templates follow after the contest. In C13 the templates are the AI's worked examples.
+
+## 15. C18 — 2.5D looks (stretch) ([#92](https://github.com/aioanei/spawnkit/issues/92))
+
+Only if time remains, never inside C8's days, and the first thing dropped at the 30 Nov checkpoint. The owner: "a cheap
+middle ground … layers, parallax backgrounds and isometric views can be built on the current 2D renderer". No new
+renderer:
+- **Parallax.** A depth factor on an object's transform (0 fixed to the screen, 1 normal, below 1 far away);
+  `renderList` offsets drawn positions by `camera × (1 − depth)`.
+- **Isometric view.** A camera option maps world (x, y) to a diamond grid when drawing, and draws objects in the same
+  layer in y order. Gameplay stays in plain 2D world units.
+- **Named layers** (Background, Play, Front) in the inspector, and a template background with two parallax layers.
+
+## 16. Left to the builder
 
 The following are left to the increment's implementation plan:
 - table and column details;
