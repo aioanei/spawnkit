@@ -199,14 +199,17 @@ not replace them: each item delivers part of the named R-step, and unfinished pa
 | C7 | Koog AI Studio (R7), [#69](https://github.com/aioanei/spawnkit/issues/69) | Character Forge and level assistant agents using editor operations and validation, with progress, cancel, cost and accept/reject. Labelled replay without keys. Agentic parity ([ADR-0009](../adr/0009-agentic-parity.md)): an assistant in compact and expanded layouts operates every manual builder capability from prompts, including rules. For example, it builds Score + collect from prompts alone, matching the manually built rules, and explains why a rule did not fire. Parity tests cover the operation catalog. |
 | C9 | Game title screens (R4, R5), [#74](https://github.com/aioanei/spawnkit/issues/74) | A scene list in compact and expanded layouts: add, rename, duplicate, remove, reorder, and set the start scene, which is stored in the project. A "Go to scene" rule block, with the play session switching scenes. An "Add title screen" helper built from ordinary operations: title text, background, and a Play button that goes to the first level. Every new operation has a catalog entry, an agent tool and a parity test. Builder Play, the web player and the Arcade start at the start scene. A headless test taps Play and reaches level 1. Android emulator evidence. |
 | C10 | Preset games (R5), [#75](https://github.com/aioanei/spawnkit/issues/75) | **New game** offers Blank plus three presets made in the builder: Coin Dash, Tap Targets and Maze Run. Each has a title screen and uses only standard blocks. Each preset passes the engine's checks and reaches its goal in a headless play test. Two of them double as C8 games. |
-| C11 | Accounts and public Arcade (R8), [#76](https://github.com/aioanei/spawnkit/issues/76), [ADR-0010](../adr/0010-accounts-on-ktor.md) | Email and Google sign-in on the Ktor server; Apple is designed, and built once the owner has an Apple developer membership. Server session tokens are kept in device secure storage. Creators own, update and unpublish their Arcade games, and sync projects with revisions. Players sign in on a server-rendered Arcade page to like games and see the games they played. SQLite through Exposed. Deployed to the owner's public HTTPS host. Tests use fake token issuers and captured mail. Android emulator evidence. |
+| C10b | Brain-rot presets and guidance (R5), [#84](https://github.com/aioanei/spawnkit/issues/84) | Aura Farmer and NPC Dodge, with original characters. Every preset gets a How it works scene from its title and lists the rule blocks it uses in the picker. Scripted players win, and idle players lose. |
+| C11 | Accounts, public Arcade and hosted AI (R8, R7), [#76](https://github.com/aioanei/spawnkit/issues/76), [ADR-0010](../adr/0010-accounts-on-ktor.md), [ADR-0011](../adr/0011-hosted-ai-model-proxy.md) | The server forwards the assistant's model calls with the owner's key, for signed-in accounts. A $20 monthly cap and a per-account fair-use limit apply; everything is free. Email and Google sign-in on the Ktor server; Apple is designed, and built once the owner has an Apple developer membership. Server session tokens are kept in device secure storage. Creators own, update and unpublish their Arcade games, and sync projects with revisions. Players sign in on a server-rendered Arcade page to like games and see the games they played. SQLite through Exposed. Deployed to the owner's public HTTPS host. Tests use fake token issuers and captured mail. Android emulator evidence. |
 | C12 | Test ads with real counts (R8), [#77](https://github.com/aioanei/spawnkit/issues/77) | Ads are off by default. When on, a labelled test banner shows on the title screen and an occasional test interstitial between scenes, through an `AdHost` interface with no ad SDK. Views and clicks from Arcade plays are really counted; builder previews never count. A creator statistics view shows views, clicks and click-through rate, revenue "$0.00 — test ads earn nothing", and an optional estimate labelled as such. |
+| C13 | AI-first building (R7, R4), [#85](https://github.com/aioanei/spawnkit/issues/85), [ADR-0011](../adr/0011-hosted-ai-model-proxy.md) | New game starts with "Describe your game…", and the AI builds the whole game with the builder's tools. The chat is the main panel. AI changes apply right away as one undo step with Revert. Manual tools are unchanged. Bring-your-own-key leaves the normal UI. A live recording of a whole game built from one prompt; UI tests in both layouts; Android emulator evidence. |
 | C8 | Demos and submission (R6, R9) | At least two mechanically different games built in the builder on the same engine. README with run instructions for all targets, screencast script, essay. |
 
-C9–C12 were added by the owner on 2026-11-22. Design:
-[title screens, presets, accounts and test ads](../design/2026-11-22-title-screens-presets-accounts-ads.md).
+C9–C13 were added by the owner on 2026-11-22; C10b and C13 later that day. Design:
+[title screens, presets, accounts, test ads and AI-first](../design/2026-11-22-title-screens-presets-accounts-ads.md).
 
-Order of work: C1 → C2 → C3 → C4 → C5 → C6 → C7 → C9 → C10 → C11 → C12 → C8, with documentation kept current per PR.
+Order of work: C1 → C2 → C3 → C4 → C5 → C6 → C7 → C9 → C10 → C10b → C11 → C13 → C12 → C8, with documentation kept
+current per PR.
 Each C-item takes only the subset of its R-step needed by the slice, and its stated dependencies must be done first:
 
 - C2 needs C1.
@@ -219,9 +222,11 @@ Each C-item takes only the subset of its R-step needed by the slice, and its sta
 - C10 needs C9.
 - C11 needs C6, and C7's secure storage.
 - C12 needs C9 and C11.
+- C13 needs C7 and C11 (accounts and the hosted proxy).
 - C8 needs all of the above.
 
-For C9–C12, C8 keeps 5–7 Dec. If time runs short, cut in this order:
+For C9–C13, C8 keeps 5–7 Dec. The owner decided that nothing is trimmed (2026-11-22). The order below is only a
+safety net, used if C8's reserved days are at risk, after telling the owner:
 1. Google sign-in. Email stays.
 2. The interstitial placement.
 3. The estimate line.

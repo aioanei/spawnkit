@@ -79,3 +79,10 @@ decisions that change the plan. The full requirement list lives in the owner's c
 
    Apple sign-in waits for an Apple Developer membership. See the
    [design](2026-11-22-title-screens-presets-accounts-ads.md) and [ADR-0010](../adr/0010-accounts-on-ktor.md).
+8. **AI-first building (2026-11-22).** SpawnKit becomes AI-first, like Lovable:
+   - the AI builds whole games with the builder's own tools, and creators still edit by hand;
+   - the model runs behind the server with the owner's key, free for now with a $20 monthly cap;
+   - subscriptions come after launch, and bring-your-own-key leaves the normal UI;
+   - C11 gains the hosted proxy, and C13 is the AI-first builder.
+
+   See [ADR-0011](../adr/0011-hosted-ai-model-proxy.md).

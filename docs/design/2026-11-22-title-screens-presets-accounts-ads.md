@@ -27,6 +27,11 @@ contest deadline. They run after C7c and before C8.
 | Hosting | The owner provides a **public HTTPS host**. There is **no Apple Developer membership** yet, so Apple is designed but not built before the contest. |
 | Ads | **Test ads with real counts.** Ads are labelled TEST, views and clicks are really counted, and revenue is shown as 0. |
 | Cut line | **Cut depth inside these features first.** C8 (demos, README, essay) keeps 5–7 Dec. |
+| Templates (later on 2026-11-22) | Brain-rot style presets with original characters and "How it works" guidance, "for showing judges what this app is capable of and also showing users and guiding them" (C10b, #84). |
+| AI-first (later on 2026-11-22) | SpawnKit becomes **AI-first, like Lovable**: the AI builds the game with the builder's own tools, and creators can still change everything by hand (C13, [ADR-0011](../adr/0011-hosted-ai-model-proxy.md)). |
+| Paying for AI | **No bring-your-own-key** after launch; **subscriptions** come later. **Everything is free for now**, with a **$20 monthly cap** on AI spending. |
+| AI changes | **Apply right away**, each as one undo step with a **Revert** button, instead of Accept/Reject. |
+| Scope | **Nothing is trimmed** to make room: "we will be done until then". |
 
 ## 3. Goals, non-goals and anti-goals
 
@@ -196,17 +201,19 @@ Games already stored as files are imported as unowned.
 
 ## 8. Schedule and cut line
 
+C7c, C9, C10 and C10b were all finished on 22 Nov, ahead of the first schedule. The schedule from 23 Nov:
+
 | Dates | Work |
 |---|---|
-| 23–24 Nov | C7c |
-| 25–26 Nov | C9 |
-| 27 Nov | C10 |
-| 28 Nov – 1 Dec | C11, with deployment on 1 Dec |
-| 2–3 Dec | C12 |
-| 4 Dec | buffer |
+| 23–26 Nov | C11 accounts, with the hosted AI proxy |
+| 27–29 Nov | C13 AI-first building |
+| 30 Nov – 1 Dec | C12 test ads |
+| 2–3 Dec | Public deployment, live AI recordings, polish |
+| 4 Dec | Buffer |
 | 5–7 Dec | C8 |
 
-If time runs short, cut in this order. High scores and Apple are already out.
+The owner decided that nothing is trimmed. The cut order below is only a safety net: it is used only if C8's reserved
+days are at risk, and the owner is told first. High scores and Apple are already out.
 1. Google sign-in. Email stays.
 2. The interstitial placement.
 3. The What if estimate.
@@ -214,7 +221,45 @@ If time runs short, cut in this order. High scores and Apple are already out.
 5. Duplicate and reorder in the scene list.
 6. Public deployment, falling back to a local demo that is stated as such.
 
-## 9. Left to the builder
+## 9. C13 — AI-first building and hosted AI
+
+The decision is [ADR-0011](../adr/0011-hosted-ai-model-proxy.md).
+
+**Hosted AI (with C11).**
+- The Ktor server forwards the assistant's model calls through Koog with the owner's key, which lives only in the
+  server environment.
+- The agent loop stays on the device (`HostedModel : AgentModel`), so every change is an ordinary undoable edit of
+  the creator's local game.
+- The proxy fixes the system prompt and accepts only SpawnKit tools.
+- **Limits:**
+  - a $20 monthly cap kept in the database;
+  - a per-account fair-use limit (default $1 a day) and a request rate limit, so one account cannot use up the shared
+    cap.
+
+  Everything is free; accounts carry a plan, so paid subscriptions plug in at launch.
+
+**AI-first builder.**
+- **Start with a prompt.** New game opens with "Describe your game…" first, and the presets below it as starting
+  points. The AI builds the whole game from one prompt: scenes, a title screen, objects, rules, a check in the real
+  engine and a rule trace.
+- **The chat is the main panel.** It is docked beside the canvas on wide screens and is the first tab on phones. Steps
+  stream in while the canvas updates.
+- **Apply right away, with Revert.** Each AI message is applied as one undo step and gets a **Revert** button. Review
+  first stays available as an option for creators who want it.
+- **Manual tools are unchanged.** Every change the AI made can be edited by hand, and the AI sees manual changes the
+  next time it looks at the game.
+- **Signed out.** Without an account, creators build by hand and can watch labelled replays. Building with AI needs
+  an account so the limits work.
+- **Bring-your-own-key** leaves the normal UI once hosted AI works. It stays behind a developer setting.
+
+**Evidence.**
+- A live recording (`record-ai-session`) of a whole game built from one prompt, reviewed and committed as a labelled
+  replay.
+- Proxy tests with a fake model executor: the cap, the per-account limit, refusals, and the tool allowlist.
+- UI tests of prompt-first New game and Revert, in both layouts.
+- Android emulator screenshots.
+
+## 10. Left to the builder
 
 The following are left to the increment's implementation plan:
 - table and column details;

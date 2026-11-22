@@ -13,7 +13,7 @@ is reconciled in the [gap analysis](docs/design/2026-11-20-product-vision-gap-an
 - release directly from the builder.
 
 Current work is the
-[contest delivery track](docs/plans/2026-11-20-engine-foundation-revision.md#contest-delivery-track) C1–C12 (deadline
+[contest delivery track](docs/plans/2026-11-20-engine-foundation-revision.md#contest-delivery-track) C1–C13 (deadline
 7 Dec 2026). The owner reviewed and merged the [architecture reassessment](docs/design/2026-11-20-engine-alternatives-review.md)
 (PR #25). All product features and mandatory technologies
 remain on the roadmap.
@@ -26,7 +26,10 @@ Manager's build engine. That work is the plan's
 
 On 2026-11-22 the owner added title screens (C9), preset games (C10), accounts with email and Google sign-in
 (C11, [ADR-0010](docs/adr/0010-accounts-on-ktor.md)) and test ads with real counts (C12) before C8. See the
-[design](docs/design/2026-11-22-title-screens-presets-accounts-ads.md).
+[design](docs/design/2026-11-22-title-screens-presets-accounts-ads.md). Later that day they added brain-rot presets
+with How it works guidance (C10b, #84) and made SpawnKit **AI-first** (C13, #85). In C13 the AI builds whole games
+with the builder's tools, through a model proxy on the server that is free with a $20 monthly cap
+([ADR-0011](docs/adr/0011-hosted-ai-model-proxy.md)).
 
 Agentic parity ([ADR-0009](docs/adr/0009-agentic-parity.md), 2026-11-20): everything a creator does by hand, rules
 first of all, must also be operable by AI agents from prompts, through the same reviewed operations.
