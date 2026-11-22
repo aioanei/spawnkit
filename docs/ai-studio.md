@@ -72,6 +72,16 @@ example: `Rule 1 of Coin (When touching players) never ran: "Touching players" w
 - `ReplayModel` replays a recording without keys or network, labelled
   `Replay: <model>, recorded <date> (no model is called)`, and shows no cost. A recording that calls a tool which no
   longer exists stops with an explanation. Every replayed tool call still runs against the real editor and engine.
+- `DemoModel` is a keyless **scripted demo** (C7c), always labelled
+  `Scripted demo: a fixed script stands in for the AI model (no model is called)`. It handles only its three
+  example prompts:
+  - collecting coins adds to the score;
+  - moving with the arrow keys;
+  - "Why doesn't my coin rule work?".
+
+  It reads the real game with `look_at_game` and finds objects by tag. It then stages rules through the same tools,
+  checks them, or answers from a real rule trace. Any other prompt gets an explanation and changes nothing. It never
+  calls a model or the network. It is not a recording of a model: no live session has been recorded yet.
 
 ## Evidence
 
