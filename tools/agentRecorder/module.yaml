@@ -1,0 +1,18 @@
+# Records live assistant sessions for labelled replays (C7, issue #69). Run by the manual "Record AI session" workflow
+# with the ANTHROPIC_API_KEY repository secret; never part of the test gates. See docs/ai-studio.md.
+product: jvm/app
+
+# Keeps Gradle's src/main/kotlin layout while both builds coexist (issue #58).
+layout: maven-like
+
+apply:
+  - //toolchain/kotlin.module-template.yaml
+  - //toolchain/lint.module-template.yaml
+
+dependencies:
+  - //ai
+  - //core/presets
+
+settings:
+  jvm:
+    mainClass: dev.spawnkit.tools.recorder.MainKt
