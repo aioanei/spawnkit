@@ -11,6 +11,9 @@ import dev.spawnkit.ai.AccountService
 import dev.spawnkit.ai.AccountSession
 import dev.spawnkit.ai.ArcadeGame
 import dev.spawnkit.ai.ServerStatus
+import dev.spawnkit.ai.AgentModel
+import dev.spawnkit.ai.HostedModel
+import dev.spawnkit.app.assistant.HostedChoice
 import dev.spawnkit.app.assistant.SecretStore
 import io.ktor.client.HttpClient
 import io.ktor.http.Url
@@ -30,6 +33,7 @@ class AccountState(
     private val secrets: SecretStore,
     private val scope: CoroutineScope,
     private val service: (address: String) -> AccountService = { AccountClient(it, sharedHttpClient) },
+    private val hostedModel: (address: String, token: String) -> AgentModel = { address, token -> HostedModel(address, token, sharedHttpClient) },
 ) {
     /** The server address being typed or used. */
     var address by mutableStateOf(secrets.read(SERVER_NAME).orEmpty())
@@ -68,6 +72,15 @@ class AccountState(
 
     /** The session token, for the hosted model and publishing only. */
     internal fun token(): String? = if (signedIn) secrets.read(TOKEN_NAME) else null
+
+    /** SpawnKit AI for the signed-in account, when its server offers it (ADR-0011); `null` otherwise. */
+    fun hostedChoice(): HostedChoice? {
+        val signedInAs = account ?: return null
+        val at = server ?: return null
+        if (status?.aiAvailable != true) return null
+        val token = token() ?: return null
+        return HostedChoice("$at#${signedInAs.id}", hostedModel(at, token))
+    }
 
     /** Restores a saved session: the server must still accept its token. */
     fun start() {

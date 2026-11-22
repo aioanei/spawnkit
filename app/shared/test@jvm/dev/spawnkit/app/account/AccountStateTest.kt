@@ -27,10 +27,10 @@ class AccountStateTest {
     private val addresses = mutableListOf<String>()
 
     private fun TestScope.accounts(): AccountState =
-        AccountState(secrets, this) { address ->
+        AccountState(secrets, this, service = { address ->
             addresses += address
             server
-        }
+        })
 
     @Test
     fun signingInKeepsTheTokenOnlyInSecureStorage() =

@@ -4,6 +4,7 @@ import dev.spawnkit.ai.AgentModel
 import dev.spawnkit.ai.AgentOutcome
 import dev.spawnkit.ai.AgentToolbox
 import dev.spawnkit.ai.DemoModel
+import dev.spawnkit.ai.HostedModelException
 import dev.spawnkit.ai.ModelInfo
 import dev.spawnkit.ai.ModelReply
 import dev.spawnkit.ai.ModelRequest
@@ -42,8 +43,10 @@ class AssistantStateTest {
             .first { it.name == "Coin" }
             .rules
 
-    private fun TestScope.assistant(live: (String) -> AgentModel = { error("No live model in this test") }) =
-        AssistantState(editor, secrets, this, live)
+    private fun TestScope.assistant(
+        hosted: () -> HostedChoice? = { null },
+        live: (String) -> AgentModel = { error("No live model in this test") },
+    ) = AssistantState(editor, secrets, this, live, hosted)
 
     /** A model that answers with fixed tool calls, one reply per call to [reply]. */
     private class Scripted(
@@ -271,4 +274,90 @@ class AssistantStateTest {
             assertNull(secrets.read(AssistantState.KEY_NAME))
             assertFalse(assistant.useLive)
         }
+
+    @Test
+    fun signedInTheHostedModelAnswers() =
+        runTest {
+            val hosted = Scripted(listOf(call(AgentToolbox.FINISH, """{"summary":"Done."}""")), info = HOSTED_INFO)
+            val assistant = assistant(hosted = { HostedChoice("server:1", hosted) })
+            assistant.prompt = "Make coins worth 5"
+
+            assistant.ask()
+            advanceUntilIdle()
+
+            assertEquals(1, hosted.requests.size)
+            assertEquals(HOSTED_INFO.label, assistant.modelLabel)
+            assertFalse(assistant.isDemo)
+            assertFalse(assistant.needsSignIn)
+        }
+
+    @Test
+    fun signedOutTheDemoAnswersWithASignInHint() =
+        runTest {
+            val assistant = assistant()
+
+            assertTrue(assistant.isDemo)
+            assertTrue(assistant.needsSignIn)
+            assertEquals(DemoModel.LABEL, assistant.modelLabel)
+        }
+
+    @Test
+    fun anotherAccountStartsANewConversation() =
+        runTest {
+            val first = Scripted(listOf(call(AgentToolbox.FINISH, """{"summary":"One."}""")), info = HOSTED_INFO)
+            val second = Scripted(listOf(call(AgentToolbox.FINISH, """{"summary":"Two."}""")), info = HOSTED_INFO)
+            var choice = HostedChoice("server:1", first)
+            val assistant = assistant(hosted = { choice })
+            assistant.prompt = "Hello"
+            assistant.ask()
+            advanceUntilIdle()
+
+            choice = HostedChoice("server:2", second)
+            assistant.prompt = "Hello again"
+            assistant.ask()
+            advanceUntilIdle()
+
+            assertEquals(1, first.requests.size)
+            assertEquals(1, second.requests.size)
+            assertEquals(1, second.requests.single().messages.size, "the new account's conversation starts fresh")
+        }
+
+    @Test
+    fun aDeveloperKeyWinsOnlyWhenSwitchedOn() =
+        runTest {
+            val hosted = Scripted(listOf(call(AgentToolbox.FINISH, """{"summary":"Hosted."}""")), info = HOSTED_INFO)
+            val own = Scripted(listOf(call(AgentToolbox.FINISH, """{"summary":"Own key."}""")), info = ModelInfo("own", "Anthropic", live = true, label = "Live: own key"))
+            val assistant = assistant(hosted = { HostedChoice("server:1", hosted) }) { own }
+            assertEquals(HOSTED_INFO.label, assistant.modelLabel)
+
+            assistant.saveKey("sk-test")
+
+            assertEquals("Live: own key", assistant.modelLabel)
+            assistant.useLive = false
+            assertEquals(HOSTED_INFO.label, assistant.modelLabel)
+        }
+
+    @Test
+    fun hostedRefusalsAreShownPlainly() =
+        runTest {
+            val refusing =
+                object : AgentModel {
+                    override val info = HOSTED_INFO
+
+                    override suspend fun reply(request: ModelRequest): ModelReply =
+                        throw HostedModelException("You have used today's free AI allowance. It renews at midnight UTC.")
+                }
+            val assistant = assistant(hosted = { HostedChoice("server:1", refusing) })
+            assistant.prompt = "Make coins worth 5"
+
+            assistant.ask()
+            advanceUntilIdle()
+
+            assertTrue("today's free AI allowance" in assistant.notice.orEmpty(), assistant.notice.toString())
+            assertEquals(emptyList(), coinRules())
+        }
+
+    private companion object {
+        val HOSTED_INFO = ModelInfo("SpawnKit AI", "SpawnKit", live = true, label = "Live: SpawnKit AI (free, with limits)")
+    }
 }

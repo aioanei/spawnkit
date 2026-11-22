@@ -70,11 +70,18 @@ fun AssistantPanel(
                 color = MaterialTheme.colorScheme.secondary,
             )
             TextButton({ settings = !settings }, Modifier.heightIn(min = 48.dp).testTag("assistant-settings")) {
-                Text(if (settings) "Close settings" else "Settings")
+                Text(if (settings) "Close developer settings" else "Developer settings")
             }
         }
         if (settings) KeySettings(assistant)
-        if (!assistant.useLive) {
+        if (assistant.needsSignIn) {
+            Text(
+                "Sign in with Project → Account to build with SpawnKit AI for free. Until then, the scripted demo answers its examples.",
+                Modifier.testTag("assistant-sign-in-hint"),
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+        if (assistant.isDemo) {
             Text("Try an example:", style = MaterialTheme.typography.bodyMedium)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 DemoModel.PROMPTS.forEachIndexed { index, example ->
@@ -170,10 +177,10 @@ private fun KeySettings(assistant: AssistantState) {
     var draft by remember { mutableStateOf("") }
     Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = MaterialTheme.shapes.medium) {
         Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Anthropic API key", fontWeight = FontWeight.SemiBold)
+            Text("Your own Anthropic API key (for developers)", fontWeight = FontWeight.SemiBold)
             Text(
                 when {
-                    !assistant.hasKey -> "Without a key, the scripted demo answers its example prompts. No AI model is called."
+                    !assistant.hasKey -> "SpawnKit AI needs no key: sign in instead. A key of your own is for testing SpawnKit itself."
                     assistant.keyPersists -> "A key is saved in ${assistant.keyLocation}."
                     else -> "A key is saved and ${assistant.keyLocation}."
                 },

@@ -21,16 +21,26 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlin.math.roundToLong
 
+/** SpawnKit AI for the signed-in account (C11b): [key] names the server and account, so a new one starts afresh. */
+class HostedChoice(
+    val key: String,
+    val model: AgentModel,
+)
+
 /**
  * The builder's assistant (C7c): one [AgentSession] over the game in [editor], with the creator's review in between.
- * Nothing reaches the game until [accept]; [reject], [cancel] and failures leave it unchanged. Without a saved key the
- * labelled [DemoModel] answers. The key lives only in [secrets] and is handed only to [liveModel].
+ * Nothing reaches the game until [accept]; [reject], [cancel] and failures leave it unchanged.
+ *
+ * Which model answers (C11b, ADR-0011): the creator's own key when switched on in Developer settings, otherwise SpawnKit
+ * AI through [hosted] when signed in to a server that offers it, otherwise the labelled [DemoModel]. The key lives only
+ * in [secrets] and is handed only to [liveModel].
  */
 class AssistantState(
     private val editor: EditorState,
     private val secrets: SecretStore,
     private val scope: CoroutineScope,
     private val liveModel: (String) -> AgentModel = { KoogModel.anthropic(it) },
+    private val hosted: () -> HostedChoice? = { null },
 ) {
     /** The creator's request being typed. */
     var prompt by mutableStateOf("")
@@ -69,9 +79,16 @@ class AssistantState(
     val keyPersists: Boolean get() = secrets.persistent
 
     private var session: AgentSession? = null
-    private var sessionFor: Triple<Boolean, Int, String>? = null
+    private var sessionFor: Triple<String, Int, String>? = null
     private var model: AgentModel? = null
+    private var modelFor: String? = null
     private var job: Job? = null
+
+    /** Whether the scripted demo answers, so its example prompts are worth showing. */
+    val isDemo: Boolean get() = modelKey() == DEMO
+
+    /** Whether signing in would bring SpawnKit AI: nothing but the demo answers now. */
+    val needsSignIn: Boolean get() = isDemo
 
     /** Label of the model that answers: live, or the scripted demo. */
     val modelLabel: String get() = runCatching { currentModel().info.label }.getOrElse { it.message ?: "The live model is unavailable" }
@@ -202,8 +219,9 @@ class AssistantState(
 
     /** The session for the current model, scene and project; a new one when any of them changed. */
     private fun sessionNow(): AgentSession? {
-        val key = Triple(useLive, editor.projectGeneration, editor.sceneId)
+        val key = Triple(modelKey(), editor.projectGeneration, editor.sceneId)
         if (session != null && sessionFor == key) return session
+        session?.reject()
         val chosen =
             runCatching { currentModel() }.getOrElse { problem ->
                 notice = problem.message ?: "The assistant could not start."
@@ -238,11 +256,26 @@ class AssistantState(
         notice = message
     }
 
-    /** The model for the current choice, made once until [reset]; live models get the key and nothing else does. */
+    /** Which model answers now: the creator's own key, SpawnKit AI for an account, or the demo. */
+    private fun modelKey(): String =
+        when {
+            useLive && secrets.read(KEY_NAME) != null -> OWN_KEY
+            else -> hosted()?.let { HOSTED + it.key } ?: DEMO
+        }
+
+    /** The model for the current choice, made once per choice; live models get the key and nothing else does. */
     private fun currentModel(): AgentModel {
-        model?.let { return it }
-        val key = if (useLive) secrets.read(KEY_NAME) else null
-        return (if (key != null) liveModel(key) else DemoModel()).also { model = it }
+        val key = modelKey()
+        model?.takeIf { modelFor == key }?.let { return it }
+        val made =
+            when {
+                key == OWN_KEY -> liveModel(secrets.read(KEY_NAME) ?: error("The key was removed"))
+                key.startsWith(HOSTED) -> hosted()?.model ?: DemoModel()
+                else -> DemoModel()
+            }
+        model = made
+        modelFor = key
+        return made
     }
 
     companion object {
@@ -250,6 +283,9 @@ class AssistantState(
         const val KEY_NAME = "anthropic-api-key"
 
         private const val LABEL_LENGTH = 60
+        private const val OWN_KEY = "own-key"
+        private const val HOSTED = "hosted:"
+        private const val DEMO = "demo"
         private const val CANCELLED = "Cancelled. Nothing in your game changed."
         private const val DROPPED = "Your game changed, so the proposal was dropped. Nothing was applied."
         private const val DROPPED_QUESTION = "Your game changed, so the question was dropped. Nothing was applied."
