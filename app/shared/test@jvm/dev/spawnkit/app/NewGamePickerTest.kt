@@ -109,9 +109,9 @@ class NewGamePickerTest {
         assertEquals(Project.blank(), session.state.project)
     }
 
-    @Test fun aPhoneOffersBlankAndThreePresets() = pick(360, 740, "maze-run", "new-game-picker-phone")
+    @Test fun aPhoneOffersBlankAndEveryPreset() = pick(360, 740, "maze-run", "new-game-picker-phone")
 
-    @Test fun aDesktopOffersBlankAndThreePresets() = pick(1280, 800, "coin-dash", "new-game-picker-desktop")
+    @Test fun aDesktopOffersBlankAndEveryPreset() = pick(1280, 800, "coin-dash", "new-game-picker-desktop")
 
     private fun pick(
         width: Int,

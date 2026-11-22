@@ -45,5 +45,17 @@ public object GamePresets {
                 "Find the exit without touching a wall.",
                 listOf("Holding a key", "Touching", "Go to scene"),
             ),
+            GamePreset(
+                "aura-farmer",
+                "Aura Farmer",
+                "Tap the Aura Toaster fast enough to farm 50 aura in time.",
+                listOf("Tapped", "Add to a number", "Show a number", "Number is", "Every … seconds", "Go to scene"),
+            ),
+            GamePreset(
+                "npc-dodge",
+                "NPC Dodge",
+                "Survive 20 seconds while NPCs ricochet around you.",
+                listOf("Holding a key", "Touching", "Number is", "Set a number", "Every … seconds", "Go to scene"),
+            ),
         )
 }

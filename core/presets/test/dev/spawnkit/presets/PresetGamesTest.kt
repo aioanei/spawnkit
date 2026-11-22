@@ -93,7 +93,7 @@ class PresetGamesTest {
 
     @Test
     fun catalogMatchesTheEmbeddedFiles() {
-        assertEquals(listOf("coin-dash", "tap-targets", "maze-run"), GamePresets.all.map { it.id })
+        assertEquals(listOf("coin-dash", "tap-targets", "maze-run", "aura-farmer", "npc-dodge"), GamePresets.all.map { it.id })
         assertEquals(EmbeddedPresets.all.keys, GamePresets.all.map { it.id }.toSet())
         GamePresets.all.forEach { assertEquals(it.name, it.project().name, "name of ${it.id}") }
         GamePresets.all.forEach { assertTrue(it.pitch.isNotBlank(), "pitch of ${it.id}") }
@@ -240,6 +240,61 @@ class PresetGamesTest {
         assertEquals(start, run.tagged("player").single(), "the player is back at the start")
     }
 
+    @Test
+    fun auraFarmerBotTapsToMaxAura() {
+        val run = Run(preset("aura-farmer"))
+        var taps = 0
+
+        while (run.sceneName == "Farm" && taps < AURA_GOAL * 2) {
+            val toaster = run.tagged("toaster").single()
+            run.tap(toaster.centerX, toaster.centerY)
+            taps++
+        }
+
+        assertEquals("MAX AURA", run.sceneName)
+        assertEquals(AURA_GOAL, taps, "every tap farms one aura")
+    }
+
+    @Test
+    fun auraFarmerIdleEndsInNegativeAura() {
+        val run = Run(preset("aura-farmer"))
+        var ticks = 0
+
+        while (run.sceneName == "Farm" && ticks < SECONDS_LIMIT * TICKS) {
+            run.tick()
+            ticks++
+        }
+
+        assertEquals("Negative aura", run.sceneName)
+        assertTrue(ticks in (AURA_SECONDS - 1) * TICKS..(AURA_SECONDS + 1) * TICKS, "time ran out after $ticks ticks")
+    }
+
+    @Test
+    fun npcDodgeBotSurvivesBetweenTheLanes() {
+        val run = Run(preset("npc-dodge"))
+
+        // Step out of the NPC lane onto a spot no lane or column reaches, then wait out the timer.
+        repeat((SURVIVE_SECONDS + 2) * TICKS) {
+            if (run.sceneName == "Dodge" && run.steer(-3.0, 1.0)) run.tick()
+        }
+
+        assertEquals("You survived", run.sceneName)
+    }
+
+    @Test
+    fun npcDodgeIdleGetsNPCd() {
+        val run = Run(preset("npc-dodge"))
+        var ticks = 0
+
+        while (run.sceneName == "Dodge" && ticks < SURVIVE_SECONDS * TICKS) {
+            run.tick()
+            ticks++
+        }
+
+        assertEquals("You got NPC'd", run.sceneName)
+        assertTrue(ticks < 10 * TICKS, "an idle Main Character is caught within 10 seconds, not after $ticks ticks")
+    }
+
     private val Bounds.centerX get() = (left + right) / 2
     private val Bounds.centerY get() = (top + bottom) / 2
 
@@ -247,6 +302,9 @@ class PresetGamesTest {
         const val TICKS = 60
         const val SECONDS_LIMIT = 60
         const val COUNTDOWN = 20
+        const val AURA_GOAL = 50
+        const val AURA_SECONDS = 15
+        const val SURVIVE_SECONDS = 20
         const val CLOSE = 0.1
     }
 }

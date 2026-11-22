@@ -21,7 +21,13 @@ import dev.spawnkit.gameplay.Target
 internal object PresetRecipes {
     /** Recipes by preset folder, in picker order. */
     val all: Map<String, () -> Project> =
-        linkedMapOf("coin-dash" to ::coinDash, "tap-targets" to ::tapTargets, "maze-run" to ::mazeRun)
+        linkedMapOf(
+            "coin-dash" to ::coinDash,
+            "tap-targets" to ::tapTargets,
+            "maze-run" to ::mazeRun,
+            "aura-farmer" to ::auraFarmer,
+            "npc-dodge" to ::npcDodge,
+        )
 
     private val keyMoves =
         listOf(
@@ -177,8 +183,128 @@ internal object PresetRecipes {
             )
         }
 
+    /** Brain-rot style clicker (C10b): tap the Aura Toaster to farm aura before the timer ends. Original characters. */
+    fun auraFarmer(): Project =
+        Recipe("Aura Farmer").run {
+            renameScene("Farm")
+            val farm = sceneId
+            box("Background", 0.0, 0.0, 8.6, 7.6, 0xFF311B92, layer = -1)
+            label("Goal", 0.0, -3.4, "Farm $AURA_GOAL aura before time runs out", 0.32)
+            val aura = place("Score", "Aura", 0.0, -2.5)
+            set(aura, "gameplay:tag", "tag", "aura")
+            set(aura, "graphics:text", "text", "Aura: 0")
+            set(aura, "graphics:text", "size", 0.7)
+            val toaster = box("Aura Toaster", 0.0, 0.3, 3.2, 2.4, 0xFFFF7043, tag = "toaster")
+            label("Toaster label", 0.0, 0.3, "TAP ME", 0.6)
+            rule(
+                toaster,
+                Rule(
+                    Condition.Tapped,
+                    actions = listOf(Action.ChangeNumber(Target.Tagged("aura"), 1), Action.ShowNumber(Target.Tagged("aura"), "Aura: ")),
+                ),
+            )
+            val timer = place("Score", "Timer", 0.0, 2.6)
+            set(timer, "gameplay:tag", "tag", "timer")
+            set(timer, "gameplay:number", "number", AURA_SECONDS)
+            set(timer, "graphics:text", "text", "Time: $AURA_SECONDS")
+            set(timer, "graphics:text", "size", 0.6)
+            rule(
+                timer,
+                Rule(Condition.EverySeconds(1), actions = listOf(Action.ChangeNumber(Target.Self, -1), Action.ShowNumber(Target.Self, "Time: "))),
+            )
+
+            val max = endScene("MAX AURA", "MAX AURA!", "Main character energy unlocked.", "Farm again", farm, 0xFFAD1457)
+            val negative = endScene("Negative aura", "Negative aura...", "The toaster is disappointed.", "Try again", farm, 0xFF37474F)
+            open(farm)
+            rule(aura, Rule(Condition.NumberIs(Target.Self, Comparison.AtLeast, AURA_GOAL), actions = listOf(Action.GoToScene(max))))
+            rule(timer, Rule(Condition.NumberIs(Target.Self, Comparison.AtMost, 0), actions = listOf(Action.GoToScene(negative))))
+            titleScreen(
+                0xFF4A148C,
+                "Tap the toaster. Farm that aura.",
+                listOf(
+                    "Tapping the Aura Toaster adds",
+                    "1 to Aura and shows it.",
+                    "Aura at $AURA_GOAL or more goes to",
+                    "scene MAX AURA.",
+                    "Timer counts down each second;",
+                    "at 0 it goes to Negative aura.",
+                ),
+                listOf("Try this: select Aura, open", "Rules and make the goal 30."),
+            )
+        }
+
+    /**
+     * Brain-rot style survival (C10b): the Main Character survives while NPCs bounce along lanes and columns. Original
+     * characters. The spots between the lanes and away from the columns are safe, so moving players can survive.
+     */
+    fun npcDodge(): Project =
+        Recipe("NPC Dodge").run {
+            renameScene("Dodge")
+            val dodge = sceneId
+            box("Background", 0.0, 0.0, 8.6, 7.6, 0xFF00695C, layer = -1)
+            box("Left edge", -4.45, 0.0, 0.3, 8.2, 0xFF004D40, tag = "edge-left")
+            box("Right edge", 4.45, 0.0, 0.3, 8.2, 0xFF004D40, tag = "edge-right")
+            box("Top edge", 0.0, -3.95, 9.2, 0.3, 0xFF004D40, tag = "edge-top")
+            box("Bottom edge", 0.0, 3.95, 9.2, 0.3, 0xFF004D40, tag = "edge-bottom")
+            val timer = place("Score", "Timer", 2.4, -3.4)
+            set(timer, "gameplay:tag", "tag", "timer")
+            set(timer, "gameplay:number", "number", SURVIVE_SECONDS)
+            set(timer, "graphics:text", "text", "Survive: $SURVIVE_SECONDS")
+            set(timer, "graphics:text", "size", 0.45)
+            rule(
+                timer,
+                Rule(
+                    Condition.EverySeconds(1),
+                    actions = listOf(Action.ChangeNumber(Target.Self, -1), Action.ShowNumber(Target.Self, "Survive: ")),
+                ),
+            )
+
+            val hero = place("Player", "Main Character", -3.0, 0.0)
+            set(hero, "graphics:shape", "width", 0.7)
+            set(hero, "graphics:shape", "height", 0.7)
+            set(hero, "graphics:shape", "color", 0xFFFFD600)
+            keyMoves.forEach { (key, direction) -> rule(hero, Rule(Condition.KeyHeld(key), actions = listOf(Action.Move(direction, 4.0)))) }
+            listOf("edge-left" to Direction.Right, "edge-right" to Direction.Left, "edge-top" to Direction.Down, "edge-bottom" to Direction.Up)
+                .forEach { (edge, back) -> rule(hero, Rule(Condition.Touching(edge), actions = listOf(Action.Move(back, 4.0)))) }
+
+            npc("Lane NPC 1", 2.0, -2.0, 3.0, horizontal = true, direction = 1)
+            npc("Lane NPC 2", 3.0, 0.0, 3.5, horizontal = true, direction = 0)
+            npc("Lane NPC 3", -1.0, 2.0, 3.0, horizontal = true, direction = 0)
+            npc("Column NPC 1", -2.0, -3.0, 2.5, horizontal = false, direction = 0)
+            npc("Column NPC 2", 2.0, 3.0, 3.0, horizontal = false, direction = 1)
+
+            val survived = endScene("You survived", "You survived!", "Main character energy.", "Play again", dodge, 0xFF1B5E20)
+            val caught = endScene("You got NPC'd", "You got NPC'd", "An NPC bumped into you.", "Try again", dodge, 0xFFB71C1C)
+            open(dodge)
+            rule(hero, Rule(Condition.Touching("npc"), actions = listOf(Action.GoToScene(caught))))
+            rule(timer, Rule(Condition.NumberIs(Target.Self, Comparison.AtMost, 0), actions = listOf(Action.GoToScene(survived))))
+            titleScreen(
+                0xFF004D40,
+                "Survive $SURVIVE_SECONDS seconds. Avoid the NPCs.",
+                listOf(
+                    "Arrow keys move the Main",
+                    "Character; edges push back.",
+                    "Each NPC's number is its",
+                    "direction; edges flip it.",
+                    "Touching an NPC goes to",
+                    "scene You got NPC'd.",
+                    "Survive the Timer to win.",
+                ),
+                listOf("Try this: duplicate an NPC", "for even more chaos."),
+            )
+        }
+
     /** Seconds on the Tap Targets timer. */
     const val COUNTDOWN = 20L
+
+    /** Aura needed for MAX AURA. */
+    const val AURA_GOAL = 50L
+
+    /** Seconds to farm the aura. */
+    const val AURA_SECONDS = 15L
+
+    /** Seconds to survive in NPC Dodge. */
+    const val SURVIVE_SECONDS = 20L
 }
 
 /** The builder, driven through the same calls its controls make. Any rejection stops the recipe with its message. */
@@ -303,6 +429,30 @@ private class Recipe(
     }
 
     /** A target that bounces between the side walls; its number is its direction (0 right, 1 left). Tapping scores. */
+    /**
+     * An NPC that bounces between the edges, along its row when [horizontal] or its column otherwise. Its number is its
+     * direction: 0 is right or down, 1 is left or up.
+     */
+    fun npc(
+        name: String,
+        x: Double,
+        y: Double,
+        speed: Double,
+        horizontal: Boolean,
+        direction: Long,
+    ): String {
+        val id = box(name, x, y, 0.8, 0.8, 0xFFBDBDBD, tag = "npc")
+        give(id, "gameplay:number")
+        if (direction != 0L) set(id, "gameplay:number", "number", direction)
+        val (forward, backward) = if (horizontal) Direction.Right to Direction.Left else Direction.Down to Direction.Up
+        val (far, near) = if (horizontal) "edge-right" to "edge-left" else "edge-bottom" to "edge-top"
+        rule(id, Rule(Condition.NumberIs(Target.Self, Comparison.Equal, 0), actions = listOf(Action.Move(forward, speed))))
+        rule(id, Rule(Condition.NumberIs(Target.Self, Comparison.Equal, 1), actions = listOf(Action.Move(backward, speed))))
+        rule(id, Rule(Condition.Touching(far), actions = listOf(Action.SetNumber(Target.Self, 1))))
+        rule(id, Rule(Condition.Touching(near), actions = listOf(Action.SetNumber(Target.Self, 0))))
+        return id
+    }
+
     fun target(
         name: String,
         x: Double,
