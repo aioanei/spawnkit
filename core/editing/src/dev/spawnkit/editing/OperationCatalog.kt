@@ -204,7 +204,12 @@ public object EditingOperations {
             ),
             listOf(
                 sceneParameter(),
-                Parameter("to", "To", "New position, starting at 1; 1 makes it the start scene.", ParameterType.Value(ValueKind.WholeNumber(1, MAX_SCENES))),
+                Parameter(
+                    "to",
+                    "To",
+                    "New position, starting at 1; 1 makes it the start scene.",
+                    ParameterType.Value(ValueKind.WholeNumber(1, MAX_SCENES)),
+                ),
             ),
             listOf("Make the title screen the start scene", "Move Level 3 before Level 2"),
         ) {

@@ -20,9 +20,10 @@ class SceneOperationsTest {
 
     @Test
     fun scenesAreAddedRenamedMovedAndRemovedWithUndo() {
-        val level = editor.project.scenes
-            .first()
-            .id
+        val level =
+            editor.project.scenes
+                .first()
+                .id
         val title = added("Title")
         assertEquals(listOf("Main scene", "Title"), names())
 
@@ -38,9 +39,10 @@ class SceneOperationsTest {
 
     @Test
     fun theLastSceneCannotBeRemovedAndMovesStayInRange() {
-        val only = editor.project.scenes
-            .single()
-            .id
+        val only =
+            editor.project.scenes
+                .single()
+                .id
 
         val removed = editor.apply(EditOperation.RemoveScene(only))
         val moved = editor.apply(EditOperation.MoveScene(only, 1))
@@ -53,21 +55,25 @@ class SceneOperationsTest {
     @Test
     fun catalogBuildsSceneOperationsFromJson() {
         val catalog = EditingOperations.catalog
+
         fun json(
             id: String,
             input: String,
         ) = editor.apply(catalog.buildFromJson(id, Json.parseToJsonElement(input).jsonObject, editor.catalogContext()))
 
         assertIs<OperationResult.Applied>(json("add_scene", """{"name":"Title"}"""))
-        val title = editor.project.scenes
-            .last()
-            .id
+        val title =
+            editor.project.scenes
+                .last()
+                .id
         assertIs<OperationResult.Applied>(json("rename_scene", """{"scene":"$title","name":"Start"}"""))
         assertIs<OperationResult.Applied>(json("move_scene", """{"scene":"$title","to":1}"""))
         assertEquals("Make Start the start scene", editor.undoLabel)
         assertEquals(listOf("Start", "Main scene"), names())
         assertIs<OperationResult.Applied>(json("remove_scene", """{"scene":"$title"}"""))
         assertEquals(listOf("Main scene"), names())
-        assertIs<BuildResult.Rejected>(catalog.buildFromJson("move_scene", Json.parseToJsonElement("""{"scene":"nope","to":1}""").jsonObject, editor.catalogContext()))
+        assertIs<BuildResult.Rejected>(
+            catalog.buildFromJson("move_scene", Json.parseToJsonElement("""{"scene":"nope","to":1}""").jsonObject, editor.catalogContext()),
+        )
     }
 }

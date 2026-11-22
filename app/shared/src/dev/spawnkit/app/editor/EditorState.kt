@@ -14,7 +14,9 @@ import dev.spawnkit.editing.OperationResult
 import dev.spawnkit.editing.Project
 import dev.spawnkit.editing.SceneWorld
 import dev.spawnkit.editing.capabilityProblems
+import dev.spawnkit.gameplay.Action
 import dev.spawnkit.gameplay.BlockLocation
+import dev.spawnkit.gameplay.BlockPart
 import dev.spawnkit.gameplay.RuleBlocks
 import dev.spawnkit.gameplay.RuleItem
 import dev.spawnkit.gameplay.StandardEngine
@@ -23,6 +25,7 @@ import dev.spawnkit.graphics.RenderList
 import dev.spawnkit.graphics.renderList
 import dev.spawnkit.player.PlaySession
 import dev.spawnkit.player.playSession
+import dev.spawnkit.program.Handler
 import dev.spawnkit.program.PrepareResult
 import dev.spawnkit.program.Program
 import dev.spawnkit.program.prepareProgram
@@ -106,6 +109,13 @@ class EditorState(
     init {
         editor.onChange {
             revision = editor.revision
+            // The scene being edited can disappear (deleted, or its creation undone): edit the first scene instead.
+            if (editor.project.scene(sceneId) == null) {
+                sceneId =
+                    editor.project.scenes
+                        .first()
+                        .id
+            }
             if (selection != null && editor.project.scene(sceneId)?.find(selection!!) == null) selection = null
         }
     }
@@ -129,6 +139,12 @@ class EditorState(
         message = (applied as? OperationResult.Rejected)?.message
         return applied
     }
+
+    /** Applies catalog operation [id] with [arguments], the same entry agents use (ADR-0009). */
+    fun applyCatalog(
+        id: String,
+        arguments: Map<String, Any?>,
+    ): OperationResult = apply(engine.operations.build(id, arguments, editor.catalogContext()))
 
     /** Adds [preset] at world point ([x], [y]) and selects it. */
     fun add(
@@ -290,7 +306,29 @@ class EditorState(
         val rules = scene.find(objectId)?.rules.orEmpty()
         if (rules.isEmpty()) return emptyList()
         val result = prepareProgram(Program("check.$objectId", handlers = rules), engine.host)
-        return (result as? PrepareResult.Invalid)?.diagnostics?.map { RuleBlocks.locate(it.source.nodeId) to it.message }.orEmpty()
+        val checked = (result as? PrepareResult.Invalid)?.diagnostics?.map { RuleBlocks.locate(it.source.nodeId) to it.message }.orEmpty()
+        return checked + missingScenes(rules)
+    }
+
+    /** "Go to scene" blocks whose scene was removed; playing ignores them with a message. */
+    private fun missingScenes(rules: List<Handler>): List<Pair<BlockLocation?, String>> =
+        RuleBlocks.decompile(rules).flatMapIndexed { index, item ->
+            val rule = (item as? RuleItem.Blocks)?.rule ?: return@flatMapIndexed emptyList()
+            rule.actions.mapIndexedNotNull { k, action ->
+                if (action is Action.GoToScene && project.scene(action.sceneId) == null) {
+                    BlockLocation(index, BlockPart.Action, k) to "Go to scene: that scene was removed. Choose another scene."
+                } else {
+                    null
+                }
+            }
+        }
+
+    /** Opens scene [id] for editing. */
+    fun selectScene(id: String) {
+        if (project.scene(id) == null || id == sceneId) return
+        sceneId = id
+        selection = null
+        dragging = null
     }
 
     /** Tags used in the current scene, for pickers. */

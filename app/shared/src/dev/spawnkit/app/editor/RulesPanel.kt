@@ -27,10 +27,12 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -42,6 +44,7 @@ import dev.spawnkit.app.assistant.AskAiButton
 import dev.spawnkit.editing.Parameter
 import dev.spawnkit.editing.ParameterType
 import dev.spawnkit.editing.Picked
+import dev.spawnkit.editing.SceneDoc
 import dev.spawnkit.editing.Suggestions
 import dev.spawnkit.editing.Variant
 import dev.spawnkit.gameplay.Action
@@ -76,6 +79,15 @@ fun RulesPanel(
     state: EditorState,
     modifier: Modifier = Modifier,
     onAskAi: ((String) -> Unit)? = null,
+) {
+    CompositionLocalProvider(LocalScenes provides state.project.scenes) { RulesPanelContent(state, modifier, onAskAi) }
+}
+
+@Composable
+private fun RulesPanelContent(
+    state: EditorState,
+    modifier: Modifier,
+    onAskAi: ((String) -> Unit)?,
 ) {
     val obj = state.selection?.let(state.scene::find)
     var editing by remember(obj?.id) { mutableStateOf<Editing?>(null) }
@@ -254,7 +266,7 @@ private fun RuleCard(
         }
         PartLabel("Do")
         rule.actions.forEachIndexed { k, action ->
-            Block(RuleBlocks.describe(action), "rule:$index:do:$k", problem(BlockPart.Action, k)) {
+            Block(RuleBlocks.describe(action, LocalScenes.current), "rule:$index:do:$k", problem(BlockPart.Action, k)) {
                 onEdit(Editing(index, BlockPart.Action, k, isNew = false))
             }
         }
@@ -413,7 +425,12 @@ private fun BlockDialog(
     )
 }
 
-private fun describe(block: Any): String = if (block is Condition) RuleBlocks.describe(block) else RuleBlocks.describe(block as Action)
+@Composable
+private fun describe(block: Any): String =
+    if (block is Condition) RuleBlocks.describe(block) else RuleBlocks.describe(block as Action, LocalScenes.current)
+
+/** The project's scenes, for "Go to scene" pickers and descriptions. */
+private val LocalScenes = staticCompositionLocalOf<List<SceneDoc>> { emptyList() }
 
 /**
  * The control generated for one catalog [parameter]. Test tags use the parameter ID, so generated controls can be
@@ -457,6 +474,20 @@ private fun ValueField(
             val text = value as? String ?: ""
             if (type.suggestions == Suggestions.TAGS) {
                 TagPicker(id, parameter.name, text, tags, kind.maxLength) { onChange(it) }
+            } else if (type.suggestions == Suggestions.SCENES) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(parameter.name, style = MaterialTheme.typography.labelMedium)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        for (scene in LocalScenes.current) {
+                            FilterChip(
+                                text == scene.id,
+                                { onChange(scene.id) },
+                                { Text(scene.name) },
+                                Modifier.testTag("$id:${scene.name}"),
+                            )
+                        }
+                    }
+                }
             } else {
                 OutlinedTextField(
                     text,

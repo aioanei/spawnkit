@@ -43,7 +43,10 @@ class GoToSceneTest {
         val rule = Rule(Condition.Tapped, actions = listOf(Action.GoToScene(level)))
 
         assertEquals(listOf(RuleItem.Blocks(rule)), RuleBlocks.decompile(RuleBlocks.compile(listOf(rule))))
-        assertEquals(BlockResult.Created(Action.GoToScene(level)), RuleBlockCatalog.action(RuleBlockCatalog.picked(Action.GoToScene(level))))
+        assertEquals(
+            BlockResult.Created(Action.GoToScene(level)),
+            RuleBlockCatalog.action(RuleBlockCatalog.picked(Action.GoToScene(level))),
+        )
         assertEquals("Go to scene Level 1", RuleBlocks.describe(Action.GoToScene(level), editor.project.scenes))
         assertEquals("Go to a removed scene", RuleBlocks.describe(Action.GoToScene("scene-99"), editor.project.scenes))
     }
