@@ -210,7 +210,10 @@ internal object PresetRecipes {
             set(timer, "graphics:text", "size", 0.6)
             rule(
                 timer,
-                Rule(Condition.EverySeconds(1), actions = listOf(Action.ChangeNumber(Target.Self, -1), Action.ShowNumber(Target.Self, "Time: "))),
+                Rule(
+                    Condition.EverySeconds(1),
+                    actions = listOf(Action.ChangeNumber(Target.Self, -1), Action.ShowNumber(Target.Self, "Time: ")),
+                ),
             )
 
             val max = endScene("MAX AURA", "MAX AURA!", "Main character energy unlocked.", "Farm again", farm, 0xFFAD1457)
@@ -264,8 +267,12 @@ internal object PresetRecipes {
             set(hero, "graphics:shape", "height", 0.7)
             set(hero, "graphics:shape", "color", 0xFFFFD600)
             keyMoves.forEach { (key, direction) -> rule(hero, Rule(Condition.KeyHeld(key), actions = listOf(Action.Move(direction, 4.0)))) }
-            listOf("edge-left" to Direction.Right, "edge-right" to Direction.Left, "edge-top" to Direction.Down, "edge-bottom" to Direction.Up)
-                .forEach { (edge, back) -> rule(hero, Rule(Condition.Touching(edge), actions = listOf(Action.Move(back, 4.0)))) }
+            listOf(
+                "edge-left" to Direction.Right,
+                "edge-right" to Direction.Left,
+                "edge-top" to Direction.Down,
+                "edge-bottom" to Direction.Up,
+            ).forEach { (edge, back) -> rule(hero, Rule(Condition.Touching(edge), actions = listOf(Action.Move(back, 4.0)))) }
 
             npc("Lane NPC 1", 2.0, -2.0, 3.0, horizontal = true, direction = 1)
             npc("Lane NPC 2", 3.0, 0.0, 3.5, horizontal = true, direction = 0)
@@ -428,7 +435,6 @@ private class Recipe(
         return copy
     }
 
-    /** A target that bounces between the side walls; its number is its direction (0 right, 1 left). Tapping scores. */
     /**
      * An NPC that bounces between the edges, along its row when [horizontal] or its column otherwise. Its number is its
      * direction: 0 is right or down, 1 is left or up.
@@ -453,6 +459,7 @@ private class Recipe(
         return id
     }
 
+    /** A target that bounces between the side walls; its number is its direction (0 right, 1 left). Tapping scores. */
     fun target(
         name: String,
         x: Double,

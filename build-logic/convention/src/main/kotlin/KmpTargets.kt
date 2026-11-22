@@ -21,14 +21,15 @@ internal fun Project.configureSpawnkitTargets(
     kmp.jvm()
     kmp.iosArm64()
     kmp.iosSimulatorArm64()
+    // Headless play tests simulate tens of seconds of game time; Mocha's 2 s default fails them on a busy machine.
     kmp.js {
         browser()
-        if (nodeTests) nodejs()
+        if (nodeTests) nodejs { testTask { useMocha { timeout = NODE_TEST_TIMEOUT } } }
     }
     @OptIn(ExperimentalWasmDsl::class)
     kmp.wasmJs {
         browser()
-        if (nodeTests) nodejs()
+        if (nodeTests) nodejs { testTask { useMocha { timeout = NODE_TEST_TIMEOUT } } }
     }
     if (nativeDesktop) {
         kmp.mingwX64()
@@ -47,3 +48,6 @@ internal fun Project.configureSpawnkitTargets(
         implementation(libs.findLibrary("kotlin-test").get())
     }
 }
+
+/** Per-test limit for Node.js test runs (Mocha). */
+private const val NODE_TEST_TIMEOUT = "30s"

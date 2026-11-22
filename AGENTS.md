@@ -28,7 +28,8 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
 - **Done:** C5, project persistence (PR #57).
 - **Done:** K1 Kotlin Toolchain adoption, C6 Release Manager and Arcade, and C7a–C7b (catalogs and AI Studio core).
 - **Done:** C7c, the assistant UI; C9, title screens (scene list, Go to scene, Add title screen); C10, preset games
-  (New game picker with Coin Dash, Tap Targets and Maze Run).
+  (New game picker with Coin Dash, Tap Targets and Maze Run); C10b, brain-rot presets Aura Farmer and NPC Dodge, and How
+  it works guidance in every preset.
 - **Now:** C11 accounts. Then C12 test ads (owner decision
   2026-11-22, [design](docs/design/2026-11-22-title-screens-presets-accounts-ads.md),
   [ADR-0010](docs/adr/0010-accounts-on-ktor.md)), and C8 last, in the
