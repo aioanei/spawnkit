@@ -163,7 +163,10 @@ private class ReleaseSession(
                                 when {
                                     owner != null && update != null -> {
                                         val game = owner.republish(update.slug, encoded)
-                                        ReleaseResult("Updated \"${update.title}\" on the Arcade. Its play link is the same.", playUrl = game.playUrl)
+                                        ReleaseResult(
+                                            "Updated \"${update.title}\" on the Arcade. Its play link is the same.",
+                                            playUrl = game.playUrl,
+                                        )
                                     }
 
                                     owner != null -> {
@@ -378,10 +381,18 @@ private fun MyGames(
             Text(game.title, style = MaterialTheme.typography.bodyLarge)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton({ runCatching { openLink(game.playUrl) } }, Modifier.heightIn(min = 48.dp)) { Text("Open") }
-                OutlinedButton({ updating = game }, Modifier.heightIn(min = 48.dp).testTag("my-game-update-${game.slug}"), enabled = enabled) {
+                OutlinedButton(
+                    { updating = game },
+                    Modifier.heightIn(min = 48.dp).testTag("my-game-update-${game.slug}"),
+                    enabled = enabled,
+                ) {
                     Text("Update with this game")
                 }
-                TextButton({ removing = game }, Modifier.heightIn(min = 48.dp).testTag("my-game-unpublish-${game.slug}"), enabled = enabled) {
+                TextButton(
+                    { removing = game },
+                    Modifier.heightIn(min = 48.dp).testTag("my-game-unpublish-${game.slug}"),
+                    enabled = enabled,
+                ) {
                     Text("Unpublish")
                 }
             }
@@ -391,7 +402,11 @@ private fun MyGames(
         AlertDialog(
             onDismissRequest = { updating = null },
             title = { Text("Update \"${game.title}\"?") },
-            text = { Text("Replace \"${game.title}\" on the Arcade with \"${session.title.trim()}\" as it is now? Its play link stays the same.") },
+            text = {
+                Text(
+                    "Replace \"${game.title}\" on the Arcade with \"${session.title.trim()}\" as it is now? Its play link stays the same.",
+                )
+            },
             confirmButton = {
                 Button(
                     {

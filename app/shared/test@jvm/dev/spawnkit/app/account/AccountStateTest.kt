@@ -204,7 +204,12 @@ internal class FakeAccountService : AccountService {
     private val profile = AccountProfile(1, "Ada", "ada@example.com", "free")
     var aiAvailable = true
 
-    override suspend fun status() = ServerStatus(emailSignIn = true, aiAvailable = aiAvailable, ai = if (aiAvailable) "SpawnKit AI is available." else "SpawnKit AI is not set up on this server.")
+    override suspend fun status() =
+        ServerStatus(
+            emailSignIn = true,
+            aiAvailable = aiAvailable,
+            ai = if (aiAvailable) "SpawnKit AI is available." else "SpawnKit AI is not set up on this server.",
+        )
 
     override suspend fun register(
         email: String,

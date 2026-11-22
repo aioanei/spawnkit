@@ -319,14 +319,24 @@ class AssistantStateTest {
 
             assertEquals(1, first.requests.size)
             assertEquals(1, second.requests.size)
-            assertEquals(1, second.requests.single().messages.size, "the new account's conversation starts fresh")
+            assertEquals(
+                1,
+                second.requests
+                    .single()
+                    .messages.size,
+                "the new account's conversation starts fresh",
+            )
         }
 
     @Test
     fun aDeveloperKeyWinsOnlyWhenSwitchedOn() =
         runTest {
             val hosted = Scripted(listOf(call(AgentToolbox.FINISH, """{"summary":"Hosted."}""")), info = HOSTED_INFO)
-            val own = Scripted(listOf(call(AgentToolbox.FINISH, """{"summary":"Own key."}""")), info = ModelInfo("own", "Anthropic", live = true, label = "Live: own key"))
+            val own =
+                Scripted(
+                    listOf(call(AgentToolbox.FINISH, """{"summary":"Own key."}""")),
+                    info = ModelInfo("own", "Anthropic", live = true, label = "Live: own key"),
+                )
             val assistant = assistant(hosted = { HostedChoice("server:1", hosted) }) { own }
             assertEquals(HOSTED_INFO.label, assistant.modelLabel)
 

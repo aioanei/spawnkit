@@ -31,7 +31,14 @@ class AccountClientTest {
     private fun server(
         module: Application.() -> Unit = {
             authRoutes(accounts)
-            arcade(ArcadeStore(java.nio.file.Files.createTempDirectory("client-arcade")), playerFixture(), owners = ArcadeOwners(accounts, OwnedGames(db)))
+            arcade(
+                ArcadeStore(
+                    java.nio.file.Files
+                        .createTempDirectory("client-arcade"),
+                ),
+                playerFixture(),
+                owners = ArcadeOwners(accounts, OwnedGames(db)),
+            )
         },
         block: suspend ApplicationTestBuilder.(AccountClient) -> Unit,
     ) = testApplication {
@@ -99,7 +106,9 @@ class AccountClientTest {
 
     @Test
     fun statusTellsWhetherEmailAndAiAreAvailable() =
-        server(module = { spawnkit(ServerConfig.fromEnvironment(mapOf("SPAWNKIT_DATA_DIR" to testDataDir(), "SPAWNKIT_LOCAL" to "1"))) }) { api ->
+        server(
+            module = { spawnkit(ServerConfig.fromEnvironment(mapOf("SPAWNKIT_DATA_DIR" to testDataDir(), "SPAWNKIT_LOCAL" to "1"))) },
+        ) { api ->
             val status = api.status()
             assertTrue(status.emailSignIn)
             assertFalse(status.aiAvailable)
@@ -116,6 +125,12 @@ class AccountClientTest {
 
     private fun testDataDir(): String =
         java.nio.file.Files
-            .createTempDirectory(java.nio.file.Files.createDirectories(java.nio.file.Path.of("build")), "client-")
-            .toString()
+            .createTempDirectory(
+                java.nio.file.Files
+                    .createDirectories(
+                        java.nio.file.Path
+                            .of("build"),
+                    ),
+                "client-",
+            ).toString()
 }

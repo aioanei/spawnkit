@@ -117,7 +117,11 @@ private fun SignedIn(accounts: AccountState) {
             Text("Server: ${accounts.server.orEmpty()}", style = MaterialTheme.typography.bodySmall)
             accounts.status?.let { Text(it.ai, style = MaterialTheme.typography.bodySmall) }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(accounts::signOut, Modifier.heightIn(min = 48.dp).testTag("account-sign-out"), enabled = !accounts.busy) { Text("Sign out") }
+                Button(
+                    accounts::signOut,
+                    Modifier.heightIn(min = 48.dp).testTag("account-sign-out"),
+                    enabled = !accounts.busy,
+                ) { Text("Sign out") }
                 OutlinedButton({ deleting = true }, Modifier.heightIn(min = 48.dp).testTag("account-delete"), enabled = !accounts.busy) {
                     Text("Delete account")
                 }
@@ -129,7 +133,11 @@ private fun SignedIn(accounts: AccountState) {
         AlertDialog(
             onDismissRequest = { deleting = false },
             title = { Text("Delete your account?") },
-            text = { Text("This deletes your account and signs you out everywhere. Games you published stay playable, but you can no longer change them.") },
+            text = {
+                Text(
+                    "This deletes your account and signs you out everywhere. Games you published stay playable, but you can no longer change them.",
+                )
+            },
             confirmButton = {
                 Button(
                     {
@@ -167,7 +175,8 @@ private fun SignedOut(accounts: AccountState) {
     }
     accounts.status?.let { status ->
         Text(
-            (if (status.emailSignIn) "Email sign-in is available. " else "This server cannot send email, so email sign-in is off. ") + status.ai,
+            (if (status.emailSignIn) "Email sign-in is available. " else "This server cannot send email, so email sign-in is off. ") +
+                status.ai,
             style = MaterialTheme.typography.bodySmall,
         )
     }
@@ -193,7 +202,11 @@ private fun SignedOut(accounts: AccountState) {
         AccountTab.SignIn -> {
             emailField()
             PasswordField(password, { password = it }, "Password", "account-password", idle)
-            Button({ accounts.signIn(email, password) }, Modifier.heightIn(min = 48.dp).testTag("account-sign-in"), enabled = idle) { Text("Sign in") }
+            Button(
+                { accounts.signIn(email, password) },
+                Modifier.heightIn(min = 48.dp).testTag("account-sign-in"),
+                enabled = idle,
+            ) { Text("Sign in") }
         }
 
         AccountTab.Create -> {
@@ -208,12 +221,20 @@ private fun SignedOut(accounts: AccountState) {
                 )
                 emailField()
                 PasswordField(password, { password = it }, "Password (at least 10 characters)", "account-password", idle)
-                Button({ accounts.register(email, password, name) }, Modifier.heightIn(min = 48.dp).testTag("account-create"), enabled = idle) {
+                Button(
+                    { accounts.register(email, password, name) },
+                    Modifier.heightIn(min = 48.dp).testTag("account-create"),
+                    enabled = idle,
+                ) {
                     Text("Create account")
                 }
             } else {
                 CodeField(code, { code = it }, idle)
-                Button({ accounts.verify(code) }, Modifier.heightIn(min = 48.dp).testTag("account-verify"), enabled = idle) { Text("Confirm") }
+                Button(
+                    { accounts.verify(code) },
+                    Modifier.heightIn(min = 48.dp).testTag("account-verify"),
+                    enabled = idle,
+                ) { Text("Confirm") }
             }
         }
 

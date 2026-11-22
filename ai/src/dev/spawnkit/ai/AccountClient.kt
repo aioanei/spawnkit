@@ -156,7 +156,12 @@ public class AccountClient(
         email: String,
         password: String,
         displayName: String,
-    ): String = call(HttpMethod.Post, "/api/auth/register", body("email" to email, "password" to password, "displayName" to displayName)).obj().text("message")
+    ): String =
+        call(
+            HttpMethod.Post,
+            "/api/auth/register",
+            body("email" to email, "password" to password, "displayName" to displayName),
+        ).obj().text("message")
 
     override suspend fun verify(
         email: String,
@@ -172,13 +177,25 @@ public class AccountClient(
         call(HttpMethod.Post, "/api/auth/sign-out", token = token)
     }
 
-    override suspend fun requestReset(email: String): String = call(HttpMethod.Post, "/api/auth/reset", body("email" to email)).obj().text("message")
+    override suspend fun requestReset(email: String): String =
+        call(HttpMethod.Post, "/api/auth/reset", body("email" to email)).obj().text("message")
 
     override suspend fun reset(
         email: String,
         code: String,
         newPassword: String,
-    ): AccountSession = session(call(HttpMethod.Post, "/api/auth/reset/confirm", body("email" to email, "code" to code, "password" to newPassword)))
+    ): AccountSession =
+        session(
+            call(
+                HttpMethod.Post,
+                "/api/auth/reset/confirm",
+                body(
+                    "email" to email,
+                    "code" to code,
+                    "password" to newPassword,
+                ),
+            ),
+        )
 
     override suspend fun me(token: String): AccountProfile = profile(call(HttpMethod.Get, "/api/me", token = token).obj())
 
@@ -231,7 +248,10 @@ public class AccountClient(
         val json = if (text.isBlank()) null else runCatching { Json.parseToJsonElement(text) }.getOrNull()
         if (!response.status.isSuccess()) {
             val message = ((json as? JsonObject)?.get("error") as? JsonPrimitive)?.contentOrNull?.take(MAX_MESSAGE)
-            throw AccountException(message ?: "The SpawnKit server could not do that (HTTP ${response.status.value}).", response.status.value)
+            throw AccountException(
+                message ?: "The SpawnKit server could not do that (HTTP ${response.status.value}).",
+                response.status.value,
+            )
         }
         return json
     }
@@ -241,7 +261,8 @@ public class AccountClient(
         setBody(text)
     }
 
-    private fun body(vararg fields: Pair<String, String>): String = JsonObject(fields.associate { (k, v) -> k to JsonPrimitive(v) }).toString()
+    private fun body(vararg fields: Pair<String, String>): String =
+        JsonObject(fields.associate { (k, v) -> k to JsonPrimitive(v) }).toString()
 
     private fun session(json: JsonElement?): AccountSession {
         val root = json.obj()
@@ -273,7 +294,8 @@ public class AccountClient(
 
     private fun JsonObject.bool(key: String): Boolean = (get(key) as? JsonPrimitive)?.booleanOrNull ?: unreadable()
 
-    private fun unreadable(): Nothing = throw AccountException("The SpawnKit server sent an answer this version cannot read. Update SpawnKit.", 0)
+    private fun unreadable(): Nothing =
+        throw AccountException("The SpawnKit server sent an answer this version cannot read. Update SpawnKit.", 0)
 
     private companion object {
         const val MAX_MESSAGE = 400

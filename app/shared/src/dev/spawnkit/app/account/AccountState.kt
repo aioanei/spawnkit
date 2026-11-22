@@ -9,10 +9,10 @@ import dev.spawnkit.ai.AccountException
 import dev.spawnkit.ai.AccountProfile
 import dev.spawnkit.ai.AccountService
 import dev.spawnkit.ai.AccountSession
-import dev.spawnkit.ai.ArcadeGame
-import dev.spawnkit.ai.ServerStatus
 import dev.spawnkit.ai.AgentModel
+import dev.spawnkit.ai.ArcadeGame
 import dev.spawnkit.ai.HostedModel
+import dev.spawnkit.ai.ServerStatus
 import dev.spawnkit.app.assistant.HostedChoice
 import dev.spawnkit.app.assistant.SecretStore
 import io.ktor.client.HttpClient
@@ -33,7 +33,10 @@ class AccountState(
     private val secrets: SecretStore,
     private val scope: CoroutineScope,
     private val service: (address: String) -> AccountService = { AccountClient(it, sharedHttpClient) },
-    private val hostedModel: (address: String, token: String) -> AgentModel = { address, token -> HostedModel(address, token, sharedHttpClient) },
+    private val hostedModel: (
+        address: String,
+        token: String,
+    ) -> AgentModel = { address, token -> HostedModel(address, token, sharedHttpClient) },
 ) {
     /** The server address being typed or used. */
     var address by mutableStateOf(secrets.read(SERVER_NAME).orEmpty())
@@ -285,7 +288,9 @@ class AccountState(
             val trimmed = text.trim().trimEnd('/')
             val url = runCatching { Url(trimmed) }.getOrNull()
             val secure = url?.protocol?.name == "https" || (url?.protocol?.name == "http" && url.host.lowercase() in LOOPBACK)
-            val plain = url != null && url.user == null && url.encodedQuery.isEmpty() && url.fragment.isEmpty() && url.encodedPath.trim('/').isEmpty()
+            val plain =
+                url != null && url.user == null && url.encodedQuery.isEmpty() && url.fragment.isEmpty() &&
+                    url.encodedPath.trim('/').isEmpty()
             require(trimmed.contains("://") && url != null && url.host.isNotEmpty() && secure && plain) {
                 "Enter the server's HTTPS address, for example https://arcade.example.org, or http://localhost for a local server."
             }
