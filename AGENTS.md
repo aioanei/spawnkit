@@ -29,9 +29,9 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
 - **Done:** K1 Kotlin Toolchain adoption, C6 Release Manager and Arcade, and C7a–C7b (catalogs and AI Studio core).
 - **Done:** C7c, the assistant UI; C9, title screens (scene list, Go to scene, Add title screen); C10, preset games
   (New game picker with Coin Dash, Tap Targets and Maze Run).
-- **Now:** C11 accounts. Then C12 test ads (owner decision
-  2026-11-22, [design](docs/design/2026-11-22-title-screens-presets-accounts-ads.md),
-  [ADR-0010](docs/adr/0010-accounts-on-ktor.md)), and C8 last, in the
+- **Now:** C11 accounts with the hosted AI proxy. Then C14 game-wide values, spawning and randomness; C12 test ads
+  and test purchases; C13 AI-first building of complete games; and C8 last (owner decisions 2026-11-22 and 23, [design](docs/design/2026-11-22-title-screens-presets-accounts-ads.md),
+  [ADR-0010](docs/adr/0010-accounts-on-ktor.md), [ADR-0011](docs/adr/0011-hosted-ai-model-proxy.md)), in the
   [contest delivery track](docs/plans/2026-11-20-engine-foundation-revision.md#contest-delivery-track). Track K
   continues alongside. Check the latest checkpoint in `PROGRESS.md` before continuing.
 - **Reviewed:** the owner merged the [architecture reassessment](docs/design/2026-11-20-engine-alternatives-review.md)
