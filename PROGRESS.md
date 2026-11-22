@@ -1,6 +1,23 @@
 # SpawnKit progress
 
-## Current checkpoint — C7b AI Studio core (2026-11-21)
+## Current checkpoint — plan additions C9–C12 (2026-11-22)
+
+- **Merged.** On the owner's instruction, #67 (C6c–C6d), #70 (ADR-0009) and #72 (C7b, which includes #71, C7a) are
+  merged into `main`. Before merging, the combination passed:
+  - Gradle `spotlessCheck allJvmAndWebTests localNativeTests`;
+  - Toolchain `check ktlint`, `test -p jvm -p android` (586 passed) and `-p mingwX64` (252 passed).
+- **Planned.** The owner added four features before C8 ([issue #73](https://github.com/aioanei/spawnkit/issues/73)):
+  - [#74](https://github.com/aioanei/spawnkit/issues/74) C9: title screens.
+  - [#75](https://github.com/aioanei/spawnkit/issues/75) C10: preset games.
+  - [#76](https://github.com/aioanei/spawnkit/issues/76) C11: accounts with email and Google sign-in, owned games,
+    sync, player accounts and a public Arcade.
+  - [#77](https://github.com/aioanei/spawnkit/issues/77) C12: test ads with real counts.
+
+  See the [design](docs/design/2026-11-22-title-screens-presets-accounts-ads.md) and
+  [ADR-0010](docs/adr/0010-accounts-on-ktor.md).
+- **Next.** C7c, then C9 → C10 → C11 → C12, then C8 (5–7 Dec reserved).
+
+## Previous checkpoint — C7b AI Studio core (2026-11-21)
 
 - **Branch.** `feat/69-ai-studio-core`, stacked on C7a (`feat/69-operation-catalog`, PR #71). The owner asked for work
   to continue while they were away.

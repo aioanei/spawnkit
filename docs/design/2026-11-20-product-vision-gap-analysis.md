@@ -37,9 +37,9 @@ decisions that change the plan. The full requirement list lives in the owner's c
 | Koog agentic AI Studio | **Planned (R7), missing** | No `ai` module yet. |
 | Autonomous characters | **Deferred after contest** | Programs and resources are the runtime foundation; no LLM needed at runtime. |
 | Story and level tools | **Deferred after contest**, except a basic level editor | — |
-| Ads, IAP, self and managed publishing, payouts | **Deferred after contest** | Keep the host-service seams in R8. |
-| Accounts, cloud sync, version history | **Deferred after contest** | Local save/load and import/export come first. |
-| Creator dashboard and analytics | **Deferred after contest** | No fabricated analytics. |
+| Ads, IAP, self and managed publishing, payouts | **Test ads with real counts planned before the contest (C12, decision 7).** Real ad networks, IAP, publishing services and payouts stay deferred | Keep the host-service seams in R8. |
+| Accounts, cloud sync, version history | **Planned before the contest (C11, decision 7):** email and Google sign-in, owned Arcade games, project sync with revisions, player accounts. Apple sign-in and version history follow | [ADR-0010](../adr/0010-accounts-on-ktor.md). |
+| Creator dashboard and analytics | **Ad statistics planned before the contest (C12, decision 7)**; a broader dashboard stays deferred | Real counts only; revenue is shown as zero in test mode. No fabricated analytics. |
 | Security: credentials, safe user logic | **Partially implemented** | Bounded deterministic program execution (R1d). Credential handling is still to be designed with AI and release work. |
 | Workflow: issues, PRs, CI, AGENTS.md as shared instructions | **Implemented** | — |
 
@@ -69,3 +69,13 @@ decisions that change the plan. The full requirement list lives in the owner's c
    player serves web, Arcade and the Android repack path, and creators never see a build tool. See
    [ADR-0008](../adr/0008-kotlin-toolchain.md) and the
    [Release Manager build architecture](2026-11-20-release-manager-kotlin-toolchain.md).
+7. **Title screens, presets, accounts and test ads (2026-11-22).** The owner moved four features into the contest
+   track, before C8:
+   - C9: title screens inside each game.
+   - C10: preset games.
+   - C11: accounts with email and Google sign-in, owned Arcade games, project sync and player accounts, on a
+     public HTTPS host.
+   - C12: test ads with real counts and a statistics view.
+
+   Apple sign-in waits for an Apple Developer membership. See the
+   [design](2026-11-22-title-screens-presets-accounts-ads.md) and [ADR-0010](../adr/0010-accounts-on-ktor.md).

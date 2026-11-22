@@ -161,7 +161,8 @@ Exit: the AI interacts with the engine/editor, authors executable behavior and v
 - [ ] Guided export/publishing flows explain destination requirements, validate setup and show progress/actionable failures. External accounts/signing/consent may be required for a destination; preserve progress and do not require them for ordinary local creation or play.
 - [ ] Package manifests/locks cover content, portable logic, compiled runtime and editor extensions separately. Preserve licensing, AI provenance, migrations, moderation and compatibility semantics.
 - [ ] Define asynchronous monetization/publishing/analytics host-service interfaces with explicit results; no fabricated revenue, purchases or ad completion. Keep test modes labelled.
-- [ ] Retain accounts/sync, server-hosted agents/credits, analytics/social arcade, cloud builds/signing, self/managed publishing, marketplace sales/payouts, ads/consent/IAP and reporting in subsequent delivery increments. Do not imply storefront, payments or native hot-loading already exists.
+- [ ] Accounts (email and Google, then Apple), owned Arcade games, project sync, player likes and played games, and test ads with real counts and a statistics view: contest increments C11–C12 ([ADR-0010](../adr/0010-accounts-on-ktor.md)).
+- [ ] Retain server-hosted agents/credits, the rest of the social arcade, cloud builds/signing, self/managed publishing, marketplace sales/payouts, real ad networks/consent/IAP and revenue reporting in subsequent delivery increments. Do not imply storefront, payments or native hot-loading already exists.
 
 Exit: reproducible exports and a real publishing slice; documented target and package availability; no data-format workaround offered as proof of app-store compliance.
 
@@ -196,10 +197,17 @@ not replace them: each item delivers part of the named R-step, and unfinished pa
 | C5 | Project persistence (R5) | Save, open and autosave the workspace through a versioned codec (storage detail), with recovery, and import/export of a project file on Android and desktop. Covered by round-trip tests. |
 | C6 | Release and Arcade (R8, R6), [#64](https://github.com/aioanei/spawnkit/issues/64) | Release Manager screen: web export (standalone player plus package) from the builder, and publishing to the Ktor Arcade with a public play URL. The player runs exported games without the creator. The player's Wasm bundle is built by the Kotlin Toolchain (`wasm-js/app`) in CI and shipped with the creator. Destinations that need a compiled build (Android AAB, iOS, desktop installers) are shown with their requirements and labelled as needing the build service (K5); none are faked. Android APK export follows if time allows. |
 | C7 | Koog AI Studio (R7), [#69](https://github.com/aioanei/spawnkit/issues/69) | Character Forge and level assistant agents using editor operations and validation, with progress, cancel, cost and accept/reject. Labelled replay without keys. Agentic parity ([ADR-0009](../adr/0009-agentic-parity.md)): an assistant in compact and expanded layouts operates every manual builder capability from prompts, including rules. For example, it builds Score + collect from prompts alone, matching the manually built rules, and explains why a rule did not fire. Parity tests cover the operation catalog. |
+| C9 | Game title screens (R4, R5), [#74](https://github.com/aioanei/spawnkit/issues/74) | A scene list in compact and expanded layouts: add, rename, duplicate, remove, reorder, and set the start scene, which is stored in the project. A "Go to scene" rule block, with the play session switching scenes. An "Add title screen" helper built from ordinary operations: title text, background, and a Play button that goes to the first level. Every new operation has a catalog entry, an agent tool and a parity test. Builder Play, the web player and the Arcade start at the start scene. A headless test taps Play and reaches level 1. Android emulator evidence. |
+| C10 | Preset games (R5), [#75](https://github.com/aioanei/spawnkit/issues/75) | **New game** offers Blank plus three presets made in the builder: Coin Dash, Tap Targets and Maze Run. Each has a title screen and uses only standard blocks. Each preset passes the engine's checks and reaches its goal in a headless play test. Two of them double as C8 games. |
+| C11 | Accounts and public Arcade (R8), [#76](https://github.com/aioanei/spawnkit/issues/76), [ADR-0010](../adr/0010-accounts-on-ktor.md) | Email and Google sign-in on the Ktor server; Apple is designed, and built once the owner has an Apple developer membership. Server session tokens are kept in device secure storage. Creators own, update and unpublish their Arcade games, and sync projects with revisions. Players sign in on a server-rendered Arcade page to like games and see the games they played. SQLite through Exposed. Deployed to the owner's public HTTPS host. Tests use fake token issuers and captured mail. Android emulator evidence. |
+| C12 | Test ads with real counts (R8), [#77](https://github.com/aioanei/spawnkit/issues/77) | Ads are off by default. When on, a labelled test banner shows on the title screen and an occasional test interstitial between scenes, through an `AdHost` interface with no ad SDK. Views and clicks from Arcade plays are really counted; builder previews never count. A creator statistics view shows views, clicks and click-through rate, revenue "$0.00 — test ads earn nothing", and an optional estimate labelled as such. |
 | C8 | Demos and submission (R6, R9) | At least two mechanically different games built in the builder on the same engine. README with run instructions for all targets, screencast script, essay. |
 
-Order of work: C1 → C2 → C3 → C4 → C5 → C6 → C7 → C8, with documentation kept current per PR. Each C-item takes only
-the subset of its R-step needed by the slice, and its stated dependencies must be done first:
+C9–C12 were added by the owner on 2026-11-22. Design:
+[title screens, presets, accounts and test ads](../design/2026-11-22-title-screens-presets-accounts-ads.md).
+
+Order of work: C1 → C2 → C3 → C4 → C5 → C6 → C7 → C9 → C10 → C11 → C12 → C8, with documentation kept current per PR.
+Each C-item takes only the subset of its R-step needed by the slice, and its stated dependencies must be done first:
 
 - C2 needs C1.
 - C3 needs C1 and C2.
@@ -207,7 +215,19 @@ the subset of its R-step needed by the slice, and its stated dependencies must b
 - C5 needs C2.
 - C6 needs C1 and C5.
 - C7 needs C2–C4.
+- C9 needs C2–C4.
+- C10 needs C9.
+- C11 needs C6, and C7's secure storage.
+- C12 needs C9 and C11.
 - C8 needs all of the above.
+
+For C9–C12, C8 keeps 5–7 Dec. If time runs short, cut in this order:
+1. Google sign-in. Email stays.
+2. The interstitial placement.
+3. The estimate line.
+4. Played games.
+5. Duplicate and reorder in the scene list.
+6. Public deployment, falling back to a local demo that says so.
 
 C5 (an R5 subset) is needed by R4's save/reopen usability loop. C6 before C7 orders independent work; Koog depends on
 editor operations, not on publishing.

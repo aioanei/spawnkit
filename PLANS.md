@@ -13,7 +13,7 @@ is reconciled in the [gap analysis](docs/design/2026-11-20-product-vision-gap-an
 - release directly from the builder.
 
 Current work is the
-[contest delivery track](docs/plans/2026-11-20-engine-foundation-revision.md#contest-delivery-track) C1–C8 (deadline
+[contest delivery track](docs/plans/2026-11-20-engine-foundation-revision.md#contest-delivery-track) C1–C12 (deadline
 7 Dec 2026). The owner reviewed and merged the [architecture reassessment](docs/design/2026-11-20-engine-alternatives-review.md)
 (PR #25). All product features and mandatory technologies
 remain on the roadmap.
@@ -23,6 +23,10 @@ Manager's build engine. That work is the plan's
 [Kotlin Toolchain track (K)](docs/plans/2026-11-20-engine-foundation-revision.md#kotlin-toolchain-track-k). See
 [ADR-0008](docs/adr/0008-kotlin-toolchain.md), [migration status](docs/kotlin-toolchain.md) and the
 [Release Manager build architecture](docs/design/2026-11-20-release-manager-kotlin-toolchain.md).
+
+On 2026-11-22 the owner added title screens (C9), preset games (C10), accounts with email and Google sign-in
+(C11, [ADR-0010](docs/adr/0010-accounts-on-ktor.md)) and test ads with real counts (C12) before C8. See the
+[design](docs/design/2026-11-22-title-screens-presets-accounts-ads.md).
 
 Agentic parity ([ADR-0009](docs/adr/0009-agentic-parity.md), 2026-11-20): everything a creator does by hand, rules
 first of all, must also be operable by AI agents from prompts, through the same reviewed operations.

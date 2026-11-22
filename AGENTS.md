@@ -26,10 +26,12 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
 - **Done:** contest-track C1–C4: general presentation, editing operations, responsive builder and visual rules.
   PRs #54 and #55 are merged.
 - **Done:** C5, project persistence (PR #57).
-- **Now:** Kotlin Toolchain track K ([issue #58](https://github.com/aioanei/spawnkit/issues/58),
-  [ADR-0008](docs/adr/0008-kotlin-toolchain.md), [status](docs/kotlin-toolchain.md)). Next, C6 Release and Arcade in the
-  [contest delivery track](docs/plans/2026-11-20-engine-foundation-revision.md#contest-delivery-track); C7–C8 follow.
-  Check the latest checkpoint in `PROGRESS.md` before continuing.
+- **Done:** K1 Kotlin Toolchain adoption, C6 Release Manager and Arcade, and C7a–C7b (catalogs and AI Studio core).
+- **Now:** C7c, the assistant UI. Then C9 title screens, C10 presets, C11 accounts and C12 test ads (owner decision
+  2026-11-22, [design](docs/design/2026-11-22-title-screens-presets-accounts-ads.md),
+  [ADR-0010](docs/adr/0010-accounts-on-ktor.md)), and C8 last, in the
+  [contest delivery track](docs/plans/2026-11-20-engine-foundation-revision.md#contest-delivery-track). Track K
+  continues alongside. Check the latest checkpoint in `PROGRESS.md` before continuing.
 - **Reviewed:** the owner merged the [architecture reassessment](docs/design/2026-11-20-engine-alternatives-review.md)
   (PR #25); it records the alternatives behind the current direction.
 - **Preserve:** completed work and player checkpoint `b2bf830` on `feat/6-player-shells`.
