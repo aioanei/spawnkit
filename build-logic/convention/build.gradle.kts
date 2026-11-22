@@ -16,6 +16,10 @@ gradlePlugin {
             id = "spawnkit.kmp.core"
             implementationClass = "SpawnkitCorePlugin"
         }
+        register("spawnkitClient") {
+            id = "spawnkit.kmp.client"
+            implementationClass = "SpawnkitClientPlugin"
+        }
         register("spawnkitCompose") {
             id = "spawnkit.kmp.compose"
             implementationClass = "SpawnkitComposePlugin"

@@ -100,8 +100,8 @@ Koog layer (C7b) adapts these definitions; it does not hand-write a tool per ope
 
 ## Not yet (later C7 increments)
 
-- The Koog `ai` module: staged changesets against the workspace revision, preview, accept/reject, progress, cancel,
-  cost, clarifying questions, recording and labelled replay, and the assistant UI (C7b–C7d).
+- The assistant UI (C7c). The `ai` module with staged changes, sessions, traces, recording, replay and the Koog
+  adapter is in [AI Studio core](ai-studio.md) (C7b).
 - Enabling and disabling rules, which needs a stored flag in the project format.
 - Agent-authored advanced rules (portable programs), and explanations from play traces.
 - Catalog entries and controls for scenes and reparenting.

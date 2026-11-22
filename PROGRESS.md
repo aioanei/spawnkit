@@ -1,6 +1,29 @@
 # SpawnKit progress
 
-## Current checkpoint — C7a operation and rule block catalogs (2026-11-21)
+## Current checkpoint — C7b AI Studio core (2026-11-21)
+
+- **Branch.** `feat/69-ai-studio-core`, stacked on C7a (`feat/69-operation-catalog`, PR #71). The owner asked for work
+  to continue while they were away.
+- **Added.**
+  - `StagedChanges` in `core/editing`.
+  - A new `ai` module (client platforms; Gradle convention `spawnkit.kmp.client`) with `AgentToolbox`, `RuleTrace`,
+    `AgentSession`, recording and labelled replay, and `KoogModel` on Koog 1.3.0.
+  - The JS and Wasm yarn locks gain `ws` 8.20.1 for Ktor's JS engine.
+  - See [AI Studio core](docs/ai-studio.md).
+- **Evidence.** `StagedChangesTest` (3), `AgentSessionTest` (4) and `KoogModelTest` (2). Score + collect is built
+  from prompts and equals the manual rules, then plays to "Score: 1". A non-firing rule is explained from a real
+  trace. Coins are made worth 5. A clarifying question works. Cancel, refusals and stale proposals change nothing.
+  `ai` passes on JVM, Android host, JS and Wasm (Node).
+- **Gates (2026-11-22).** Gradle `spotlessCheck allJvmAndWebTests localNativeTests` is `BUILD SUCCESSFUL`, with no
+  failing test reports: `ai` 6/6 on four targets, `editing` 34/34 and `gameplay` 20/20 on five. Toolchain:
+  `check ktlint` is clean, and `test -p jvm -p android` and `-p mingwX64` pass. The Toolchain's interleaved native
+  output drops some result lines, so counts come from the Gradle reports.
+- **Not live.** No live model was called: tests and demos use hand-written fixtures labelled as scripted. Recording
+  a live session needs a key and the owner's consent.
+- **Next.** C7c: the assistant UI in compact and expanded layouts, "Ask AI", secure key storage and a publish
+  confirmation, with Android emulator evidence.
+
+## Previous checkpoint — C7a operation and rule block catalogs (2026-11-21)
 
 - **Branch.** `feat/69-operation-catalog`, from `main` while CI ran on PR #67 (C6c–C6d) and PR #70 (ADR-0009 docs).
   [Issue #69](https://github.com/aioanei/spawnkit/issues/69), first requirement of C7.
