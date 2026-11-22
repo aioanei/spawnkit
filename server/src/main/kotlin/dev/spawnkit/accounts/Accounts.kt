@@ -22,6 +22,9 @@ internal data class AccountInfo(
     val plan: String,
 )
 
+/** This server cannot send email, so email sign-in is unavailable. */
+internal class EmailUnavailable : IllegalStateException("Email sign-in is not set up on this server.")
+
 /** The outcome of an action that signs in. */
 internal sealed interface AuthResult {
     /** Signed in: [token] goes back to the client once and is stored only as a hash. */
@@ -33,6 +36,8 @@ internal sealed interface AuthResult {
     /** Refused with a plain message that never reveals whether an email has an account. */
     data class Refused(
         val message: String,
+        /** True when too many attempts were made, so trying again later can succeed. */
+        val retryLater: Boolean = false,
     ) : AuthResult
 }
 
@@ -52,6 +57,9 @@ internal class Accounts(
 ) {
     private val perEmail = AttemptLimiter(EMAIL_ATTEMPTS, WINDOW, clock)
     private val perAddress = AttemptLimiter(ADDRESS_ATTEMPTS, WINDOW, clock)
+
+    /** Bounds the emails one address receives, so nobody can flood an inbox; the answers stay the same. */
+    private val mailsPerEmail = AttemptLimiter(MAILS_PER_EMAIL, WINDOW, clock)
 
     /** A hash of a random password, verified for unknown emails so both answers take about as long. */
     private val decoy: String by lazy { passwords.hash(Tokens.newToken()) }
@@ -99,6 +107,7 @@ internal class Accounts(
             }
 
             else -> {
+                if (!mayMail(address)) return REGISTERED
                 sender.send(
                     address,
                     "Your SpawnKit account",
@@ -107,7 +116,7 @@ internal class Accounts(
                 )
             }
         }
-        return "Check your email for a 6-digit code to finish."
+        return REGISTERED
     }
 
     /** Confirms the email with the code from [register] and signs in. */
@@ -129,7 +138,7 @@ internal class Accounts(
         from: String,
     ): AuthResult {
         val address = email.trim().lowercase()
-        if (perEmail.blocked(address) || perAddress.blocked(from)) return AuthResult.Refused(TOO_MANY)
+        if (perEmail.blocked(address) || perAddress.blocked(from)) return AuthResult.Refused(TOO_MANY, retryLater = true)
         val found = db.tx { identity(address) }
         val matches = passwords.verify(password, found?.passwordHash ?: decoy) && found != null
         if (!matches) {
@@ -216,6 +225,7 @@ internal class Accounts(
         address: String,
         purpose: String,
     ) {
+        if (!mayMail(address)) return
         val code = Tokens.newCode()
         db.tx {
             EmailCodes.deleteWhere { (email eq address) and (EmailCodes.purpose eq purpose) }
@@ -251,6 +261,13 @@ internal class Accounts(
             true
         }
 
+    /** Counts one email to [address]; false when it has had its share for now. */
+    private fun mayMail(address: String): Boolean {
+        if (mailsPerEmail.blocked(address)) return false
+        mailsPerEmail.record(address)
+        return true
+    }
+
     private class Found(
         val identity: Long,
         val account: Long,
@@ -278,7 +295,7 @@ internal class Accounts(
             AccountInfo(it[AccountRows.id], it[AccountRows.displayName], it[AccountRows.email], it[AccountRows.plan])
         }
 
-    private fun requireMail(): MailSender = mail ?: throw IllegalStateException("Email sign-in is not set up on this server.")
+    private fun requireMail(): MailSender = mail ?: throw EmailUnavailable()
 
     private fun normalized(email: String): String {
         val address = email.trim().lowercase()
@@ -301,9 +318,11 @@ internal class Accounts(
         const val MAX_TRIES = 5
         const val EMAIL_ATTEMPTS = 5
         const val ADDRESS_ATTEMPTS = 10
+        const val MAILS_PER_EMAIL = 5
         const val WINDOW = 15 * 60_000L
         const val CODE_MILLIS = 15 * 60_000L
         const val SESSION_MILLIS = 30L * 24 * 60 * 60_000L
+        const val REGISTERED = "Check your email for a 6-digit code to finish."
         const val WRONG = "Email or password is not right."
         const val BAD_CODE = "That code is not right or has expired. Ask for a new one."
         const val TOO_MANY = "Too many sign-in attempts. Try again in 15 minutes."

@@ -1,14 +1,11 @@
 package dev.spawnkit.accounts
 
-import dev.spawnkit.data.Db
 import dev.spawnkit.data.Games
 import dev.spawnkit.data.Identities
 import dev.spawnkit.data.Sessions
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
-import java.nio.file.Files
-import java.nio.file.Path
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -20,24 +17,10 @@ import kotlin.test.assertTrue
 
 /** Email accounts (C11a, ADR-0010): codes, sessions, limits and deletion, with captured mail and a test clock. */
 class AccountsTest {
-    private class CapturedMail : MailSender {
-        val sent = mutableListOf<Triple<String, String, String>>()
-
-        override fun send(
-            to: String,
-            subject: String,
-            body: String,
-        ) {
-            sent += Triple(to, subject, body)
-        }
-
-        fun lastCode(to: String): String = Regex("\\b\\d{6}\\b").find(sent.last { it.first == to }.third)!!.value
-    }
-
-    private val db = Db.open(Files.createTempDirectory(Files.createDirectories(Path.of("build")), "accounts-").resolve("spawnkit.db"))
+    private val db = testDb()
     private val mail = CapturedMail()
     private var now = 1_000_000L
-    private val accounts = Accounts(db, mail, Passwords(memoryKb = 1024, iterations = 1), clock = { now })
+    private val accounts = Accounts(db, mail, testPasswords(), clock = { now })
 
     private fun signedUp(
         email: String = "ada@example.com",
@@ -154,6 +137,17 @@ class AccountsTest {
         assertEquals(0L, db.tx { Identities.selectAll().where { Identities.account eq signedIn.account.id }.count() })
         assertEquals(listOf<Long?>(null), db.tx { Games.selectAll().map { it[Games.owner] } }, "the game stays published, unowned")
         assertIs<AuthResult.Refused>(accounts.signIn("ada@example.com", "correct horse", "10.0.0.1"))
+    }
+
+    @Test
+    fun emailsToOneAddressAreLimitedWithoutChangingTheAnswer() {
+        val answers = (1..7).map { accounts.register("ada@example.com", "correct horse", "Ada") }
+
+        assertEquals(1, answers.toSet().size, "the answer never changes, so the limit reveals nothing")
+        assertEquals(5, mail.sent.count { it.first == "ada@example.com" })
+        now += 16 * 60_000L
+        accounts.requestReset("ada@example.com")
+        assertEquals(6, mail.sent.count { it.first == "ada@example.com" })
     }
 
     @Test
