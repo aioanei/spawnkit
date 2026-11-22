@@ -47,9 +47,11 @@ emulator reaches the host at `http://10.0.2.2:8080`. Use a reachable HTTPS addre
 | `GET /api/games/{slug}` | The validated game package. |
 | `GET /play/{slug}/` | The universal player, which loads the released package from the same directory. |
 
-Each published package is immutable and survives server restarts. Set `SPAWNKIT_ARCADE_DIR` to a persistent
-directory for one server process. The default is `.spawnkit/arcade` under the service account's home directory.
-This version supports anonymous publishing and a maximum of 128 releases per directory. Uploads are limited to
+Each published package survives server restarts. Set `SPAWNKIT_ARCADE_DIR` to a persistent directory for one server
+process. The default is `.spawnkit/arcade` under the service account's home directory. Since C11a, a game published
+while signed in belongs to that account, which alone can republish (`PUT /api/games/{slug}`, same play link) or
+unpublish it (`DELETE`). Publishing without signing in still works, unowned. See [Arcade hosting](arcade-hosting.md)
+for accounts, configuration and backups. The Arcade keeps at most 128 releases per directory. Uploads are limited to
 12,779,520 UTF-8 bytes (three bytes per package character), and the decoded package to 4,259,840 characters, four simultaneous submissions and 30 seconds for the body. The rolling one-minute limits
 are six attempts per connecting address and 60 per server process. The client displays the server's explanation
 when it refuses a release. Use a separate directory for smoke testing.
