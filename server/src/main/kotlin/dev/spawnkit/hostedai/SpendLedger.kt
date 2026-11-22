@@ -82,6 +82,8 @@ internal class SpendLedger(
     ): SpendDecision {
         val date = today()
         val day = date.toString()
+        // A call that could cost more than a whole day's allowance can never run; saying so beats blaming today's use.
+        if (maxMicros > limits.dailyMicros || maxMicros > limits.monthlyMicros) return SpendDecision.Refused(TOO_LONG)
         if (calls.blocked(account.toString())) return SpendDecision.Refused(HOURLY)
         return db.tx {
             if (monthTotal(date) + maxMicros > limits.monthlyMicros) return@tx SpendDecision.Refused(monthly(date))
@@ -152,6 +154,7 @@ internal class SpendLedger(
     private companion object {
         const val HOUR = 60 * 60_000L
         const val DAILY = "You have used today's free AI allowance. It renews at midnight UTC. You can keep building by hand."
+        const val TOO_LONG = "This conversation is too long for SpawnKit AI. Start a new request with a shorter description."
         const val HOURLY = "Too many AI requests in the last hour. Wait a little and try again."
     }
 }

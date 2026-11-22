@@ -38,6 +38,7 @@ import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /** The hosted AI proxy (C11a, ADR-0011) with a fake model gateway: no live model is ever called. */
@@ -143,6 +144,15 @@ class HostedAiTest {
                 HostedModel("", signedUp("bob@example.com").token, client).reply(prompt),
                 "other accounts are unaffected",
             )
+        }
+
+    @Test
+    fun aRequestBeyondTheWholeDailyAllowanceSaysItIsTooLong() =
+        proxy(limits = AiLimits(dailyMicros = 10_000)) {
+            val refused = assertFailsWith<HostedModelException> { HostedModel("", signedUp().token, client).reply(prompt) }
+
+            assertContains(refused.message.orEmpty(), "too long")
+            assertFalse("today" in refused.message.orEmpty(), "nothing was used today, so the daily message would be wrong")
         }
 
     @Test

@@ -44,6 +44,7 @@ internal fun Application.spawnkit(config: ServerConfig) {
         config.anthropicKey()?.let { key ->
             HostedAi(KoogGateway(key, config.maxOutputTokens), SpendLedger(db, config.aiLimits), maxOutputTokens = config.maxOutputTokens)
         }
+    val aiStatus = if (hosted != null) "SpawnKit AI is available." else "SpawnKit AI is not set up on this server."
     routing {
         get("/health") {
             call.respondText("ok")
@@ -53,18 +54,7 @@ internal fun Application.spawnkit(config: ServerConfig) {
                 buildJsonObject {
                     put("emailSignIn", JsonPrimitive(accounts.emailAvailable))
                     put("aiAvailable", JsonPrimitive(hosted != null))
-                    put(
-                        "ai",
-                        JsonPrimitive(
-                            if (hosted !=
-                                null
-                            ) {
-                                "SpawnKit AI is available."
-                            } else {
-                                "SpawnKit AI is not set up on this server."
-                            },
-                        ),
-                    )
+                    put("ai", JsonPrimitive(aiStatus))
                 }
             call.respondText(status.toString(), ContentType.Application.Json)
         }

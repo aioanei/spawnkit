@@ -90,7 +90,7 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
 | `player/playerKit` | KMP + Compose | shared game player (play session, loop, surface, touch controls) used by the builder and exported players; `GamePlayer(pkg)` |
 | `player/webPlayer` | Toolchain `wasm-js/app` | universal web player that plays `game.spawnkit.json` beside its `index.html` |
 | `player/shared` + `player/*App` | KMP + Compose | preserved legacy exported-game shells checkpoint (`b2bf830`), adapted at R6 |
-| `server` | Ktor (JVM) | publishing, arcade hosting, validation |
+| `server` | Ktor (JVM) | Arcade publishing and hosting with validation; SQLite database, email accounts, owned games and the hosted AI proxy with spending limits ([hosting](docs/arcade-hosting.md)) |
 | `tools/agentRecorder` | JVM app | records live assistant sessions for labelled replays; run only by the manual `record-ai-session` workflow |
 
 This table distinguishes existing responsibilities where affected; it is not a claim that planned modules exist.
