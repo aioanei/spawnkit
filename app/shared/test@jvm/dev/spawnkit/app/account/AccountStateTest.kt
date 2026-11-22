@@ -198,9 +198,10 @@ internal class FakeAccountService : AccountService {
     var signInFailure: AccountException? = null
     var publishFailure: AccountException? = null
     val signedOut = mutableListOf<String>()
+    val republished = mutableListOf<String>()
+    val published = mutableListOf<ArcadeGame>()
     var deleted = 0
     private val profile = AccountProfile(1, "Ada", "ada@example.com", "free")
-    private val published = mutableListOf<ArcadeGame>()
     var aiAvailable = true
 
     override suspend fun status() = ServerStatus(emailSignIn = true, aiAvailable = aiAvailable, ai = if (aiAvailable) "SpawnKit AI is available." else "SpawnKit AI is not set up on this server.")
@@ -261,6 +262,7 @@ internal class FakeAccountService : AccountService {
         slug: String,
         packageJson: String,
     ): ArcadeGame {
+        republished += slug
         val index = published.indexOfFirst { it.slug == slug }
         return published[index].copy(title = "Updated").also { published[index] = it }
     }

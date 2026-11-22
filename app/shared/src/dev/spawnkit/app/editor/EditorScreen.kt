@@ -100,7 +100,7 @@ fun EditorScreen(
         }
     }
     if (projectSession != null) ProjectDialogs(projectSession)
-    if (releasing) ReleaseManager(state, releasePlatform) { releasing = false }
+    if (releasing) ReleaseManager(state, releasePlatform, accounts) { releasing = false }
     if (accountOpen) AccountScreen(accounts, secrets.where) { accountOpen = false }
 }
 

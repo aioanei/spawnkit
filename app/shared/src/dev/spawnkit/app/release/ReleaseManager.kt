@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.widthIn
@@ -28,6 +29,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,6 +48,9 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import dev.spawnkit.ai.AccountException
+import dev.spawnkit.ai.ArcadeGame
+import dev.spawnkit.app.account.AccountState
 import dev.spawnkit.app.editor.EditorState
 import dev.spawnkit.editing.GamePackage
 import dev.spawnkit.editing.GamePackageCodec
@@ -70,7 +75,11 @@ private class ReleaseSession(
     val state: EditorState,
     val platform: ReleasePlatform,
     private val scope: CoroutineScope,
+    val accounts: AccountState?,
 ) {
+    /** Signed in: the Arcade is the account's server, and games are published as its own (C11b). */
+    val signedIn: Boolean get() = accounts?.signedIn == true
+
     var title by mutableStateOf(state.project.name)
 
     // Released games start where players should start: the first scene, for example a title screen.
@@ -90,8 +99,37 @@ private class ReleaseSession(
         job?.cancel()
     }
 
-    fun release(destination: Destination) {
+    /** Removes [game] from the Arcade; its play link stops working. */
+    fun unpublish(game: ArcadeGame) {
+        val owner = accounts ?: return
         if (active != null) return
+        active = Destination.Arcade
+        progress = "Unpublishing \"${game.title}\"…"
+        arcadeResult = null
+        job =
+            scope.launch(start = CoroutineStart.UNDISPATCHED) {
+                try {
+                    owner.unpublish(game.slug)
+                    arcadeResult = ReleaseResult("Unpublished \"${game.title}\". Its play link no longer works.")
+                } catch (cancelled: CancellationException) {
+                    arcadeResult = ReleaseResult("Cancelled. Check My games before trying again.")
+                    throw cancelled
+                } catch (problem: AccountException) {
+                    arcadeResult = ReleaseResult(problem.message ?: "The game could not be unpublished.", failed = true)
+                } finally {
+                    active = null
+                    job = null
+                }
+            }
+    }
+
+    /** Releases the game; with [update], it replaces that owned Arcade game and keeps its play link. */
+    fun release(
+        destination: Destination,
+        update: ArcadeGame? = null,
+    ) {
+        if (active != null) return
+        val owner = accounts?.takeIf { it.signedIn }
         val snapshot = state.editor.saveSnapshot()
         val releaseTitle = title
         val start = sceneId
@@ -121,7 +159,21 @@ private class ReleaseSession(
 
                         Destination.Arcade -> {
                             progress = "Uploading your game…"
-                            arcadeResult = ReleaseResult("Published to the Arcade.", playUrl = platform.publish(arcade, encoded))
+                            arcadeResult =
+                                when {
+                                    owner != null && update != null -> {
+                                        val game = owner.republish(update.slug, encoded)
+                                        ReleaseResult("Updated \"${update.title}\" on the Arcade. Its play link is the same.", playUrl = game.playUrl)
+                                    }
+
+                                    owner != null -> {
+                                        ReleaseResult("Published to the Arcade as your game.", playUrl = owner.publish(encoded).playUrl)
+                                    }
+
+                                    else -> {
+                                        ReleaseResult("Published to the Arcade.", playUrl = platform.publish(arcade, encoded))
+                                    }
+                                }
                         }
                     }
                 } catch (cancelled: CancellationException) {
@@ -134,7 +186,7 @@ private class ReleaseSession(
                 } catch (problem: Exception) {
                     val detail =
                         when (problem) {
-                            is IllegalArgumentException, is IllegalStateException -> problem.message
+                            is IllegalArgumentException, is IllegalStateException, is AccountException -> problem.message
                             else -> null
                         }
                     val result = ReleaseResult(detail ?: "The release could not finish. Try again.", failed = true)
@@ -152,10 +204,11 @@ private class ReleaseSession(
 internal fun ReleaseManager(
     state: EditorState,
     platform: ReleasePlatform,
+    accounts: AccountState? = null,
     close: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    val session = remember(state, platform, scope) { ReleaseSession(state, platform, scope) }
+    val session = remember(state, platform, scope, accounts) { ReleaseSession(state, platform, scope, accounts) }
     val browser = LocalUriHandler.current
     Dialog(
         onDismissRequest = { if (session.active == null) close() },
@@ -254,31 +307,38 @@ private fun ArcadeCard(
     modifier: Modifier,
     openLink: (String) -> Unit,
 ) {
-    val enabled = session.platform.available && session.active == null
+    val owner = session.accounts?.takeIf { session.signedIn }
+    // Signed in, publishing goes through the account's client, which works on every platform.
+    val enabled = (session.platform.available || owner != null) && session.active == null
+    val destination = owner?.server ?: session.address.trim()
     DestinationCard("SpawnKit Arcade", modifier) {
-        Text("Publish your game to this server. Anyone with the play link can open it.")
-        OutlinedTextField(
-            session.address,
-            { session.address = it },
-            Modifier.fillMaxWidth().testTag("release-address"),
-            enabled = enabled,
-            singleLine = true,
-            label = { Text("Arcade server address") },
-            placeholder = { Text("https://arcade.example.org") },
-        )
+        if (owner != null) {
+            Text("Publishing as ${owner.account?.displayName} to ${owner.server}. Anyone with the play link can open it.")
+        } else {
+            Text("Publish your game to this server. Anyone with the play link can open it. Sign in with Project → Account to own it.")
+            OutlinedTextField(
+                session.address,
+                { session.address = it },
+                Modifier.fillMaxWidth().testTag("release-address"),
+                enabled = enabled,
+                singleLine = true,
+                label = { Text("Arcade server address") },
+                placeholder = { Text("https://arcade.example.org") },
+            )
+        }
         var confirming by remember { mutableStateOf(false) }
         Button(
             { confirming = true },
             Modifier.testTag("release-publish"),
-            enabled = enabled && session.address.isNotBlank(),
-        ) { Text("Publish game") }
+            enabled = enabled && destination.isNotBlank(),
+        ) { Text(if (owner != null) "Publish as a new game" else "Publish game") }
         // Publishing is outward-facing, so it always needs an explicit confirmation (ADR-0009).
         if (confirming) {
             AlertDialog(
                 onDismissRequest = { confirming = false },
                 modifier = Modifier.testTag("publish-confirm"),
                 title = { Text("Publish to the Arcade?") },
-                text = { Text("Publish \"${session.title.trim()}\" to ${session.address.trim()}? Anyone with the play link can play it.") },
+                text = { Text("Publish \"${session.title.trim()}\" to $destination? Anyone with the play link can play it.") },
                 confirmButton = {
                     Button(
                         {
@@ -296,6 +356,70 @@ private fun ArcadeCard(
             ResultText(result)
             result.playUrl?.let { PlayLink(it, openLink) }
         }
+        if (owner != null) MyGames(session, owner, enabled, openLink)
+    }
+}
+
+/** The account's Arcade games: open, update with this project, or unpublish; updates and removals are confirmed. */
+@Composable
+private fun MyGames(
+    session: ReleaseSession,
+    owner: AccountState,
+    enabled: Boolean,
+    openLink: (String) -> Unit,
+) {
+    LaunchedEffect(owner) { owner.refreshGames() }
+    var updating by remember { mutableStateOf<ArcadeGame?>(null) }
+    var removing by remember { mutableStateOf<ArcadeGame?>(null) }
+    Text("My games", Modifier.semantics { heading() }, style = MaterialTheme.typography.titleMedium)
+    if (owner.games.isEmpty()) Text("Games you publish while signed in appear here.", style = MaterialTheme.typography.bodySmall)
+    owner.games.forEach { game ->
+        Column(Modifier.fillMaxWidth().testTag("my-game"), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(game.title, style = MaterialTheme.typography.bodyLarge)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton({ runCatching { openLink(game.playUrl) } }, Modifier.heightIn(min = 48.dp)) { Text("Open") }
+                OutlinedButton({ updating = game }, Modifier.heightIn(min = 48.dp).testTag("my-game-update-${game.slug}"), enabled = enabled) {
+                    Text("Update with this game")
+                }
+                TextButton({ removing = game }, Modifier.heightIn(min = 48.dp).testTag("my-game-unpublish-${game.slug}"), enabled = enabled) {
+                    Text("Unpublish")
+                }
+            }
+        }
+    }
+    updating?.let { game ->
+        AlertDialog(
+            onDismissRequest = { updating = null },
+            title = { Text("Update \"${game.title}\"?") },
+            text = { Text("Replace \"${game.title}\" on the Arcade with \"${session.title.trim()}\" as it is now? Its play link stays the same.") },
+            confirmButton = {
+                Button(
+                    {
+                        updating = null
+                        session.release(Destination.Arcade, update = game)
+                    },
+                    Modifier.testTag("update-confirm-yes"),
+                ) { Text("Update") }
+            },
+            dismissButton = { TextButton({ updating = null }, Modifier.testTag("update-confirm-no")) { Text("Cancel") } },
+        )
+    }
+    removing?.let { game ->
+        AlertDialog(
+            onDismissRequest = { removing = null },
+            title = { Text("Unpublish \"${game.title}\"?") },
+            text = { Text("Players can no longer open it, and its play link stops working.") },
+            confirmButton = {
+                Button(
+                    {
+                        removing = null
+                        session.unpublish(game)
+                    },
+                    Modifier.testTag("unpublish-confirm-yes"),
+                ) { Text("Unpublish") }
+            },
+            dismissButton = { TextButton({ removing = null }, Modifier.testTag("unpublish-confirm-no")) { Text("Cancel") } },
+        )
     }
 }
 
