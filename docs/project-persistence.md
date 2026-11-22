@@ -19,17 +19,26 @@ have accessible descriptions. Some Android document providers append `.json` to 
 
 ### Preset games (C10)
 
-The picker lists Blank and three preset games, each with a picture of its game scene and a one-line pitch. Phones
-show one column; wider screens show two.
+The picker lists Blank and five preset games. Each has a picture of its game scene, a one-line pitch and the rule
+blocks it uses ("Uses: Tapped · Every … seconds · …", named as in the rule editor). Phones show one column; wider
+screens show two.
 
 | Preset | Game | Uses |
 |---|---|---|
 | Coin Dash | Move with the arrows and collect every coin; the last coin leads to "You win". | Key held, Touching, Count is |
 | Tap Targets | Tap the moving targets before the 20-second timer runs out. | Tapped, Every second, Number is |
 | Maze Run | Reach the exit; touching a wall restarts the maze. | Key held, Touching, Go to scene |
+| Aura Farmer (C10b) | Tap the Aura Toaster to farm 50 aura in 15 seconds: MAX AURA, or Negative aura. | Tapped, Add to a number, Number is, Every second |
+| NPC Dodge (C10b) | Survive 20 seconds while NPCs bounce along lanes and columns, or "You got NPC'd". | Key held, Touching, Number is, Set a number |
 
 - **Ordinary projects.** Each preset is a normal project file in `presets/<id>/project.json` with a title screen. It
   is embedded into the app by `core/presets` (`EmbeddedPresets`, listed by `GamePresets`).
+- **Guidance (C10b).** Every title screen has a **How it works** button. It opens a scene that explains, in short
+  lines, which object has which rule. The scene ends with one "Try this" change in yellow and a Back button to the
+  title. A test checks that every block a picker card lists is really used by that preset.
+- **Original characters.** Aura Farmer and NPC Dodge are brain-rot style on purpose: loud colours and meme-style
+  text. Their characters are original, with no third-party meme characters, because the contest requires work the
+  entrant owns.
 - **How they were made.** With the builder's own calls: palette presets, catalog operations, rule operations and
   "Add title screen". The recipes are in `app/shared/test@jvm/.../presets/PresetRecipes.kt`, and a test checks the
   files against them ([presets/README.md](../presets/README.md)).
@@ -45,6 +54,11 @@ show one column; wider screens show two.
   `tools/android-preset-smoke.py` used real taps: [the picker](media/android-presets-picker.png), then
   [Coin Dash's title screen playing](media/android-presets-title-play.png). Holding the on-screen Right arrow then
   [collected a coin](media/android-presets-coin.png).
+- **Evidence for C10b.**
+  - [Phone picker with all five presets](media/presets-picker-phone.png).
+  - `tools/android-brainrot-smoke.py` used real taps on the emulator. It opened Aura Farmer from New game, then
+    [How it works](media/android-aura-how.png) and Back.
+  - Twelve taps on the toaster then showed [Aura: 12](media/android-aura-tapped.png).
 
 New and Open ask before replacing unsaved changes. Save and continue, Discard changes, and Cancel are explicit.
 Cancelling a picker, opening a bad file, and a failed write keep the current project and its undo history. Opening a
