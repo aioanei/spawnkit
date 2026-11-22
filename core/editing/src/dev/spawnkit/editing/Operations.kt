@@ -99,6 +99,19 @@ public sealed interface EditOperation {
         override val label: String = "Rename scene",
     ) : EditOperation
 
+    /** Removes a scene with its objects. A game always keeps at least one scene. */
+    public data class RemoveScene(
+        public val sceneId: String,
+        override val label: String = "Delete scene",
+    ) : EditOperation
+
+    /** Moves a scene to position [toIndex] (0-based). The first scene is where the game starts. */
+    public data class MoveScene(
+        public val sceneId: String,
+        public val toIndex: Int,
+        override val label: String = "Move scene",
+    ) : EditOperation
+
     /**
      * Replaces an object's rules as one undoable step. Rules are not type-checked here, so creators can save rules that
      * are still being built; worlds report their problems ([SceneWorld.diagnostics]).
@@ -178,6 +191,19 @@ internal class OperationApplier(
             is EditOperation.RenameScene -> {
                 requireName(operation.name)
                 editScene(project, operation.sceneId) { it.copy(name = operation.name.trim()) }
+            }
+
+            is EditOperation.RemoveScene -> {
+                if (project.scene(operation.sceneId) == null) reject("That scene no longer exists")
+                if (project.scenes.size == 1) reject("A game needs at least one scene")
+                project.copy(scenes = project.scenes.filter { it.id != operation.sceneId })
+            }
+
+            is EditOperation.MoveScene -> {
+                val scene = project.scene(operation.sceneId) ?: reject("That scene no longer exists")
+                if (operation.toIndex !in project.scenes.indices) reject("Choose a position from 1 to ${project.scenes.size}")
+                val rest = project.scenes.filter { it.id != scene.id }
+                project.copy(scenes = rest.toMutableList().apply { add(operation.toIndex, scene) })
             }
 
             is EditOperation.AddObject -> {
