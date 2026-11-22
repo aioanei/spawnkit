@@ -72,6 +72,7 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
 | `build-logic/` | Gradle included build (coexistence) | convention plugins `spawnkit.kmp.core`, `spawnkit.kmp.client`, `spawnkit.kmp.compose`, `spawnkit.quality`; read the Toolchain layout |
 | `core/model` | KMP, all targets | existing v1 document schema, IDs, serialization and migrations; legacy import boundary in the target design |
 | `core/templates` | KMP, all targets | existing embedded template fixtures; preserve during migration |
+| `core/presets` | KMP, all targets | preset games (C10): `presets/<id>/project.json` embedded as `EmbeddedPresets`, listed by `GamePresets` |
 | `core/engine` | KMP, all targets | preserved tested platformer runtime and compatibility regression baseline |
 | `core/runtime` | KMP, all targets | provisional headless world/component/scheduler and explicit checkpoint/replay APIs; no legacy model dependency |
 | `core/program` | KMP, all targets | portable program executor: typed programs, type checking, resumable bytecode VM, atomic segments, checkpointed waits |

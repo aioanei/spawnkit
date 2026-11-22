@@ -17,6 +17,12 @@ class EmbeddedTemplatesRendererTest {
     }
 
     @Test
+    fun rendersTheConfiguredObjectName() {
+        val source = renderEmbeddedTemplates("dev.example", listOf(EmbeddedTemplate("coin-dash", "{}")), objectName = "EmbeddedPresets")
+        assertContains(source, "public object EmbeddedPresets {")
+    }
+
+    @Test
     fun splitsLargeDocumentsIntoBoundedConstants() {
         val source = renderEmbeddedTemplates("p", listOf(EmbeddedTemplate("big", "x".repeat(40_000))))
         assertEquals(3, Regex("append\\(\"x+\"\\)").findAll(source).count())

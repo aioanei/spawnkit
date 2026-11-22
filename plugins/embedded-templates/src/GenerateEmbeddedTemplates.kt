@@ -13,14 +13,15 @@ import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
 /**
- * Embeds every `templates/<name>/project.json` into a generated `EmbeddedTemplates` Kotlin object, so template
- * documents load identically on every Kotlin target without resource APIs (ADR-0003).
+ * Embeds every `<templatesDir>/<name>/project.json` into a generated Kotlin object (`EmbeddedTemplates` by default), so
+ * the documents load identically on every Kotlin target without resource APIs (ADR-0003).
  */
 @TaskAction
 fun generateEmbeddedTemplates(
     @Input templatesDir: Path,
     @Output outputDir: Path,
     packageName: String,
+    objectName: String,
 ) {
     // Like the former Gradle task: a missing templates directory yields an empty map, and stale output is removed.
     val entries = if (templatesDir.isDirectory()) templatesDir.listDirectoryEntries() else emptyList()
@@ -31,5 +32,5 @@ fun generateEmbeddedTemplates(
             .map { EmbeddedTemplate(it.name, it.resolve("project.json").readText()) }
     outputDir.toFile().listFiles()?.forEach { it.deleteRecursively() }
     val packageDir = outputDir.resolve(packageName.replace('.', '/')).createDirectories()
-    packageDir.resolve("EmbeddedTemplates.kt").writeText(renderEmbeddedTemplates(packageName, templates))
+    packageDir.resolve("$objectName.kt").writeText(renderEmbeddedTemplates(packageName, templates, objectName))
 }
