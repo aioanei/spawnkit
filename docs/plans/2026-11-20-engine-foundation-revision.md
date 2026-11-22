@@ -200,17 +200,22 @@ not replace them: each item delivers part of the named R-step, and unfinished pa
 | C9 | Game title screens (R4, R5), [#74](https://github.com/aioanei/spawnkit/issues/74) | A scene list in compact and expanded layouts: add, rename, duplicate, remove, reorder, and set the start scene, which is stored in the project. A "Go to scene" rule block, with the play session switching scenes. An "Add title screen" helper built from ordinary operations: title text, background, and a Play button that goes to the first level. Every new operation has a catalog entry, an agent tool and a parity test. Builder Play, the web player and the Arcade start at the start scene. A headless test taps Play and reaches level 1. Android emulator evidence. |
 | C10 | Preset games (R5), [#75](https://github.com/aioanei/spawnkit/issues/75) | **New game** offers Blank plus three presets made in the builder: Coin Dash, Tap Targets and Maze Run. Each has a title screen and uses only standard blocks. Each preset passes the engine's checks and reaches its goal in a headless play test. Two of them double as C8 games. |
 | C10b | Brain-rot presets and guidance (R5), [#84](https://github.com/aioanei/spawnkit/issues/84) | Aura Farmer and NPC Dodge, with original characters. Every preset gets a How it works scene from its title and lists the rule blocks it uses in the picker. Scripted players win, and idle players lose. |
-| C11 | Accounts, public Arcade and hosted AI (R8, R7), [#76](https://github.com/aioanei/spawnkit/issues/76), [ADR-0010](../adr/0010-accounts-on-ktor.md), [ADR-0011](../adr/0011-hosted-ai-model-proxy.md) | The server forwards the assistant's model calls with the owner's key, for signed-in accounts. A $20 monthly cap and a per-account fair-use limit apply; everything is free. Email and Google sign-in on the Ktor server; Apple is designed, and built once the owner has an Apple developer membership. Server session tokens are kept in device secure storage. Creators own, update and unpublish their Arcade games, and sync projects with revisions. Players sign in on a server-rendered Arcade page to like games and see the games they played. SQLite through Exposed. Deployed to the owner's public HTTPS host. Tests use fake token issuers and captured mail. Android emulator evidence. |
-| C14 | Game-wide values, spawning and randomness (R3, R4), [#88](https://github.com/aioanei/spawnkit/issues/88) | Named game-wide numbers that keep their value across scenes, a spawn block, and random positions and numbers from the seeded generator, each with catalog entries, agent tools and parity tests. A score is kept across two levels in a headless test; seeded runs repeat on every core target. |
+| C11 | Accounts, public Arcade and hosted AI (R8, R7), [#76](https://github.com/aioanei/spawnkit/issues/76), [ADR-0010](../adr/0010-accounts-on-ktor.md), [ADR-0011](../adr/0011-hosted-ai-model-proxy.md) | The server forwards the assistant's model calls with the owner's key, for signed-in accounts. A $20 monthly cap and a per-account fair-use limit apply; everything is free. Email and Google sign-in on the Ktor server; Apple is designed, and built once the owner has an Apple developer membership. Server session tokens are kept in device secure storage. Creators own, update and unpublish their Arcade games, and sync projects with revisions. Players sign in on a server-rendered Arcade page to like games and see the games they played. SQLite through Exposed. Deployed to the owner's public HTTPS host. Tests use fake token issuers and captured mail. Android emulator evidence. Built as C11a (the server: database, email accounts, owned games, the AI proxy), C11b (sign-in, hosted AI and My games in the builder) and C11c (Google sign-in, sync, the Arcade page and deployment, after C13). |
+| C14 | Game blocks for complete games (R3, R4), [#88](https://github.com/aioanei/spawnkit/issues/88) | Named game-wide numbers that keep their value across scenes, spawning (with direction, hidden templates and "Leaves the screen"), random positions and numbers from the seeded generator, deterministic platform physics (body and solid components; on the ground, jump, push), camera follow, and tycoon economy blocks (add one value to another, number ≥ value), each with catalog entries, agent tools and parity tests. A score is kept across two levels in a headless test; seeded runs repeat on every core target; physics tests cover landing, jumping, walls and moving platforms. |
+| C15 | Home screen kit and images (R4, R5), [#89](https://github.com/aioanei/spawnkit/issues/89) | Button, Text and Image palette pieces; grouping through `ReparentObject` with a catalog entry and builder controls; PNG assets in projects with limits (ADR-0012) imported on Android and desktop and drawn by every canvas; "+ Title screen" layouts with Levels, Shop and How it works. Codec migration and image round-trip tests; UI tests in both layouts; an emulator screenshot of a home screen with an imported logo. |
 | C12 | Test ads and test purchases with real counts (R8), [#77](https://github.com/aioanei/spawnkit/issues/77) | In-game purchases in test mode: a shop scene whose items unlock things through game-wide values, labelled "TEST PURCHASE: no money is charged", really counted and shown in the earnings view. Ads are off by default. When on, a labelled test banner shows on the title screen and an occasional test interstitial between scenes, through an `AdHost` interface with no ad SDK. Views and clicks from Arcade plays are really counted; builder previews never count. A creator statistics view shows views, clicks and click-through rate, revenue "$0.00 — test ads earn nothing", and an optional estimate labelled as such. |
+| C17 | Template library (R5), [#91](https://github.com/aioanei/spawnkit/issues/91) | Three complete templates from builder-call recipes, each with a kit home screen, levels, game-wide values, a shop with test purchases, ad spots, win and lose scenes and How it works: Sky Hopper (platformer), Star Defender (shooter) and Toaster Tycoon. The picker groups Complete games and Starters. Scripted bots finish each template. |
+| C16 | Character Forge from photos (R7), [#90](https://github.com/aioanei/spawnkit/issues/90) | A photo, with consent, becomes Pixel art, Cartoon and Chibi characters through the server's image route (OpenAI image editing, shared $20 cap, ADR-0013); pixel art is post-processed deterministically. The chosen image becomes a Character object. The same capability is an agent tool that asks before uploading. Fake-gateway tests; emulator evidence from photo to playable character. |
 | C13 | AI-first building of complete games (R7, R4), [#85](https://github.com/aioanei/spawnkit/issues/85), [ADR-0011](../adr/0011-hosted-ai-model-proxy.md) | New game starts with "Describe your game…". The AI plans and builds a complete game with the builder's tools: a home screen, levels, game-wide values, a shop with test purchases, ad spots, and win and lose scenes. The chat is the main panel. AI changes apply right away as one undo step with Revert. Manual tools are unchanged. Bring-your-own-key leaves the normal UI. A live recording of a whole game built from one prompt; UI tests in both layouts; Android emulator evidence. |
 | C8 | Demos and submission (R6, R9) | At least two mechanically different games built in the builder on the same engine. README with run instructions for all targets, screencast script, essay. |
+| C18 | 2.5D looks, stretch (R3), [#92](https://github.com/aioanei/spawnkit/issues/92) | Only if time remains, never inside C8's days. Parallax depth on transforms, an isometric camera view with y-ordered drawing, and named layers, on the existing 2D renderer. Render-list tests and screenshots; gameplay unchanged. |
 
-C9–C13 were added by the owner on 2026-11-22; C10b and C13 later that day. Design:
+C9–C13 were added by the owner on 2026-11-22; C10b and C13 later that day. On 2026-11-23 the owner expanded C14 and
+added C15–C17, with C18 as a stretch item. Design:
 [title screens, presets, accounts, test ads and AI-first](../design/2026-11-22-title-screens-presets-accounts-ads.md).
 
-Order of work: C1 → C2 → C3 → C4 → C5 → C6 → C7 → C9 → C10 → C10b → C11 → C14 → C12 → C13 → C8, with documentation
-kept current per PR.
+Order of work: C1 → C2 → C3 → C4 → C5 → C6 → C7 → C9 → C10 → C10b → C11a → C11b → C14 → C15 → C12 → C17 → C16 → C13 →
+C11c → C8, then C18 only if time remains, with documentation kept current per PR.
 Each C-item takes only the subset of its R-step needed by the slice, and its stated dependencies must be done first:
 
 - C2 needs C1.
@@ -224,17 +229,22 @@ Each C-item takes only the subset of its R-step needed by the slice, and its sta
 - C11 needs C6, and C7's secure storage.
 - C14 needs C9.
 - C12 needs C9, C11 and C14 (purchases unlock through game-wide values).
-- C13 needs C7, C11, C12 and C14, so the AI can build complete games with all of them.
+- C15 needs C5 and C9.
+- C17 needs C12, C14 and C15.
+- C16 needs C11 (hosted AI) and C15 (images in projects).
+- C13 needs C7, C11, C12 and C14–C17, so the AI can build complete games with all of them.
+- C18 needs C1 only; it never takes C8's days.
 - C8 needs all of the above.
 
-For C9–C14, C8 keeps 5–7 Dec. The owner decided that nothing is trimmed (2026-11-22). The order below is only a
-safety net, used if C8's reserved days are at risk, after telling the owner:
-1. Google sign-in. Email stays.
-2. The interstitial placement.
-3. The estimate line.
-4. Played games.
-5. Duplicate and reorder in the scene list.
-6. Public deployment, falling back to a local demo that says so.
+For C9–C17, C8 keeps 5–7 Dec. The owner decided that nothing is trimmed (2026-11-22, again 2026-11-23). The order
+below is only a safety net, used if C8's reserved days are at risk, after telling the owner:
+1. C18, the stretch item.
+2. Google sign-in. Email stays.
+3. The interstitial placement.
+4. The estimate line.
+5. Played games.
+6. Duplicate and reorder in the scene list.
+7. Public deployment, falling back to a local demo that says so.
 
 C5 (an R5 subset) is needed by R4's save/reopen usability loop. C6 before C7 orders independent work; Koog depends on
 editor operations, not on publishing.
