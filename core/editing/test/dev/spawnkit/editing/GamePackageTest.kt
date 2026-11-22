@@ -45,6 +45,20 @@ class GamePackageTest {
     }
 
     @Test
+    fun runtimeCompatibilityIncludesFirstGenerationPackages() {
+        val pkg = GamePackage.of(project)
+        val json = GamePackageCodec.encode(pkg)
+        assertContains(json, "\"runtimeVersion\":1")
+        assertEquals(pkg, GamePackageCodec.decode(json.replace("\"runtimeVersion\":1,", "")))
+        val problem =
+            assertFailsWith<IllegalArgumentException> {
+                GamePackageCodec.decode(json.replace("\"runtimeVersion\":1", "\"runtimeVersion\":2"))
+            }
+        assertContains(problem.message.orEmpty(), "runtime")
+        assertFailsWith<IllegalArgumentException> { GamePackageCodec.decode("[".repeat(220) + "]".repeat(220)) }
+    }
+
+    @Test
     fun defaultsToTheProjectNameAndFirstScene() {
         val pkg = GamePackage.of(project)
         assertEquals("Coin run", pkg.title)

@@ -222,6 +222,13 @@ public object ProjectCodec {
     /** Bounds the parser's stack before JSON parsing; brackets inside strings and escapes do not count. */
     private fun checkSizeAndDepth(text: String) {
         require(text.length <= MAX_FILE_CHARS) { "This project is too large (maximum $MAX_FILE_CHARS characters)" }
+        checkJsonDepth(text)
+    }
+
+    internal fun checkJsonDepth(
+        text: String,
+        extraLevels: Int = 0,
+    ) {
         var depth = 0
         var quoted = false
         var escaped = false
@@ -242,11 +249,12 @@ public object ProjectCodec {
 
                     '{', '[' -> {
                         depth++
-                        require(depth <= 128) { "This project's data is nested too deeply" }
+                        require(depth <= 128 + extraLevels) { "This project's data is nested too deeply" }
                     }
 
                     '}', ']' -> {
                         depth--
+                        require(depth >= 0) { "This project's data is incomplete" }
                     }
                 }
             }

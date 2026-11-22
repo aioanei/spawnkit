@@ -10,7 +10,7 @@ import dev.spawnkit.app.persistence.ProjectSession
 import dev.spawnkit.app.persistence.rememberProjectFiles
 
 /** SpawnKit's creator palette: a calm dark workspace with bright accents that keep the game content in focus. */
-private val SpawnKitColors =
+internal val SpawnKitColors =
     darkColorScheme(
         primary = Color(0xFF4FC3F7),
         secondary = Color(0xFFB39DDB),

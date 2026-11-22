@@ -10,6 +10,8 @@ kotlin {
         }
     }
     sourceSets {
+        androidMain.get().kotlin.srcDir("src@jvmAndAndroid")
+        jvmMain.get().kotlin.srcDir("src@jvmAndAndroid")
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
             implementation(libs.compose.uiToolingPreview)

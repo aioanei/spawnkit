@@ -69,19 +69,21 @@ Toolchain release service (issue #64, [Release Manager build architecture](desig
 `GamePackage.of(project, title, startScene)` validates the release fields, and `GamePackageCodec` encodes them:
 
 ```json
-{"format":"spawnkit-game","packageVersion":1,"title":"Coin Run","startScene":"scene-1",
+{"format":"spawnkit-game","packageVersion":1,"runtimeVersion":1,"title":"Coin Run","startScene":"scene-1",
  "requiredComponents":["gameplay:tag","graphics:shape","graphics:transform"],
  "project":{"format":"spawnkit-project","schemaVersion":1, "...": "..."}}
 ```
 
 - The project is the unchanged project-file document, so decoding reuses all project validation.
+- `runtimeVersion` identifies the player compatibility level. The first v1 packages omitted this field and use level 1.
+  The player explains when a release requires a different runtime.
 - `requiredComponents` is derived from the project. A package whose list disagrees with its contents is reported as
   damaged instead of being trusted.
 - Players call `missingComponents(runtime)` before running, and explain which capabilities they lack.
 - Foreign files, newer package versions, unknown start scenes, malformed JSON and oversized input fail with
   player-facing messages. Parser details are not shown.
-- Evidence: `GamePackageTest` (6 tests) passes on JVM, Android host and mingwX64 (Kotlin Toolchain) and on JS and
-  Wasm (Gradle Node runners).
+- The Release Manager and Arcade call `releaseProblem(runtime, host)` to validate component settings and compile
+  the rules for every scene against the destination player's installed capabilities before publishing.
 
 ## Recovery boundary
 

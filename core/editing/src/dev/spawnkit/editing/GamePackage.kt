@@ -1,5 +1,9 @@
 package dev.spawnkit.editing
 
+import dev.spawnkit.program.PrepareResult
+import dev.spawnkit.program.Program
+import dev.spawnkit.program.ProgramHost
+import dev.spawnkit.program.prepareProgram
 import dev.spawnkit.runtime.Runtime
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -55,10 +59,31 @@ public data class GamePackage internal constructor(
     }
 }
 
+/** Checks every scene against the destination player's components, settings and rule host before releasing the project. */
+public fun GamePackage.releaseProblem(
+    runtime: Runtime,
+    host: ProgramHost,
+): String? {
+    project.capabilityProblems(runtime).firstOrNull()?.let { return it }
+    for (scene in project.scenes) {
+        for (obj in scene.objects) {
+            if (obj.rules.isEmpty()) continue
+            val result = prepareProgram(Program("rules.${obj.id}", handlers = obj.rules), host)
+            if (result is PrepareResult.Invalid) {
+                return "${scene.name} / ${obj.name}: ${result.diagnostics.first().message}"
+            }
+        }
+    }
+    return null
+}
+
 /** Versioned encoding of [GamePackage]. Unsupported or damaged packages fail explicitly. */
 public object GamePackageCodec {
     /** Current package format version. */
     public const val PACKAGE_VERSION: Int = 1
+
+    /** Portable player compatibility level, independent of the package envelope and workspace schema. */
+    public const val RUNTIME_VERSION: Int = 1
 
     /** Maximum UTF-16 characters in a package: a maximal project file plus the package envelope. */
     public const val MAX_PACKAGE_CHARS: Int = ProjectCodec.MAX_FILE_CHARS + 64 * 1024
@@ -72,22 +97,31 @@ public object GamePackageCodec {
             linkedMapOf(
                 "format" to JsonPrimitive(FORMAT),
                 "packageVersion" to JsonPrimitive(PACKAGE_VERSION),
+                "runtimeVersion" to JsonPrimitive(RUNTIME_VERSION),
                 "title" to JsonPrimitive(pkg.title),
                 "startScene" to JsonPrimitive(pkg.startScene),
                 "requiredComponents" to JsonArray(pkg.requiredComponents.map(::JsonPrimitive)),
                 "project" to project,
             ),
-        ).toString()
+        ).toString().also { require(it.length <= MAX_PACKAGE_CHARS) { "This game package is too large to release" } }
     }
 
     /** Decodes and validates a package. Throws [IllegalArgumentException] explaining, for players, why it cannot be played. */
     public fun decode(text: String): GamePackage {
         if (text.length > MAX_PACKAGE_CHARS) throw unplayable("This game is too large to open")
         return try {
+            ProjectCodec.checkJsonDepth(text, extraLevels = 1)
             val root = Json.parseToJsonElement(text) as? JsonObject ?: damaged("it is not a game file")
             if (root.string("format") != FORMAT) throw PackageProblem("Choose a SpawnKit game package")
             val version = (root["packageVersion"] as? JsonPrimitive)?.takeUnless { it.isString }?.longOrNull
             if (version != PACKAGE_VERSION.toLong()) throw PackageProblem("This game needs a newer SpawnKit player")
+            // Packages from the first v1 player predate the explicit runtime field and use compatibility level 1.
+            if ("runtimeVersion" in root) {
+                val runtimeVersion =
+                    (root["runtimeVersion"] as? JsonPrimitive)?.takeUnless { it.isString }?.longOrNull
+                        ?: damaged("its runtime version is invalid")
+                if (runtimeVersion != RUNTIME_VERSION.toLong()) throw PackageProblem("This game needs a different SpawnKit runtime")
+            }
             val project =
                 try {
                     ProjectCodec.decode((root["project"] as? JsonObject ?: damaged("its game data is missing")).toString())

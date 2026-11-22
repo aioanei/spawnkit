@@ -42,6 +42,7 @@ import kotlinx.coroutines.delay
 fun ProjectMenu(
     session: ProjectSession,
     compact: Boolean = false,
+    onRelease: (() -> Unit)? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }
     var renaming by remember { mutableStateOf(false) }
@@ -75,6 +76,12 @@ fun ProjectMenu(
         MenuAction("Rename game…", "project-rename") {
             expanded = false
             renaming = true
+        }
+        if (onRelease != null) {
+            MenuAction("Release game…", "project-release") {
+                expanded = false
+                onRelease()
+            }
         }
         Text(session.status, Modifier.padding(16.dp), style = MaterialTheme.typography.bodySmall)
         if (session.files.picker == null) {
