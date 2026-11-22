@@ -69,6 +69,7 @@ internal fun SceneList(
             SceneAction("Delete", "scene-delete", editing && scenes.size > 1) {
                 state.applyCatalog("remove_scene", mapOf("scene" to state.sceneId))
             }
+            SceneAction("+ Title screen", "title-add", editing) { state.addTitleScreen() }
         }
     }
     if (renaming) RenameScene(state) { renaming = false }

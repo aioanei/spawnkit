@@ -17,6 +17,8 @@ import dev.spawnkit.editing.capabilityProblems
 import dev.spawnkit.gameplay.Action
 import dev.spawnkit.gameplay.BlockLocation
 import dev.spawnkit.gameplay.BlockPart
+import dev.spawnkit.gameplay.Condition
+import dev.spawnkit.gameplay.Rule
 import dev.spawnkit.gameplay.RuleBlocks
 import dev.spawnkit.gameplay.RuleItem
 import dev.spawnkit.gameplay.StandardEngine
@@ -71,7 +73,13 @@ private fun shape(
     width: Double,
     height: Double,
     color: Long,
-) = ComponentDoc("graphics:shape", mapOf("form" to form, "width" to width, "height" to height, "color" to color))
+    layer: Long = 0,
+) = ComponentDoc("graphics:shape", mapOf("form" to form, "width" to width, "height" to height, "color" to color, "layer" to layer))
+
+private fun text(
+    value: String,
+    size: Double,
+) = listOf(ComponentDoc("graphics:text", mapOf("text" to value, "size" to size, "layer" to 2L)))
 
 /**
  * UI state of the builder, shared by every platform layout. All project changes go through [Editor] operations, so
@@ -322,6 +330,34 @@ class EditorState(
                 }
             }
         }
+
+    /**
+     * Adds a title screen as one undoable step and opens it (C9). It is an ordinary scene made with catalog operations:
+     * a background, the game's name and a tagged Play button whose rule goes to the current start scene. The new scene
+     * becomes the start scene. Creators change everything afterwards with the inspector and rules.
+     */
+    fun addTitleScreen() {
+        val current = project
+        val next = current.nextId
+        val title = "scene-$next"
+        val button = "obj-${next + 3}"
+        val play = Rule(Condition.Tapped, actions = listOf(Action.GoToScene(current.scenes.first().id)))
+        val operations =
+            listOf(
+                EditOperation.AddScene("Title"),
+                EditOperation.AddObject(title, "Background", components = placed(0.0, 0.0) + shape("rectangle", 16.0, 9.0, 0xFF1A237E, -1)),
+                EditOperation.AddObject(title, "Title text", components = placed(0.0, -2.0) + text(current.name, 1.5)),
+                EditOperation.AddObject(
+                    title,
+                    "Play button",
+                    components = placed(0.0, 2.0) + shape("rectangle", 4.0, 1.5, 0xFF43A047, 1) + tag("play-button"),
+                ),
+                EditOperation.AddObject(title, "Play label", parent = button, components = placed(0.0, 0.0) + text("Play", 0.8)),
+                EditOperation.SetRules(title, button, RuleBlocks.compile(listOf(play))),
+                EditOperation.MoveScene(title, 0),
+            )
+        if (apply(EditOperation.Batch(operations, "Add title screen")) is OperationResult.Applied) selectScene(title)
+    }
 
     /** Opens scene [id] for editing. */
     fun selectScene(id: String) {

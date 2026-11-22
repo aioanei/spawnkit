@@ -10,8 +10,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.runDesktopComposeUiTest
-import dev.spawnkit.app.editor.EditorScreen
 import dev.spawnkit.app.editor.DefaultPresets
+import dev.spawnkit.app.editor.EditorScreen
 import dev.spawnkit.app.editor.EditorState
 import dev.spawnkit.editing.EditOperation
 import dev.spawnkit.editing.OperationResult
@@ -63,7 +63,9 @@ class SceneListUiTest {
         state.add(DefaultPresets.first { it.name == "Box" })
         val box = checkNotNull(state.selection)
         val level = (state.apply(EditOperation.AddScene("Level")) as OperationResult.Applied).createdIds.single()
-        state.apply(RuleOperations.addRule(state.project, state.sceneId, box, Rule(Condition.Tapped, actions = listOf(Action.GoToScene(level)))))
+        state.apply(
+            RuleOperations.addRule(state.project, state.sceneId, box, Rule(Condition.Tapped, actions = listOf(Action.GoToScene(level)))),
+        )
         assertEquals(emptyList(), state.ruleProblems(box))
 
         state.apply(EditOperation.RemoveScene(level))
