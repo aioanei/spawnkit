@@ -1,6 +1,28 @@
 # SpawnKit progress
 
-## Current checkpoint — C7c assistant UI (2026-11-22)
+## Current checkpoint — C9 title screens (2026-11-22)
+
+- **Branch.** `feat/74-title-screens`, stacked on C7c (PR #79). Plan:
+  [C9 title screens](docs/plans/2026-11-22-c9-title-screens.md).
+  [Issue #74](https://github.com/aioanei/spawnkit/issues/74).
+- **Added.**
+  - Scene operations `RemoveScene` and `MoveScene`, with catalog entries `add_scene`, `rename_scene`,
+    `remove_scene` and `move_scene`. Position 1 is the start scene, so the format is unchanged.
+  - A scene list in the builder: in the Scenes section (expanded) and the Scene tab (phones).
+  - A "Go to scene" block over a `goToScene` program effect. Players switch to a fresh world after the tick
+    (`StandardEngine.playSession`).
+  - "Add title screen" as one undoable `Batch`.
+  - Releases default to the first scene.
+- **Evidence.**
+  - New tests: `SceneOperationsTest` 3, `GoToSceneTest` 3, `PlaySessionScenesTest` 3, `SceneListUiTest` 3,
+    `TitleScreenTest` 2.
+  - `OperationParityTest` now covers all 19 entries.
+  - On the API 36 emulator, real taps added a title screen and played it. Tapping its Play button on the canvas
+    reached the level (`docs/media/android-title-*.png`).
+- **Cut.** Duplicate scene, from the cut line. Numbers do not carry across scenes yet.
+- **Next.** C10 preset games ([#75](https://github.com/aioanei/spawnkit/issues/75)).
+
+## Previous checkpoint — C7c assistant UI (2026-11-22)
 
 - **Branch.** `feat/69-assistant-ui`, stacked on the docs PR #78. Plan:
   [C7c assistant UI](docs/plans/2026-11-22-c7c-assistant-ui.md).

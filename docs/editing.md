@@ -24,7 +24,8 @@ All changes go through typed `EditOperation`s, validated against the installed d
 - components: `AddComponent` (defaults) and `RemoveComponent`;
 - properties: `SetProperty`;
 - rules: `SetRules` (C4b), which replaces an object's rules as one undoable step;
-- scenes: `AddScene` and `RenameScene`;
+- scenes: `AddScene`, `RenameScene`, `RemoveScene` (a game keeps at least one scene) and `MoveScene` (C9). The
+  first scene is the start scene, so moving a scene to position 1 makes players see it first;
 - `Batch`: atomic, with one undo step and a label.
 
 A rejection returns a plain-language message and changes nothing. IDs are minted above every ID the project or the

@@ -33,12 +33,13 @@ checked arguments into an `EditOperation`. The editor validates the operation ag
 | Category | Entries | Package |
 |---|---|---|
 | Project | `rename_project` | `EditingOperations` |
+| Scenes (C9) | `add_scene`, `rename_scene`, `remove_scene`, `move_scene` (position 1 is the start scene) | `EditingOperations` |
 | Objects | `add_object`, `remove_object`, `rename_object`, `duplicate_object` | `EditingOperations` |
 | Components | `add_component`, `remove_component`, `set_property` | `EditingOperations` |
 | Rules | `add_rule`, `add_block`, `change_block`, `remove_block`, `move_rule`, `duplicate_rule`, `remove_rule` | `RuleOperations` (`core/gameplay`) |
 
-`AddScene`, `RenameScene` and `ReparentObject` exist as editor operations but have no builder control yet. They join
-the catalog together with their controls, never for agents alone. `OperationCatalogTest` classifies every
+`ReparentObject` exists as an editor operation but has no builder control yet. It joins the catalog together with its
+control, never for agents alone. The scene operations joined in C9 with the builder's scene list. `OperationCatalogTest` classifies every
 `EditOperation` subtype with an exhaustive `when`, so a new operation does not compile until it is placed.
 
 `core/gameplay` now depends on `core/editing`, as any extension package that adds editor capabilities will. Rule
@@ -94,7 +95,7 @@ Koog layer (C7b) adapts these definitions; it does not hand-write a tool per ope
   defaults make a block. Limits and wrong parts are explained. A literal JSON `add_rule` builds exactly the compiled
   Score + collect rule and undoes in one step. "Make coins worth 5" works through `change_block`. Moving and
   duplicating renumber block rules and keep advanced rules.
-- `OperationParityTest` (`app/shared`, JVM Compose). For each of the 15 catalog entries it does the change with real
+- `OperationParityTest` (`app/shared`, JVM Compose). For each of the 19 catalog entries (15 in C7a, plus the four scene entries in C9) it does the change with real
   builder taps in one editor and with the derived JSON tool in another. Both give the same workspace, rule problems,
   capability check, undo label and project after undo. A catalog entry without a case fails the test.
 
@@ -104,4 +105,4 @@ Koog layer (C7b) adapts these definitions; it does not hand-write a tool per ope
   adapter is in [AI Studio core](ai-studio.md) (C7b).
 - Enabling and disabling rules, which needs a stored flag in the project format.
 - Agent-authored advanced rules (portable programs), and explanations from play traces.
-- Catalog entries and controls for scenes and reparenting.
+- A catalog entry and control for reparenting.

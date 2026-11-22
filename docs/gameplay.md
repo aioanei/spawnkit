@@ -73,6 +73,29 @@ to agents. A `Rule` is a When block, optional And-if blocks and Do blocks; it is
 - **Timing.** The world counts ticks from 1: "Game starts" is `tick() == 1` and "Every N seconds" is
   `tick() % (60·N) == 0`.
 
+## Scenes and "Go to scene" (C9)
+
+- **The block.** `Action.GoToScene(sceneId)` compiles to a program effect request named `goToScene`, with the scene
+  ID as its payload. It is checked every tick like any rule.
+- **Switching.** After each tick, `StandardEngine.takeSceneRequest(world)` returns the last request once.
+  `PlaySession` (`player/playerKit`, created with `StandardEngine.playSession`) then switches to a fresh world of that
+  scene. Builder Play, exported players and the web player all behave this way.
+  - Going to the scene that is already playing restarts it.
+  - Pointers pressed on the old scene are dropped.
+  - Numbers do not carry across scenes yet.
+- **Missing scenes.**
+  - Rule edits cannot add a "Go to scene" for a missing scene.
+  - A target removed later is a rule problem on the block ("that scene was removed").
+  - During play, such a request is ignored with a message.
+- **Title screens.** The builder's "Add title screen" applies one `Batch` of catalog operations:
+  - a Title scene with a background, the game's name, and a Play button tagged `play-button`;
+  - the button's rule "When tapped → Go to scene ⟨previous start scene⟩";
+  - moving the Title scene to position 1, so it becomes the start scene.
+
+  Everything is then edited with the normal inspector and rules.
+- **Evidence.** Android emulator screenshots: [editing](media/android-title-edit.png),
+  [playing the title](media/android-title-play.png), [after tapping Play](media/android-title-level.png).
+
 ## Catalog and rule operations (C7a)
 
 [`RuleBlockCatalog`](operation-catalog.md#rule-block-catalog-coregameplay-ruleblockcatalog) describes every block:
