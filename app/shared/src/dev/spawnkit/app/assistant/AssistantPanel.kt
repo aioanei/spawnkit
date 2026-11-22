@@ -50,6 +50,11 @@ fun AssistantPanel(
     val scroll = rememberScrollState()
     // On phones the panel is short: bring the newest progress, question or proposal into view.
     LaunchedEffect(assistant.outcome, assistant.progress.size, assistant.notice) {
+        // With nothing new to show (opened, accepted or rejected), go back to the examples and the prompt.
+        if (assistant.outcome == null && assistant.progress.isEmpty() && assistant.notice == null) {
+            scroll.animateScrollTo(0)
+            return@LaunchedEffect
+        }
         withFrameNanos { } // let the new content be measured first
         scroll.animateScrollTo(scroll.maxValue)
     }

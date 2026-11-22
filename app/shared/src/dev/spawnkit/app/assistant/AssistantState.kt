@@ -57,7 +57,7 @@ class AssistantState(
     var useLive: Boolean
         get() = live && hasKey
         set(value) {
-            if (value == live || value && !hasKey) return
+            if (value == live || (value && !hasKey)) return
             live = value
             reset(null)
         }
@@ -119,7 +119,7 @@ class AssistantState(
 
     /** Answers the assistant's question and continues the same proposal. */
     fun answer(text: String) {
-        if (running || outcome !is AgentOutcome.Question || text.isBlank()) return
+        if (dropIfStale() || running || outcome !is AgentOutcome.Question || text.isBlank()) return
         start(keepProgress = true) { session, onEvent -> session.answer(text.trim(), onEvent) }
     }
 
@@ -132,6 +132,7 @@ class AssistantState(
             is AcceptResult.Accepted -> {
                 outcome = null
                 notice = null
+                progress.clear()
             }
 
             is AcceptResult.Refused -> {
@@ -144,6 +145,7 @@ class AssistantState(
         session?.reject()
         outcome = null
         notice = null
+        progress.clear()
     }
 
     fun cancel() {
@@ -170,6 +172,11 @@ class AssistantState(
                     outcome = null
                     notice = CANCELLED
                     throw cancelled
+                } catch (problem: Exception) {
+                    // Never let an unexpected failure crash the builder; the session's changes are not applied.
+                    active.reject()
+                    outcome = null
+                    notice = "The assistant stopped: ${problem.message ?: "unknown problem"}. Nothing in your game changed."
                 } finally {
                     running = false
                     job = null
@@ -206,13 +213,18 @@ class AssistantState(
         return AgentSession(editor.engine, editor.editor, editor.sceneId, chosen).also { session = it }
     }
 
-    /** Drops the proposal when the project or scene it was made for is gone. */
+    /** Drops a proposal or question whose project or scene is gone; `true` when one was dropped. */
     private fun dropIfStale(): Boolean {
         val made = sessionFor ?: return false
         if (made.second == editor.projectGeneration && made.third == editor.sceneId) return false
-        val hadProposal = outcome is AgentOutcome.Proposal
-        reset(if (hadProposal) DROPPED else null)
-        return hadProposal
+        val dropped =
+            when (outcome) {
+                is AgentOutcome.Proposal -> DROPPED
+                is AgentOutcome.Question -> DROPPED_QUESTION
+                else -> null
+            }
+        reset(dropped)
+        return dropped != null
     }
 
     private fun reset(message: String?) {
@@ -240,6 +252,7 @@ class AssistantState(
         private const val LABEL_LENGTH = 60
         private const val CANCELLED = "Cancelled. Nothing in your game changed."
         private const val DROPPED = "Your game changed, so the proposal was dropped. Nothing was applied."
+        private const val DROPPED_QUESTION = "Your game changed, so the question was dropped. Nothing was applied."
 
         /** Plain cost text for [cost] from a [live] model or not. */
         internal fun costText(

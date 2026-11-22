@@ -178,6 +178,26 @@ class AssistantStateTest {
         }
 
     @Test
+    fun answeringAfterTheProjectChangedDropsTheQuestion() =
+        runTest {
+            val script = Scripted(listOf(call(AgentToolbox.ASK, """{"question":"Which coin?","options":["Coin"]}""")))
+            secrets.write(AssistantState.KEY_NAME, "sk-test")
+            val assistant = assistant { script }
+            assistant.prompt = "Change the coin"
+            assistant.ask()
+            advanceUntilIdle()
+            assertIs<AgentOutcome.Question>(assistant.outcome)
+
+            editor.loadProject(Project.blank("Other game"))
+            assistant.answer("Coin")
+            advanceUntilIdle()
+
+            assertNull(assistant.outcome)
+            assertFalse(assistant.running)
+            assertEquals("Your game changed, so the question was dropped. Nothing was applied.", assistant.notice)
+        }
+
+    @Test
     fun failingModelExplainsAndKeepsTheKey() =
         runTest {
             secrets.write(AssistantState.KEY_NAME, "sk-test")
