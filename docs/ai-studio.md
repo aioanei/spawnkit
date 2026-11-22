@@ -81,7 +81,31 @@ example: `Rule 1 of Coin (When touching players) never ran: "Touching players" w
 
   It reads the real game with `look_at_game` and finds objects by tag. It then stages rules through the same tools,
   checks them, or answers from a real rule trace. Any other prompt gets an explanation and changes nothing. It never
-  calls a model or the network. It is not a recording of a model: no live session has been recorded yet.
+  calls a model or the network. It is not a recording of a model.
+
+### Recording live sessions
+
+Live sessions are recorded on GitHub, so the key never has to be on a developer machine:
+
+- **The key.** It is the `ANTHROPIC_API_KEY` repository secret. Only the `record-ai-session` workflow reads it; tests
+  and the builder never do.
+- **Starting a run.** The owner starts the workflow by hand from the Actions tab. It never runs on pull requests or
+  pushes. With an empty form it records the demo set:
+  - a collect game built from a blank game with one prompt;
+  - a bouncing enemy added to Coin Dash;
+  - two follow-up edits to Tap Targets.
+
+  A custom prompt can be recorded instead, on a blank game or a preset.
+- **Playing the creator.** `SessionRecorder` (`ai`) sends the prompts, answers each clarifying question with its first
+  option and accepts every proposal. Its replay drives a `ReplayModel` through the same steps, and tests check that
+  it rebuilds the same game. Tests use the scripted demo and fakes only.
+- **The command.** `tools/agentRecorder` (`./kotlin run -m agentRecorder -- <out-dir>`) wraps the live model in
+  `CappedModel`, which stops calling once the run's dollar budget is spent. The default is $3, and at most $20. Each
+  prompt also has at most 20 model calls.
+- **Output.** For each scenario it writes `<name>.json`, the replayable session, and `<name>.spawnkit`, the game after
+  accepting every proposal. It also prints a summary of every outcome and the cost.
+- **Review first.** The files are uploaded as the run's artifacts. They are reviewed before any is committed as a
+  replay, and replays always show their model and date.
 
 ## Assistant UI (C7c)
 
@@ -161,7 +185,7 @@ Without a key, the labelled scripted demo answers its three example prompts.
 
 - A visual preview of a proposal in the viewport before accepting; the review lists the steps in words.
 - Secure key storage on iOS (Keychain) and the web.
-- Recordings of live model sessions: they need an owner-provided key, and none is used without the owner's
-  consent. Until then, demos use the labelled scripted fixtures.
+- Committed recordings of live sessions. The recording workflow exists, but no run has been reviewed and committed
+  yet; until then, demos use the labelled scripted fixtures.
 - Hand-written Koog workflows (Level Designer, Character Forge) that compose the derived tools, and agent-authored
   advanced rules.

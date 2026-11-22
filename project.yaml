@@ -23,6 +23,7 @@ modules:
   - render
   - samples/runtimeProbe
   - server
+  - tools/agentRecorder
 
 plugins:
   - ./plugins/embedded-templates

@@ -91,6 +91,7 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
 | `player/webPlayer` | Toolchain `wasm-js/app` | universal web player that plays `game.spawnkit.json` beside its `index.html` |
 | `player/shared` + `player/*App` | KMP + Compose | preserved legacy exported-game shells checkpoint (`b2bf830`), adapted at R6 |
 | `server` | Ktor (JVM) | publishing, arcade hosting, validation |
+| `tools/agentRecorder` | JVM app | records live assistant sessions for labelled replays; run only by the manual `record-ai-session` workflow |
 
 This table distinguishes existing responsibilities where affected; it is not a claim that planned modules exist.
 Future boundaries are in the revision. Modules that do not exist yet are created by the milestone that

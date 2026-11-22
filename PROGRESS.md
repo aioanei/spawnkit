@@ -1,6 +1,21 @@
 # SpawnKit progress
 
-## Current checkpoint — C10 preset games (2026-11-22)
+## Current checkpoint — live session recorder (2026-11-22)
+
+- **Branch.** `feat/69-session-recorder`, stacked on C10 (PR #81). Part of C7
+  ([#69](https://github.com/aioanei/spawnkit/issues/69)): recorded live sessions.
+- **Added.**
+  - `SessionRecorder` (`ai`) plays the creator: it sends prompts, answers questions with their first option, accepts
+    each proposal and records the replies. Its replay rebuilds the same game.
+  - `tools/agentRecorder`, a JVM command with a dollar budget (`CappedModel`, default $3), and the manual
+    `record-ai-session` workflow. The workflow reads the owner's `ANTHROPIC_API_KEY` repository secret, added
+    2026-11-22.
+- **Evidence.** `SessionRecorderTest` 4 and `RecorderTest` 4, using the scripted demo and fakes only. No live run yet:
+  the workflow can only be started once it is on `main`.
+- **Next.** After #78–#82 merge, the owner starts the workflow; the recordings are reviewed, then committed as
+  replays. Then the brain-rot presets with guidance (owner, 2026-11-22), and C11 accounts.
+
+## Previous checkpoint — C10 preset games (2026-11-22)
 
 - **Branch.** `feat/75-preset-games`, stacked on C9 (PR #80). Plan:
   [C10 preset games](docs/plans/2026-11-22-c10-preset-games.md).
