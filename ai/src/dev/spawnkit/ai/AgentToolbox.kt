@@ -97,6 +97,12 @@ public class AgentToolbox(
         input: JsonObject,
     ): ToolOutcome {
         if (engine.operations[name] == null) return ToolOutcome.Refused(problem("There is no tool called '$name'"))
+        // Inspection, checks and traces are about this session's scene, so it stays; the creator can delete it by hand.
+        if (name == REMOVE_SCENE && (input["scene"] as? JsonPrimitive)?.content == sceneId) {
+            return ToolOutcome.Refused(
+                problem("The assistant is working on this scene, so it cannot delete it. The creator can delete it in the scene list."),
+            )
+        }
         val built = engine.operations.buildFromJson(name, input, staged.catalogContext())
         return when (val result = staged.apply(built)) {
             is OperationResult.Rejected -> {
@@ -402,5 +408,6 @@ public class AgentToolbox(
         public const val FINISH: String = "finish"
 
         private const val MAX_TRACE_SECONDS = 120.0
+        private const val REMOVE_SCENE = "remove_scene"
     }
 }
