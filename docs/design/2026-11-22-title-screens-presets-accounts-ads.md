@@ -32,6 +32,8 @@ contest deadline. They run after C7c and before C8.
 | Paying for AI | **No bring-your-own-key** after launch; **subscriptions** come later. **Everything is free for now**, with a **$20 monthly cap** on AI spending. |
 | AI changes | **Apply right away**, each as one undo step with a **Revert** button, instead of Accept/Reject. |
 | Scope | **Nothing is trimmed** to make room: "we will be done until then". |
+| Complete games (2026-11-23) | The chat should let "even an inexperienced person" get **a fully functional game**: a home screen, levels, places for ads, in-game purchases and the business side. The owner is sure the schedule holds. |
+| Purchases before the contest | **Test mode**, like the ads: no money is charged, purchases are really counted. Real payments need Google Play and App Store developer accounts and store builds, which are not available before 7 Dec, so they come after launch with the subscriptions. This is my call, stated to the owner. |
 
 ## 3. Goals, non-goals and anti-goals
 
@@ -46,7 +48,7 @@ contest deadline. They run after C7c and before C8.
 **Non-goals before the contest.**
 - Apple sign-in (until the membership exists).
 - High scores, and merging of conflicting project edits.
-- Real ad networks, in-app purchases, payouts and the marketplace.
+- Real ad networks, real in-app payments, payouts and the marketplace. Test-mode purchases are in scope (C12).
 - iOS and web creator sign-in.
 
 **Anti-goals: these would be failures even if the feature works.**
@@ -174,7 +176,7 @@ Games already stored as files are imported as unowned.
 - the host's environment variables;
 - later, the Apple membership and key.
 
-## 7. C12 — Test ads with real counts
+## 7. C12 — Test ads and test purchases with real counts
 
 **Builder.**
 - The Release Manager gets an **Ads** section, off by default, with two placements:
@@ -201,16 +203,19 @@ Games already stored as files are imported as unowned.
 
 ## 8. Schedule and cut line
 
-C7c, C9, C10 and C10b were all finished on 22 Nov, ahead of the first schedule. The schedule from 23 Nov:
+C7c, C9, C10 and C10b were all finished on 22 Nov, ahead of the first schedule. The schedule from 23 Nov, after the
+owner asked for complete games:
 
 | Dates | Work |
 |---|---|
 | 23–26 Nov | C11 accounts, with the hosted AI proxy |
-| 27–29 Nov | C13 AI-first building |
-| 30 Nov – 1 Dec | C12 test ads |
-| 2–3 Dec | Public deployment, live AI recordings, polish |
-| 4 Dec | Buffer |
+| 27–28 Nov | C14 game-wide values, spawning and randomness |
+| 29 Nov – 1 Dec | C12 test ads and test purchases |
+| 2–4 Dec | C13 AI-first building of complete games; public deployment; live AI recordings |
 | 5–7 Dec | C8 |
+
+No buffer day is left. The order puts C13 last before C8, so the AI can build with everything the other increments
+add.
 
 The owner decided that nothing is trimmed. The cut order below is only a safety net: it is used only if C8's reserved
 days are at risk, and the owner is told first. High scores and Apple are already out.
@@ -240,8 +245,19 @@ The decision is [ADR-0011](../adr/0011-hosted-ai-model-proxy.md).
 
 **AI-first builder.**
 - **Start with a prompt.** New game opens with "Describe your game…" first, and the presets below it as starting
-  points. The AI builds the whole game from one prompt: scenes, a title screen, objects, rules, a check in the real
-  engine and a rule trace.
+  points.
+- **A complete game from one prompt (owner, 2026-11-23).** Even a creator with no experience gets a fully functional
+  game:
+  - a home screen (title screen) and several levels;
+  - game-wide values such as coins and lives that carry between levels, plus spawning and randomness (C14);
+  - a shop with test purchases and ads at chosen spots (C12);
+  - win and lose scenes.
+
+  The AI first plans the game (screens, levels, mechanics, shop, ad spots), then builds every part with the builder's
+  tools. It checks each scene in the real engine and traces the main rules. A short summary says what it made and
+  how to change it by hand.
+- **What "app" means before the contest.** The game plays in the builder, publishes to the Arcade as a link and
+  exports for the web. Play Store and App Store apps need the build service (K5, K6) and come after the contest.
 - **The chat is the main panel.** It is docked beside the canvas on wide screens and is the first tab on phones. Steps
   stream in while the canvas updates.
 - **Apply right away, with Revert.** Each AI message is applied as one undo step and gets a **Revert** button. Review
@@ -259,7 +275,25 @@ The decision is [ADR-0011](../adr/0011-hosted-ai-model-proxy.md).
 - UI tests of prompt-first New game and Revert, in both layouts.
 - Android emulator screenshots.
 
-## 10. Left to the builder
+## 10. C14 — Game-wide values, spawning and randomness ([#88](https://github.com/aioanei/spawnkit/issues/88))
+
+Complete games need three general capabilities the engine lacks today. Each gets rule blocks with catalog entries,
+agent tools and parity tests (ADR-0009), and none is specific to a genre (ADR-0006):
+- **Game-wide values.** Named numbers such as Coins, Lives and Level that keep their value across "Go to scene".
+  Blocks change, set, compare and show them. A play starts fresh, except for what purchases unlock (C12).
+- **Spawning.** "Spawn a copy of ⟨object⟩ at ⟨place⟩" during play, so enemies, falling objects and shots can appear.
+  Copies run their own rules.
+- **Randomness.** Random positions and numbers in blocks, from the engine's seeded random generator, so tests repeat
+  exactly on every target.
+
+**C12 in-game purchases (test mode)**, added to §7:
+- A shop is an ordinary scene. Items are objects with a price and a "Buy" rule that grants something through a
+  game-wide value, such as a skin, extra lives or a level.
+- Every purchase is labelled "TEST PURCHASE: no money is charged". Purchases from Arcade plays are really counted
+  and appear in the creator's earnings view next to test ads, with revenue $0.00.
+- Real payments (Google Play Billing, App Store, Stripe) plug in behind the same host interface after launch.
+
+## 11. Left to the builder
 
 The following are left to the increment's implementation plan:
 - table and column details;

@@ -37,7 +37,7 @@ decisions that change the plan. The full requirement list lives in the owner's c
 | Koog agentic AI Studio | **Planned (R7), missing** | No `ai` module yet. |
 | Autonomous characters | **Deferred after contest** | Programs and resources are the runtime foundation; no LLM needed at runtime. |
 | Story and level tools | **Deferred after contest**, except a basic level editor | — |
-| Ads, IAP, self and managed publishing, payouts | **Test ads with real counts planned before the contest (C12, decision 7).** Real ad networks, IAP, publishing services and payouts stay deferred | Keep the host-service seams in R8. |
+| Ads, IAP, self and managed publishing, payouts | **Test ads and test purchases with real counts planned before the contest (C12, decisions 7 and 9).** Real ad networks, real in-app payments, publishing services and payouts stay deferred | Keep the host-service seams in R8. |
 | Accounts, cloud sync, version history | **Planned before the contest (C11, decision 7):** email and Google sign-in, owned Arcade games, project sync with revisions, player accounts. Apple sign-in and version history follow | [ADR-0010](../adr/0010-accounts-on-ktor.md). |
 | Creator dashboard and analytics | **Ad statistics planned before the contest (C12, decision 7)**; a broader dashboard stays deferred | Real counts only; revenue is shown as zero in test mode. No fabricated analytics. |
 | Security: credentials, safe user logic | **Partially implemented** | Bounded deterministic program execution (R1d). Credential handling is still to be designed with AI and release work. |
@@ -86,3 +86,9 @@ decisions that change the plan. The full requirement list lives in the owner's c
    - C11 gains the hosted proxy, and C13 is the AI-first builder.
 
    See [ADR-0011](../adr/0011-hosted-ai-model-proxy.md).
+9. **Complete games from the chat (2026-11-23).** Even an inexperienced person should get a fully functional game from
+   the chat: a home screen, levels, ad spots, in-game purchases and the business side.
+   - C14 adds game-wide values, spawning and randomness.
+   - C12 adds test-mode purchases next to test ads.
+   - C13 builds complete games with both.
+   - Real payments and store apps come after launch.
