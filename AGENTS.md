@@ -27,7 +27,8 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
   PRs #54 and #55 are merged.
 - **Done:** C5, project persistence (PR #57).
 - **Done:** K1 Kotlin Toolchain adoption, C6 Release Manager and Arcade, and C7a–C7b (catalogs and AI Studio core).
-- **Now:** C7c, the assistant UI. Then C9 title screens, C10 presets, C11 accounts and C12 test ads (owner decision
+- **Done:** C7c, the assistant UI.
+- **Now:** C9 title screens. Then, C10 presets, C11 accounts and C12 test ads (owner decision
   2026-11-22, [design](docs/design/2026-11-22-title-screens-presets-accounts-ads.md),
   [ADR-0010](docs/adr/0010-accounts-on-ktor.md)), and C8 last, in the
   [contest delivery track](docs/plans/2026-11-20-engine-foundation-revision.md#contest-delivery-track). Track K
@@ -82,7 +83,7 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
 | `core/editing` | KMP, all targets | workspace model (project/scenes/objects/component values/rules), typed validated operations, undo/redo, scene→world building with identity mapping; operation catalog, parameter metadata and derived JSON-Schema agent tools ([catalog](docs/operation-catalog.md)) |
 | `core/api` | KMP, all targets | client/server DTOs |
 | `render` | KMP + Compose | shared `RuntimeCanvas` for general-runtime frames (editor and players); legacy platformer `GameView` |
-| `ai` | KMP (client platforms: no `mingwX64`/`linuxX64`) | AI Studio core ([docs](docs/ai-studio.md)): agent sessions over staged changes, the agent toolbox (derived catalog tools, inspection, checks, headless rule traces, clarifying questions), recording and labelled replay, and the Koog 1.3.0 live-model adapter |
+| `ai` | KMP (client platforms: no `mingwX64`/`linuxX64`) | AI Studio core ([docs](docs/ai-studio.md)): agent sessions over staged changes, the agent toolbox (derived catalog tools, inspection, checks, headless rule traces, clarifying questions), recording and labelled replay, the labelled scripted demo, and the Koog 1.3.0 live-model adapter; the builder's assistant UI and key storage live in `app/shared` (`assistant/`) |
 | `app/shared` + `app/*App` | KMP + Compose | creator app: responsive builder (viewport, hierarchy, generated inspector, play) on Android/desktop/iOS/web, plus platform entry points |
 | `player/playerKit` | KMP + Compose | shared game player (play session, loop, surface, touch controls) used by the builder and exported players; `GamePlayer(pkg)` |
 | `player/webPlayer` | Toolchain `wasm-js/app` | universal web player that plays `game.spawnkit.json` beside its `index.html` |

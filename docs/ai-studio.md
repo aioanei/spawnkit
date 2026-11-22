@@ -83,6 +83,41 @@ example: `Rule 1 of Coin (When touching players) never ran: "Touching players" w
   checks them, or answers from a real rule trace. Any other prompt gets an explanation and changes nothing. It never
   calls a model or the network. It is not a recording of a model: no live session has been recorded yet.
 
+## Assistant UI (C7c)
+
+The builder shows the assistant as an **Assistant** tab in the expanded right panel and an **AI** tab on phones.
+`AssistantState` (`app/shared`) drives one `AgentSession` per model, scene and project:
+
+- **Asking.** The panel has a prompt field, and example prompts while the scripted demo answers. Ask is disabled
+  while the game plays or the prompt is blank.
+- **While it works.** Progress shows in plain words: "Looked at the game", "Staged: Add a rule to Coin", "Checked the
+  game". **Cancel** stops the session, and the game is unchanged.
+- **Review.**
+  - A proposal shows the summary and its steps, and says that nothing has changed yet.
+  - **Accept** applies it as one undo step. **Reject** discards it.
+  - Accepting after hand edits is refused with the reason. Loading another project, or switching scene, drops the
+    proposal with a notice.
+- **Questions and answers.** Clarifying questions show their options as buttons, plus a reply field. Answers and
+  failures are shown in plain words.
+- **Labels.** The model label (live, or the scripted demo) and the cost are always visible. The demo and replays
+  show "No cost (no model is called)".
+- **Ask AI.** "Ask AI" on Rules and Properties opens the assistant with a prompt about the selected object.
+- **Publishing.** Publishing to the Arcade now asks for confirmation (ADR-0009). Agents still have no publish tool.
+
+**Keys.** Settings take an Anthropic API key in a masked field. The key is stored only in the platform `SecretStore`
+and handed only to the live model client. It never appears in the UI after saving, nor in projects, exports, logs,
+transcripts or tool inputs.
+
+| Platform | Where the key is kept |
+|---|---|
+| Android | Android Keystore (AES-GCM key that never leaves the Keystore; encrypted value in private preferences) |
+| Windows | DPAPI, encrypted for the signed-in user (`%APPDATA%\SpawnKit\secrets`) |
+| macOS | login keychain through `security` (the key is briefly visible in that tool's arguments to the same user) |
+| Linux | Secret Service through `secret-tool`, when installed; otherwise memory only |
+| iOS, web | memory only, until SpawnKit closes; the assistant says so |
+
+Without a key, the labelled scripted demo answers its three example prompts.
+
 ## Evidence
 
 - `StagedChangesTest` (`core/editing`, 3 tests): the workspace is untouched until accept; accept is one undo step;
@@ -101,11 +136,31 @@ example: `Rule 1 of Coin (When touching players) never ran: "Touching players" w
   to a Koog descriptor, messages and tool results convert, and replies come back as tool calls with usage. The
   Anthropic factory requires a key and never exposes it.
 - `ai` passes on JVM, Android host, JS and Wasm (Node). CI covers iOS.
+- C7c:
+  - `DemoModelTest` (5 tests): the demo builds the collect rule on every coin and plays to "Score: 1". It adds four
+    arrow-key rules, answers "why" from a real trace, explains missing objects and unknown prompts without changes,
+    and is labelled as a script.
+  - `AssistantStateTest` (9 tests): accept is one undo step. Reject, cancel and failures change nothing. Questions
+    continue the proposal. Ask is disabled while playing. Loading a project drops a proposal or question. A stale
+    accept is refused. The key is never shown.
+  - `DesktopSecretStoreTest` (4 tests): DPAPI round trip with no plain text on disk, delete, safe names, and memory
+    storage that says it is temporary.
+  - `AssistantUiTest` (5 tests, phone and desktop): demo, accept and undo; reject and cancel; a question answered by
+    an option; Ask AI prefills the prompt; the key is masked and removable.
+  - `ReleaseUiTest` covers the publish confirmation, including dismissing it.
+  - Android emulator (API 36), `tools/android-assistant-smoke.py`, with real taps and no key:
+    - add Player, Coin and Score;
+    - ask the demo for the collect rule, review it and accept;
+    - ask for arrow keys and accept;
+    - play to "Score: 1".
+
+  Screenshots: [phone review](media/android-assistant-review.png), [play](media/android-assistant-play.png),
+  [compact](media/assistant-compact.png), [expanded](media/assistant-expanded.png).
 
 ## Not yet
 
-- C7c: the assistant UI in compact and expanded layouts (review, accept and undo, reject, progress, cancel, cost,
-  questions), "Ask AI" on the Rules panel and inspector, secure key storage, and a publish confirmation.
+- A visual preview of a proposal in the viewport before accepting; the review lists the steps in words.
+- Secure key storage on iOS (Keychain) and the web.
 - Recordings of live model sessions: they need an owner-provided key, and none is used without the owner's
   consent. Until then, demos use the labelled scripted fixtures.
 - Hand-written Koog workflows (Level Designer, Character Forge) that compose the derived tools, and agent-authored

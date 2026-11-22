@@ -72,6 +72,10 @@ C7b adds the [AI Studio core](ai-studio.md) in `ai`. Agents propose `StagedChang
 through the derived catalog tools. They inspect, check and trace rules in the real engine. The creator accepts a
 proposal as one undoable step or rejects it. Koog 1.3.0 provides live models; labelled replays need no keys.
 
+C7c adds the assistant UI in `app/shared` (`AssistantState`, `AssistantPanel`): compact and expanded layouts, Ask AI,
+a labelled keyless scripted demo (`DemoModel`), and keys in a platform `SecretStore` (Android Keystore, Windows DPAPI,
+macOS keychain, Linux Secret Service). Publishing to the Arcade asks for confirmation.
+
 This is still a subset of R4–R5. Per-resource storage, dependency locks, broader extension proof, complete language
 authoring and the novice usability studies remain acceptance gates in the revised plan.
 
