@@ -35,6 +35,15 @@ jobs:
           key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
           restore-keys: konan-${{ runner.os }}-
 
+      # buildWebPlayer runs the Kotlin Toolchain; without this cache every run downloads its distribution and
+      # dependencies from Maven Central again, which can be refused with HTTP 429 (main, 2026-11-22).
+      - name: Cache Kotlin Toolchain distribution, JDKs and dependencies
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/JetBrains/Kotlin
+          key: kotlin-toolchain-${{ runner.os }}-${{ hashFiles('kotlin', 'gradle/libs.versions.toml', '**/module.yaml', 'toolchain/*.yaml') }}
+          restore-keys: kotlin-toolchain-${{ runner.os }}-
+
       - name: Lint (Spotless + ktlint)
         run: ./gradlew --console=plain spotlessCheck
 
