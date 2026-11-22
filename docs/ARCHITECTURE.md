@@ -81,17 +81,16 @@ authoring and the novice usability studies remain acceptance gates in the revise
 
 - `project.yaml` lists the modules. Each module's `module.yaml` declares its product (`kmp/lib`, `android/app`,
   `jvm/app`, `wasm-js/app`) and applies templates from `toolchain/`.
-- Local plugins in `plugins/` generate the embedded templates and run ktlint.
+- Local plugins in `plugins/` generate the embedded templates, run ktlint and package the universal Wasm player.
 - Sources use the Toolchain layout, which Gradle also reads while the two builds coexist.
 - Gradle remains the required CI check, plus numbered exceptions, until the K2 gate. See
   [Kotlin Toolchain](kotlin-toolchain.md) for verified evidence per target.
 
-The same toolchain is the Release Manager's build engine for compiled releases. A Ktor build service generates a
-release workspace (player template, validated game package, release profile, vetted release plugins) and builds it in
-isolated remote workers. Creators, including phone-only creators, never install or operate it. Web export and
-Arcade publishing keep using the prebuilt universal player. See the
-[Release Manager build architecture](design/2026-11-20-release-manager-kotlin-toolchain.md). The build service is
-planned (K5–K6), not implemented.
+The Android and desktop Release Manager and the Ktor Arcade share the prebuilt Wasm player. The builder checks
+components, settings and authored rules before exporting or uploading. The Arcade repeats those checks and assigns
+each accepted package its own immutable play URL. See the [release flow and service limits](release.md).
+K5–K6 cover compiled releases on remote workers. See the
+[Release Manager build architecture](design/2026-11-20-release-manager-kotlin-toolchain.md).
 
 ## Big picture
 
@@ -153,6 +152,7 @@ JS, Wasm, mingwX64, linuxX64 and the iOS simulator. See [ADR-0004](adr/0004-dete
 | Engine/editor/programming/extension foundation | broader R1 comparisons and R2–R9 work remain unfinished |
 | Guided creation, accessibility and novice-usability release gate | builder slice exists; complete novice study and remaining accessibility gates are not claimed |
 | Browser deployment, editor, validation, AI Studio, publishing | preserved roadmap, revised R0–R9 dependency order |
+| Agentic parity: every manual capability (rules first) operable by prompt | accepted requirement ([ADR-0009](adr/0009-agentic-parity.md)); planned with C7/R7, not implemented |
 
 The targeted [renderer browser smoke check](../tools/render-smoke/README.md) runs an isolated headless Chrome
 against the real Wasm preview. It checks keyboard/coin/jump behavior, actual tab focus loss, simultaneous touch

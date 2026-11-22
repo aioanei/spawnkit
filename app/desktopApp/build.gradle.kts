@@ -15,6 +15,8 @@ dependencies {
     implementation(libs.compose.uiToolingPreview)
 }
 
+sourceSets.main { resources.srcDir(rootProject.tasks.named("bundleWebPlayer")) }
+
 compose.desktop {
     application {
         mainClass = "dev.spawnkit.app.MainKt"

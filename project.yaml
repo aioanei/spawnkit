@@ -18,6 +18,7 @@ modules:
   - player/webPlayer
   - plugins/embedded-templates
   - plugins/ktlint
+  - plugins/web-player-bundle
   - render
   - samples/runtimeProbe
   - server
@@ -25,3 +26,4 @@ modules:
 plugins:
   - ./plugins/embedded-templates
   - ./plugins/ktlint
+  - ./plugins/web-player-bundle

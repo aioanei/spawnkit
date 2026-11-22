@@ -67,3 +67,30 @@ android {
         res.srcDir("res")
     }
 }
+
+abstract class CopyWebPlayerResources : DefaultTask() {
+    @get:InputDirectory
+    abstract val bundle: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val output: DirectoryProperty
+
+    @TaskAction
+    fun copyBundle() {
+        val file = "spawnkit/web-player.zip"
+        bundle
+            .file(file)
+            .get()
+            .asFile
+            .copyTo(output.file(file).get().asFile, overwrite = true)
+    }
+}
+
+androidComponents.onVariants { variant ->
+    val resources =
+        tasks.register<CopyWebPlayerResources>("copy${variant.name.replaceFirstChar { it.uppercase() }}WebPlayer") {
+            dependsOn(rootProject.tasks.named("bundleWebPlayer"))
+            bundle.set(rootProject.layout.buildDirectory.dir("tasks/_server_bundle@web-player-bundle"))
+        }
+    variant.sources.resources?.addGeneratedSourceDirectory(resources, CopyWebPlayerResources::output)
+}

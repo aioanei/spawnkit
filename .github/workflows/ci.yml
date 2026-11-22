@@ -88,14 +88,33 @@ jobs:
       - name: Lint (ktlint local plugin)
         run: ./kotlin check ktlint
 
+      - name: Build the universal player for the creator and Arcade
+        run: ./kotlin build -m webPlayer -v release
+
       - name: Tests (JVM, Android host, linuxX64)
         run: ./kotlin test -p jvm -p android -p linuxX64
 
       - name: Tests (Wasm, headless browser)
         run: ./kotlin test -p wasmJs
 
-      - name: Build apps (Android APK, desktop, Wasm web creator and universal web player)
-        run: ./kotlin build -m androidApp -m desktopApp -m webApp -m webPlayer
+      - name: Build apps (Android APK, desktop, Wasm web creator)
+        run: ./kotlin build -m androidApp -m desktopApp -m webApp
 
       - name: Package (server and desktop executable JARs, unsigned Android release bundle)
         run: ./kotlin package -m server -m desktopApp -m androidApp
+
+      - name: Verify the same player ships in the Android creator, desktop creator and Arcade
+        shell: python
+        run: |
+          from hashlib import sha256
+          from pathlib import Path
+          from zipfile import ZipFile
+
+          tasks = Path("build/tasks")
+          digests = set()
+          for pattern in ("_androidApp_buildAndroidDebug/*.apk", "_desktopApp_executableJarJvm/*.jar", "_server_executableJarJvm/*.jar"):
+              artifact, = tasks.glob(pattern)
+              with ZipFile(artifact) as archive:
+                  player, = (name for name in archive.namelist() if name.endswith("spawnkit/web-player.zip"))
+                  digests.add(sha256(archive.read(player)).hexdigest())
+          assert len(digests) == 1, "The creator and Arcade packages contain different players"
