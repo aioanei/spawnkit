@@ -34,6 +34,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -53,6 +54,11 @@ import dev.spawnkit.ai.KoogModel
 import dev.spawnkit.app.assistant.AssistantPanel
 import dev.spawnkit.app.assistant.AssistantState
 import dev.spawnkit.app.assistant.SecretStore
+import dev.spawnkit.app.account.AccountScreen
+import dev.spawnkit.app.account.AccountState
+import dev.spawnkit.app.account.sharedHttpClient
+import dev.spawnkit.ai.AccountClient
+import dev.spawnkit.ai.AccountService
 import dev.spawnkit.app.assistant.rememberSecretStore
 import dev.spawnkit.app.persistence.ProjectDialogs
 import dev.spawnkit.app.persistence.ProjectMenu
@@ -77,19 +83,25 @@ fun EditorScreen(
     releasePlatform: ReleasePlatform = rememberReleasePlatform(),
     secrets: SecretStore = rememberSecretStore(),
     liveModel: (String) -> AgentModel = { KoogModel.anthropic(it) },
+    accountService: (String) -> AccountService = { AccountClient(it, sharedHttpClient) },
 ) {
     var releasing by remember { mutableStateOf(false) }
+    var accountOpen by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val accounts = remember(secrets) { AccountState(secrets, scope, accountService) }
+    LaunchedEffect(accounts) { accounts.start() }
     val assistant = remember(state, secrets) { AssistantState(state, secrets, scope, liveModel) }
+    val openAccount = { accountOpen = true }
     BoxWithConstraints(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).safeDrawingPadding()) {
         if (maxWidth < CompactWidth) {
-            CompactLayout(state, projectSession, assistant) { releasing = true }
+            CompactLayout(state, projectSession, assistant, openAccount) { releasing = true }
         } else {
-            ExpandedLayout(state, projectSession, assistant) { releasing = true }
+            ExpandedLayout(state, projectSession, assistant, openAccount) { releasing = true }
         }
     }
     if (projectSession != null) ProjectDialogs(projectSession)
     if (releasing) ReleaseManager(state, releasePlatform) { releasing = false }
+    if (accountOpen) AccountScreen(accounts, secrets.where) { accountOpen = false }
 }
 
 @Composable
@@ -97,10 +109,11 @@ private fun ExpandedLayout(
     state: EditorState,
     session: ProjectSession?,
     assistant: AssistantState,
+    onAccount: () -> Unit,
     onRelease: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
-        Toolbar(state, compact = false, session, onRelease)
+        Toolbar(state, compact = false, session, onAccount, onRelease)
         Row(Modifier.weight(1f)) {
             Panel(Modifier.width(260.dp).fillMaxHeight()) {
                 Column {
@@ -144,6 +157,7 @@ private fun CompactLayout(
     state: EditorState,
     session: ProjectSession?,
     assistant: AssistantState,
+    onAccount: () -> Unit,
     onRelease: () -> Unit,
 ) {
     var tab by remember { mutableIntStateOf(0) }
@@ -154,7 +168,7 @@ private fun CompactLayout(
         expanded = true
     }
     Column(Modifier.fillMaxSize()) {
-        Toolbar(state, compact = true, session, onRelease)
+        Toolbar(state, compact = true, session, onAccount, onRelease)
         Viewport(state, Modifier.weight(1f).fillMaxWidth(), touchControls = true)
         StatusBar(state, session)
         if (state.play == null) {
@@ -221,6 +235,7 @@ private fun Toolbar(
     state: EditorState,
     compact: Boolean,
     session: ProjectSession?,
+    onAccount: () -> Unit,
     onRelease: () -> Unit,
 ) {
     Surface(color = MaterialTheme.colorScheme.surface, tonalElevation = 2.dp) {
@@ -229,7 +244,7 @@ private fun Toolbar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            if (session != null) ProjectMenu(session, compact, onRelease)
+            if (session != null) ProjectMenu(session, compact, onRelease, onAccount)
             Text(
                 if (compact && session != null) {
                     ""

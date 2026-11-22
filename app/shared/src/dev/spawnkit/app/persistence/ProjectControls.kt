@@ -43,6 +43,7 @@ fun ProjectMenu(
     session: ProjectSession,
     compact: Boolean = false,
     onRelease: (() -> Unit)? = null,
+    onAccount: (() -> Unit)? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }
     var renaming by remember { mutableStateOf(false) }
@@ -81,6 +82,12 @@ fun ProjectMenu(
             MenuAction("Release game…", "project-release") {
                 expanded = false
                 onRelease()
+            }
+        }
+        if (onAccount != null) {
+            MenuAction("Account…", "project-account") {
+                expanded = false
+                onAccount()
             }
         }
         Text(session.status, Modifier.padding(16.dp), style = MaterialTheme.typography.bodySmall)
