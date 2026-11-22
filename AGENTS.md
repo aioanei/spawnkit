@@ -66,21 +66,21 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
 |---|---|---|
 | `project.yaml`, `toolchain/` | Kotlin Toolchain | module list and module templates (`kotlin`, `android`, `core-library`, `compose`, `compose-library`, `lint`) |
 | `plugins/embedded-templates`, `plugins/ktlint` | Toolchain local plugins | generated `EmbeddedTemplates`; `ktlint` check and `ktlintFormat` command |
-| `build-logic/` | Gradle included build (coexistence) | convention plugins `spawnkit.kmp.core`, `spawnkit.kmp.compose`, `spawnkit.quality`; read the Toolchain layout |
+| `build-logic/` | Gradle included build (coexistence) | convention plugins `spawnkit.kmp.core`, `spawnkit.kmp.client`, `spawnkit.kmp.compose`, `spawnkit.quality`; read the Toolchain layout |
 | `core/model` | KMP, all targets | existing v1 document schema, IDs, serialization and migrations; legacy import boundary in the target design |
 | `core/templates` | KMP, all targets | existing embedded template fixtures; preserve during migration |
 | `core/engine` | KMP, all targets | preserved tested platformer runtime and compatibility regression baseline |
 | `core/runtime` | KMP, all targets | provisional headless world/component/scheduler and explicit checkpoint/replay APIs; no legacy model dependency |
 | `core/program` | KMP, all targets | portable program executor: typed programs, type checking, resumable bytecode VM, atomic segments, checkpointed waits |
 | `core/graphics` | KMP, all targets | general 2D presentation: transform, shape, sprite, text and camera components with descriptors; render lists, hit testing, view transforms |
-| `core/gameplay` | KMP, all targets | tags, numbers, seeded random, touching/tapping and rule functions; friendly rule blocks (`RuleBlocks`); `StandardEngine` installs presentation, gameplay, input actions and rules for builder and players |
+| `core/gameplay` | KMP, all targets | tags, numbers, seeded random, touching/tapping and rule functions; friendly rule blocks (`RuleBlocks`) with their catalog (`RuleBlockCatalog`) and `RuleOperations`; `StandardEngine` installs presentation, gameplay, input actions and rules, and exposes the operation catalog; depends on `core/editing` |
 | `samples/runtimeProbe` | KMP, all targets | separately compiled public-API consumer and cross-target extension evidence |
 | `benchmarks/runtimeStorage` | KMP executable (jvm, js, wasmJs, mingwX64, linuxX64) | unshipped runtime storage benchmark harness; public `World` API only |
 | `core/validation` | KMP, all targets | integrity checks, reachability solver, playtest, economy check |
-| `core/editing` | KMP, all targets | workspace model (project/scenes/objects/component values/rules), typed validated operations, undo/redo, scene→world building with identity mapping |
+| `core/editing` | KMP, all targets | workspace model (project/scenes/objects/component values/rules), typed validated operations, undo/redo, scene→world building with identity mapping; operation catalog, parameter metadata and derived JSON-Schema agent tools ([catalog](docs/operation-catalog.md)) |
 | `core/api` | KMP, all targets | client/server DTOs |
 | `render` | KMP + Compose | shared `RuntimeCanvas` for general-runtime frames (editor and players); legacy platformer `GameView` |
-| `ai` | KMP | planned Koog engine/editor capability tools, media providers, record/replay executors |
+| `ai` | KMP (client platforms: no `mingwX64`/`linuxX64`) | AI Studio core ([docs](docs/ai-studio.md)): agent sessions over staged changes, the agent toolbox (derived catalog tools, inspection, checks, headless rule traces, clarifying questions), recording and labelled replay, and the Koog 1.3.0 live-model adapter |
 | `app/shared` + `app/*App` | KMP + Compose | creator app: responsive builder (viewport, hierarchy, generated inspector, play) on Android/desktop/iOS/web, plus platform entry points |
 | `player/playerKit` | KMP + Compose | shared game player (play session, loop, surface, touch controls) used by the builder and exported players; `GamePlayer(pkg)` |
 | `player/webPlayer` | Toolchain `wasm-js/app` | universal web player that plays `game.spawnkit.json` beside its `index.html` |

@@ -47,8 +47,11 @@ import dev.spawnkit.runtime.PropertyDescriptor
 import dev.spawnkit.runtime.ValueKind
 import dev.spawnkit.runtime.Visibility
 
-/** Colors offered by color properties: large touch targets rather than a fiddly picker. */
-private val Swatches =
+/**
+ * Colors offered by color controls, in the inspector and in generated rule-block controls: large touch targets
+ * rather than a fiddly picker.
+ */
+internal val Swatches =
     listOf(
         0xFFF44336,
         0xFFFF9800,
@@ -161,7 +164,7 @@ private fun ComponentSection(
                         "Remove ${descriptor.component.authoring.name}",
                     ),
                 )
-            }) {
+            }, Modifier.testTag("remove-component:${descriptor.component.id}")) {
                 Text("Remove")
             }
         }

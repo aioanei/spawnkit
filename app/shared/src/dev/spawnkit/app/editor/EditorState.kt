@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import dev.spawnkit.editing.BuildResult
 import dev.spawnkit.editing.ComponentDoc
 import dev.spawnkit.editing.EditOperation
 import dev.spawnkit.editing.Editor
@@ -115,6 +116,16 @@ class EditorState(
         val result = editor.apply(operation)
         message = (result as? OperationResult.Rejected)?.message
         return result
+    }
+
+    /**
+     * Applies an operation built by the engine's operation catalog or by typed catalog helpers such as rule operations,
+     * the same path agents use. A rejection keeps the project and shows the explanation.
+     */
+    fun apply(result: BuildResult): OperationResult {
+        val applied = editor.apply(result)
+        message = (applied as? OperationResult.Rejected)?.message
+        return applied
     }
 
     /** Adds [preset] at world point ([x], [y]) and selects it. */

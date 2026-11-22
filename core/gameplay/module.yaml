@@ -12,6 +12,8 @@ dependencies:
   - //core/runtime: exported
   - //core/graphics: exported
   - //core/program: exported
+  # Rule operations are editor capabilities, as an extension package's would be (ADR-0009).
+  - //core/editing: exported
 
 settings:
   android:

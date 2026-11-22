@@ -1,0 +1,300 @@
+package dev.spawnkit.app
+
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.ui.test.ComposeUiTest
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.runDesktopComposeUiTest
+import dev.spawnkit.app.editor.DefaultPresets
+import dev.spawnkit.app.editor.EditorScreen
+import dev.spawnkit.app.editor.EditorState
+import dev.spawnkit.app.persistence.DesktopDraftStore
+import dev.spawnkit.app.persistence.ProjectFile
+import dev.spawnkit.app.persistence.ProjectFilePicker
+import dev.spawnkit.app.persistence.ProjectFiles
+import dev.spawnkit.app.persistence.ProjectSession
+import dev.spawnkit.editing.OperationResult
+import dev.spawnkit.editing.Picked
+import dev.spawnkit.editing.Project
+import dev.spawnkit.editing.buildFromJson
+import dev.spawnkit.editing.capabilityProblems
+import dev.spawnkit.editing.encodeArguments
+import dev.spawnkit.gameplay.Action
+import dev.spawnkit.gameplay.Condition
+import dev.spawnkit.gameplay.Rule
+import dev.spawnkit.gameplay.RuleItem
+import dev.spawnkit.gameplay.Target
+import java.nio.file.Files
+import java.nio.file.Path
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+
+/** Storage for the project menu; parity cases never open or save files. */
+private class ParityFiles : ProjectFiles {
+    private val directory = Files.createTempDirectory(Files.createDirectories(Path.of("build")), "parity-")
+    override val drafts = DesktopDraftStore(directory.resolve("recovery"))
+    override val picker =
+        object : ProjectFilePicker {
+            override fun open(result: (Result<ProjectFile?>) -> Unit) = result(Result.success(null))
+
+            override fun create(
+                suggestedName: String,
+                result: (Result<ProjectFile?>) -> Unit,
+            ) = result(Result.success(null))
+        }
+}
+
+/**
+ * Agentic parity (ADR-0009, issue #69): for every entry of the engine's operation catalog, doing it by hand in the
+ * builder and calling the derived agent tool with JSON give the same workspace, the same validation and the same undo.
+ * A catalog entry without a case here fails the test.
+ */
+@OptIn(ExperimentalTestApi::class)
+class OperationParityTest {
+    /** One capability: the starting game, the creator's taps, and the agent tool's arguments. */
+    private class Case(
+        val setup: EditorState.() -> Unit = {},
+        val ui: ComposeUiTest.(EditorState) -> Unit,
+        val tool: EditorState.() -> Map<String, Any?>,
+    )
+
+    private fun EditorState.id(name: String): String = scene.objects.first { it.name == name }.id
+
+    private fun EditorState.target(name: String): Map<String, Any?> = mapOf("scene" to sceneId, "object" to id(name))
+
+    private fun EditorState.select(name: String) {
+        selection = id(name)
+    }
+
+    private fun EditorState.coinRules(vararg rules: Rule) {
+        setRuleItems(id("Coin"), rules.map { RuleItem.Blocks(it) })
+        select("Coin")
+    }
+
+    private fun ComposeUiTest.tap(tag: String) {
+        val node = onNodeWithTag(tag)
+        runCatching { node.performScrollTo() }
+        node.performClick()
+        waitForIdle()
+    }
+
+    private val touching = Rule(Condition.Touching("player"))
+    private val scoring = Rule(Condition.Touching("player"), actions = listOf(Action.ChangeNumber(Target.Tagged("score"), 1)))
+    private val tapped = Rule(Condition.Tapped, actions = listOf(Action.RemoveSelf))
+    private val tagged = Picked("tagged", mapOf("tag" to "score"))
+
+    private val cases: Map<String, Case> =
+        mapOf(
+            "rename_project" to
+                Case(
+                    ui = {
+                        tap("project-menu")
+                        tap("project-rename")
+                        onNodeWithTag("project-name").performTextReplacement("Coin Rush")
+                        tap("project-name-done")
+                    },
+                    tool = { mapOf("name" to "Coin Rush") },
+                ),
+            "add_object" to
+                Case(
+                    ui = { tap("add:Coin") },
+                    tool = {
+                        val coin = DefaultPresets.first { it.name == "Coin" }
+                        mapOf("scene" to sceneId, "name" to "Coin 2", "components" to coin.components(camera.centerX, camera.centerY))
+                    },
+                ),
+            "remove_object" to Case({ select("Coin") }, { tap("delete") }, { target("Coin") }),
+            "duplicate_object" to Case({ select("Coin") }, { tap("duplicate") }, { target("Coin") }),
+            "rename_object" to
+                Case(
+                    { select("Coin") },
+                    {
+                        onNodeWithTag("field:name").performTextReplacement("Gold")
+                        onNodeWithTag("field:name").performImeAction()
+                        waitForIdle()
+                    },
+                    { target("Coin") + ("name" to "Gold") },
+                ),
+            "add_component" to
+                Case(
+                    { select("Player") },
+                    { tap("add-component:gameplay:number") },
+                    { target("Player") + ("component" to "gameplay:number") },
+                ),
+            "remove_component" to
+                Case(
+                    { select("Coin") },
+                    { tap("remove-component:gameplay:tag") },
+                    { target("Coin") + ("component" to "gameplay:tag") },
+                ),
+            "set_property" to
+                Case(
+                    { select("Coin") },
+                    { state -> tap("inc:${state.id("Coin")}/graphics:transform/x") },
+                    {
+                        val x = scene.find(id("Coin"))!!.component("graphics:transform")!!.values["x"] as Double
+                        target("Coin") + mapOf("component" to "graphics:transform", "property" to "x", "value" to x + 0.5)
+                    },
+                ),
+            "add_rule" to
+                Case(
+                    { select("Coin") },
+                    {
+                        tap("panel:Rules")
+                        tap("add-rule")
+                        tap("kind:Touching")
+                        tap("tag:player")
+                        tap("block-done")
+                    },
+                    { target("Coin") + ("when" to Picked("Touching", mapOf("tag" to "player"))) },
+                ),
+            "add_block" to
+                Case(
+                    { coinRules(touching) },
+                    {
+                        tap("panel:Rules")
+                        tap("rule:0:add-do")
+                        tap("kind:ChangeNumber")
+                        tap("target:score")
+                        tap("block-done")
+                    },
+                    { target("Coin") + mapOf("rule" to 1L, "block" to Picked("ChangeNumber", mapOf("target" to tagged))) },
+                ),
+            "change_block" to
+                Case(
+                    { coinRules(scoring) },
+                    {
+                        tap("panel:Rules")
+                        tap("rule:0:do:0")
+                        repeat(4) { tap("inc:amount") }
+                        tap("block-done")
+                    },
+                    // "Make coins worth 5"
+                    {
+                        target("Coin") +
+                            mapOf(
+                                "rule" to 1L,
+                                "part" to "do",
+                                "position" to 1L,
+                                "block" to Picked("ChangeNumber", mapOf("target" to tagged, "amount" to 5L)),
+                            )
+                    },
+                ),
+            "remove_block" to
+                Case(
+                    { coinRules(scoring.copy(actions = scoring.actions + Action.RemoveSelf)) },
+                    {
+                        tap("panel:Rules")
+                        tap("rule:0:do:1")
+                        tap("block-remove")
+                    },
+                    { target("Coin") + mapOf("rule" to 1L, "part" to "do", "position" to 2L) },
+                ),
+            "move_rule" to
+                Case(
+                    { coinRules(tapped, scoring) },
+                    {
+                        tap("panel:Rules")
+                        tap("rule:1:more")
+                        tap("rule:1:up")
+                    },
+                    { target("Coin") + mapOf("rule" to 2L, "to" to 1L) },
+                ),
+            "duplicate_rule" to
+                Case(
+                    { coinRules(scoring) },
+                    {
+                        tap("panel:Rules")
+                        tap("rule:0:more")
+                        tap("rule:0:duplicate")
+                    },
+                    { target("Coin") + ("rule" to 1L) },
+                ),
+            "remove_rule" to
+                Case(
+                    { coinRules(tapped, scoring) },
+                    {
+                        tap("panel:Rules")
+                        tap("rule:0:delete")
+                    },
+                    { target("Coin") + ("rule" to 1L) },
+                ),
+        )
+
+    /** What both paths must agree on after the change. */
+    private data class Outcome(
+        val project: Project,
+        val undoLabel: String?,
+        val ruleProblems: Map<String, List<String>>,
+        val capabilityProblems: List<String>,
+        val afterUndo: Project,
+    )
+
+    private fun session(case: Case): ProjectSession {
+        val session = ProjectSession(ParityFiles())
+        val state = session.state
+        for (name in listOf("Score", "Coin", "Player")) state.add(DefaultPresets.first { it.name == name })
+        case.setup(state)
+        return session
+    }
+
+    private fun outcome(
+        state: EditorState,
+        before: Project,
+        label: String,
+    ): Outcome {
+        val project = state.project
+        val undoLabel = state.editor.undoLabel
+        val world = state.editor.buildWorld(state.sceneId)
+        val problems = world.diagnostics.mapValues { (_, list) -> list.map { it.message } }
+        val capabilities = project.capabilityProblems(state.engine.runtime)
+        state.undo()
+        assertEquals(before, state.project, "$label: one undo restores the starting game")
+        return Outcome(project, undoLabel, problems, capabilities, state.project)
+    }
+
+    @Test
+    fun everyCatalogOperationGivesTheSameResultByHandAndByAgentTool() {
+        val catalog = EditorState().engine.operations
+        assertEquals(catalog.operations.map { it.id }.toSet(), cases.keys, "Every catalog operation needs a parity case")
+        for ((id, case) in cases) {
+            val byHand =
+                run {
+                    val session = session(case)
+                    val state = session.state
+                    val before = state.project
+                    var result: Outcome? = null
+                    runDesktopComposeUiTest(width = 1440, height = 900) {
+                        setContent { MaterialTheme(colorScheme = darkColorScheme()) { EditorScreen(state, projectSession = session) } }
+                        waitForIdle()
+                        case.ui(this, state)
+                        waitForIdle()
+                        result = outcome(state, before, "$id by hand")
+                    }
+                    checkNotNull(result)
+                }
+            val byAgent =
+                run {
+                    val state = session(case).state
+                    val before = state.project
+                    val spec = checkNotNull(state.engine.operations[id])
+                    val input = encodeArguments(spec.parameters, case.tool(state))
+                    val applied = state.apply(state.engine.operations.buildFromJson(id, input, state.editor.catalogContext()))
+                    assertIs<OperationResult.Applied>(applied, "$id by agent: $applied")
+                    outcome(state, before, "$id by agent")
+                }
+            assertEquals(byHand.project, byAgent.project, "$id: same workspace")
+            assertEquals(byHand.ruleProblems, byAgent.ruleProblems, "$id: same validation")
+            assertEquals(byHand.capabilityProblems, byAgent.capabilityProblems, "$id: same capability check")
+            assertEquals(byHand.undoLabel, byAgent.undoLabel, "$id: same undo step")
+            assertEquals(byHand.afterUndo, byAgent.afterUndo, "$id: same project after undo")
+            check(byHand.project != byHand.afterUndo) { "$id: the case must change the game" }
+        }
+    }
+}
