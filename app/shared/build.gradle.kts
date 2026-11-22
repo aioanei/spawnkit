@@ -18,6 +18,7 @@ kotlin {
             implementation(libs.compose.uiTooling)
         }
         commonMain.dependencies {
+            implementation(project(":ai"))
             implementation(project(":core:editing"))
             implementation(project(":core:gameplay"))
             implementation(project(":render"))
@@ -26,6 +27,8 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
         }
+        // Assistant keys on desktop: Windows DPAPI through JNA (Apache-2.0 / LGPL-2.1).
+        jvmMain.dependencies { implementation(libs.jna.platform) }
         jvmTest.dependencies {
             // Compose UI tests and offscreen screenshots of the builder at phone and desktop sizes.
             implementation(libs.compose.uiTest)

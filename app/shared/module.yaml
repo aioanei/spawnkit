@@ -13,6 +13,7 @@ apply:
   - //toolchain/lint.module-template.yaml
 
 dependencies:
+  - //ai
   - //core/editing
   - //core/gameplay
   - //render
@@ -20,6 +21,10 @@ dependencies:
   - $libs.compose.uiToolingPreview
   - $libs.androidx.lifecycle.viewmodelCompose
   - $libs.androidx.lifecycle.runtimeCompose
+
+# Assistant keys on desktop: Windows DPAPI through JNA (Apache-2.0 / LGPL-2.1).
+dependencies@jvm:
+  - $libs.jna.platform
 
 dependencies@android:
   - $libs.androidx.activity.compose
