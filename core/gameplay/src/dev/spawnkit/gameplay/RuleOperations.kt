@@ -362,10 +362,15 @@ public object RuleOperations {
         val scene = project.scene(sceneId) ?: return BuildResult.Rejected("That scene no longer exists")
         val obj = scene.find(objectId) ?: return BuildResult.Rejected("That object no longer exists")
         val items = RuleBlocks.decompile(obj.rules).toMutableList()
+        val earlierTargets = sceneTargets(items)
         try {
             change(items)
         } catch (problem: RuleProblem) {
             return BuildResult.Rejected(problem.message ?: "This rule change is not possible")
+        }
+        // A change may not add a "Go to scene" to a scene that does not exist; targets that were already there stay.
+        if ((sceneTargets(items) - earlierTargets).any { project.scene(it) == null }) {
+            return BuildResult.Rejected("Go to scene: choose one of the game's scenes")
         }
         return BuildResult.Ready(EditOperation.SetRules(sceneId, objectId, RuleBlocks.compileItems(items), label(obj.name)))
     }
@@ -395,6 +400,14 @@ public object RuleOperations {
             )
         }
     }
+
+    private fun sceneTargets(items: List<RuleItem>): Set<String> =
+        items
+            .filterIsInstance<RuleItem.Blocks>()
+            .flatMap { it.rule.actions }
+            .filterIsInstance<Action.GoToScene>()
+            .map { it.sceneId }
+            .toSet()
 
     private fun checkSize(rule: Rule) {
         if (rule.alsoIf.size > MAX_AND_IF) refuse("A rule can have at most $MAX_AND_IF And if blocks")

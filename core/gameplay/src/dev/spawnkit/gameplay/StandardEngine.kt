@@ -7,10 +7,12 @@ import dev.spawnkit.program.ProgramFeature
 import dev.spawnkit.program.ProgramHost
 import dev.spawnkit.program.ProgramHostBuilder
 import dev.spawnkit.program.ProgramLimits
+import dev.spawnkit.program.TextValue
 import dev.spawnkit.runtime.AuthoringInfo
 import dev.spawnkit.runtime.InputAction
 import dev.spawnkit.runtime.Runtime
 import dev.spawnkit.runtime.RuntimeBuilder
+import dev.spawnkit.runtime.World
 
 /** IDs of the standard input actions. Hosts map keys, buttons and touch controls onto them. */
 public object StandardActions {
@@ -68,6 +70,23 @@ public class StandardEngine(
      * The builder's controls and the agent tools both use these entries (ADR-0009).
      */
     public val operations: OperationCatalog = EditingOperations.catalog + RuleOperations.catalog
+
+    /**
+     * The scene a "Go to scene" block asked for during the last ticks of [world], or `null`. Delivered requests are
+     * acknowledged, so each is returned once. When several rules ask, the last request wins. Players call this after
+     * each tick and switch to a fresh world of that scene.
+     */
+    public fun takeSceneRequest(world: World): String? {
+        var requested: String? = null
+        for (entity in world.entities(programs.behavior)) {
+            val instance = world.get(entity, programs.behavior) ?: continue
+            val pending = instance.pendingEffects
+            if (pending.isEmpty()) continue
+            pending.lastOrNull { it.effect == RuleBlocks.GO_TO_SCENE }?.let { requested = (it.payload as TextValue).value }
+            instance.acknowledgeEffects(pending.last().id)
+        }
+        return requested
+    }
 
     /** Engine defaults. */
     public companion object {

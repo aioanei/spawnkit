@@ -244,7 +244,7 @@ public class Gameplay(
                 IntegerValue(min + it.world.resource(random).nextInt((max - min + 1).toInt()))
             }.function("tick", emptyList(), IntegerType, info("Tick", "Ticks since play started; 60 per second")) {
                 IntegerValue(it.tick)
-            }
+            }.effect(RuleBlocks.GO_TO_SCENE, TextType)
 
     private companion object {
         const val NUMBER_LIMIT = 1_000_000_000_000_000L
