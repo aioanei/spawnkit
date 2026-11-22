@@ -102,9 +102,12 @@ internal object Plays : Table("plays") {
     override val primaryKey = PrimaryKey(account, game)
 }
 
-/** Hosted AI spending per account and UTC day, in millionths of a dollar (ADR-0011). */
+/**
+ * Hosted AI spending per account and UTC day, in millionths of a dollar (ADR-0011). Rows hold no personal data and
+ * deliberately outlive their account, so deleting an account never lowers the month's total under the cap.
+ */
 internal object AiSpend : Table("ai_spend") {
-    val account = long("account_id").references(Accounts.id, onDelete = ReferenceOption.CASCADE)
+    val account = long("account_id")
     val day = varchar("day", 10)
     val microDollars = long("micro_dollars").default(0)
     val calls = integer("calls").default(0)

@@ -18,6 +18,8 @@ dependencies:
   - $libs.koog.anthropic: exported
   - $libs.koog.executor: exported
   - $libs.koog.httpKtor
+  # HostedModel (C11a) talks to SpawnKit's server through the Ktor client that Koog already uses.
+  - $libs.ktor.clientCore: exported
 
 dependencies@jvm:
   - $libs.ktor.clientOkhttp

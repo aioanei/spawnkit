@@ -72,10 +72,8 @@ public class AgentToolbox(
     private val staged: StagedChanges,
     private val sceneId: String,
 ) {
-    private val editing: List<ToolDefinition> = engine.operations.toolDefinitions(engine.runtime)
-
-    /** Every tool, editing tools first. */
-    public val tools: List<ToolDefinition> = editing + readingTools()
+    /** Every tool, editing tools first. They depend only on [engine], so a server can derive the same list. */
+    public val tools: List<ToolDefinition> = definitions(engine)
 
     /** Runs tool [name] with JSON [input]. Unknown tools and bad inputs are refused with an explanation. */
     public fun call(
@@ -267,101 +265,6 @@ public class AgentToolbox(
         return ToolOutcome.Finished("Done.", summary)
     }
 
-    private fun readingTools(): List<ToolDefinition> =
-        listOf(
-            ToolDefinition(
-                LOOK,
-                "Look at the game. Returns the scene ID and every object with its ID, name, component values and rules " +
-                    "as blocks (in the same form the rule tools take). Call it first, and again after changes.",
-                schema(),
-            ),
-            ToolDefinition(
-                COMPONENTS,
-                "Describe the installed components and their properties (IDs, kinds, limits and defaults).",
-                schema(),
-            ),
-            ToolDefinition(
-                CHECK,
-                "Check the game in the real engine, exactly as Play does, and list rule problems. Call it before finishing.",
-                schema(),
-            ),
-            ToolDefinition(
-                TRACE,
-                "Play the game headlessly in the real engine and report which rules ran, when, and which conditions were " +
-                    "never true. Use it to test changes and to explain why a rule did not fire.",
-                schema(
-                    "seconds" to number("How long to play, up to $MAX_TRACE_SECONDS seconds. Default 3."),
-                    "hold" to
-                        JsonObject(
-                            mapOf(
-                                "type" to JsonPrimitive("array"),
-                                "description" to JsonPrimitive("Input actions held while playing, for example input:right."),
-                                "items" to
-                                    schema(
-                                        "action" to
-                                            JsonObject(
-                                                mapOf(
-                                                    "type" to JsonPrimitive("string"),
-                                                    "enum" to JsonArray(engine.actions.keys.map(::JsonPrimitive)),
-                                                ),
-                                            ),
-                                        "from" to number("Second when holding starts."),
-                                        "to" to number("Second when holding stops."),
-                                        required = listOf("action"),
-                                    ),
-                            ),
-                        ),
-                    "objects" to
-                        JsonObject(
-                            mapOf(
-                                "type" to JsonPrimitive("array"),
-                                "items" to JsonObject(mapOf("type" to JsonPrimitive("string"))),
-                                "description" to JsonPrimitive("Object IDs to trace; all objects with rules when omitted."),
-                            ),
-                        ),
-                ),
-            ),
-            ToolDefinition(
-                ASK,
-                "Ask the creator a clarifying question when the request is ambiguous, instead of guessing. The session " +
-                    "waits for the answer.",
-                schema(
-                    "question" to JsonObject(mapOf("type" to JsonPrimitive("string"))),
-                    "options" to
-                        JsonObject(
-                            mapOf(
-                                "type" to JsonPrimitive("array"),
-                                "items" to JsonObject(mapOf("type" to JsonPrimitive("string"))),
-                                "description" to JsonPrimitive("Short suggested answers."),
-                            ),
-                        ),
-                    required = listOf("question"),
-                ),
-            ),
-            ToolDefinition(
-                FINISH,
-                "Finish and summarize the proposed changes in the creator's words. Nothing changes in the game until the " +
-                    "creator accepts.",
-                schema("summary" to JsonObject(mapOf("type" to JsonPrimitive("string"))), required = listOf("summary")),
-            ),
-        )
-
-    private fun schema(
-        vararg properties: Pair<String, JsonElement>,
-        required: List<String> = emptyList(),
-    ): JsonObject =
-        JsonObject(
-            mapOf(
-                "type" to JsonPrimitive("object"),
-                "properties" to JsonObject(mapOf(*properties)),
-                "required" to JsonArray(required.map(::JsonPrimitive)),
-                "additionalProperties" to JsonPrimitive(false),
-            ),
-        )
-
-    private fun number(description: String): JsonObject =
-        JsonObject(mapOf("type" to JsonPrimitive("number"), "description" to JsonPrimitive(description)))
-
     private fun problem(message: String): String =
         JsonObject(mapOf("ok" to JsonPrimitive(false), "problem" to JsonPrimitive(message))).toString()
 
@@ -387,7 +290,7 @@ public class AgentToolbox(
             else -> JsonPrimitive(value.toString())
         }
 
-    /** Names of the reading tools. */
+    /** Names of the reading tools, and the tool definitions for an engine. */
     public companion object {
         /** Look at the staged game. */
         public const val LOOK: String = "look_at_game"
@@ -406,6 +309,105 @@ public class AgentToolbox(
 
         /** Finish with a summary. */
         public const val FINISH: String = "finish"
+
+        /** The tools for [engine]: its operation catalog as editing tools, then the reading tools (ADR-0009). */
+        public fun definitions(engine: StandardEngine): List<ToolDefinition> =
+            engine.operations.toolDefinitions(engine.runtime) + readingTools(engine)
+
+        private fun readingTools(engine: StandardEngine): List<ToolDefinition> =
+            listOf(
+                ToolDefinition(
+                    LOOK,
+                    "Look at the game. Returns the scene ID and every object with its ID, name, component values and rules " +
+                        "as blocks (in the same form the rule tools take). Call it first, and again after changes.",
+                    schema(),
+                ),
+                ToolDefinition(
+                    COMPONENTS,
+                    "Describe the installed components and their properties (IDs, kinds, limits and defaults).",
+                    schema(),
+                ),
+                ToolDefinition(
+                    CHECK,
+                    "Check the game in the real engine, exactly as Play does, and list rule problems. Call it before finishing.",
+                    schema(),
+                ),
+                ToolDefinition(
+                    TRACE,
+                    "Play the game headlessly in the real engine and report which rules ran, when, and which conditions were " +
+                        "never true. Use it to test changes and to explain why a rule did not fire.",
+                    schema(
+                        "seconds" to number("How long to play, up to $MAX_TRACE_SECONDS seconds. Default 3."),
+                        "hold" to
+                            JsonObject(
+                                mapOf(
+                                    "type" to JsonPrimitive("array"),
+                                    "description" to JsonPrimitive("Input actions held while playing, for example input:right."),
+                                    "items" to
+                                        schema(
+                                            "action" to
+                                                JsonObject(
+                                                    mapOf(
+                                                        "type" to JsonPrimitive("string"),
+                                                        "enum" to JsonArray(engine.actions.keys.map(::JsonPrimitive)),
+                                                    ),
+                                                ),
+                                            "from" to number("Second when holding starts."),
+                                            "to" to number("Second when holding stops."),
+                                            required = listOf("action"),
+                                        ),
+                                ),
+                            ),
+                        "objects" to
+                            JsonObject(
+                                mapOf(
+                                    "type" to JsonPrimitive("array"),
+                                    "items" to JsonObject(mapOf("type" to JsonPrimitive("string"))),
+                                    "description" to JsonPrimitive("Object IDs to trace; all objects with rules when omitted."),
+                                ),
+                            ),
+                    ),
+                ),
+                ToolDefinition(
+                    ASK,
+                    "Ask the creator a clarifying question when the request is ambiguous, instead of guessing. The session " +
+                        "waits for the answer.",
+                    schema(
+                        "question" to JsonObject(mapOf("type" to JsonPrimitive("string"))),
+                        "options" to
+                            JsonObject(
+                                mapOf(
+                                    "type" to JsonPrimitive("array"),
+                                    "items" to JsonObject(mapOf("type" to JsonPrimitive("string"))),
+                                    "description" to JsonPrimitive("Short suggested answers."),
+                                ),
+                            ),
+                        required = listOf("question"),
+                    ),
+                ),
+                ToolDefinition(
+                    FINISH,
+                    "Finish and summarize the proposed changes in the creator's words. Nothing changes in the game until the " +
+                        "creator accepts.",
+                    schema("summary" to JsonObject(mapOf("type" to JsonPrimitive("string"))), required = listOf("summary")),
+                ),
+            )
+
+        private fun schema(
+            vararg properties: Pair<String, JsonElement>,
+            required: List<String> = emptyList(),
+        ): JsonObject =
+            JsonObject(
+                mapOf(
+                    "type" to JsonPrimitive("object"),
+                    "properties" to JsonObject(mapOf(*properties)),
+                    "required" to JsonArray(required.map(::JsonPrimitive)),
+                    "additionalProperties" to JsonPrimitive(false),
+                ),
+            )
+
+        private fun number(description: String): JsonObject =
+            JsonObject(mapOf("type" to JsonPrimitive("number"), "description" to JsonPrimitive(description)))
 
         private const val MAX_TRACE_SECONDS = 120.0
         private const val REMOVE_SCENE = "remove_scene"

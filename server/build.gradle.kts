@@ -14,6 +14,7 @@ sourceSets.main { resources.srcDir(rootProject.tasks.named("bundleWebPlayer")) }
 dependencies {
     implementation(project(":core:editing"))
     implementation(project(":core:gameplay"))
+    implementation(project(":ai"))
     implementation(libs.logback)
     implementation(libs.ktor.serverCore)
     implementation(libs.ktor.serverNetty)

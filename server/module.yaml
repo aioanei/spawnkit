@@ -10,6 +10,8 @@ apply:
 dependencies:
   - //core/editing
   - //core/gameplay
+  # Hosted AI (C11a): the wire format, the toolbox definitions and the Koog adapter.
+  - //ai
   - $libs.logback
   - $libs.ktor.serverCore
   - $libs.ktor.serverNetty

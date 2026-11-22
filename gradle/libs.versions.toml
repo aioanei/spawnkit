@@ -66,6 +66,7 @@ jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
 koog-anthropic = { module = "ai.koog:prompt-executor-anthropic-client", version.ref = "koog" }
 koog-executor = { module = "ai.koog:prompt-executor-model", version.ref = "koog" }
 koog-httpKtor = { module = "ai.koog:http-client-ktor", version.ref = "koog" }
+ktor-clientCore = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-clientOkhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
 ktor-clientJs = { module = "io.ktor:ktor-client-js", version.ref = "ktor" }
 ktor-clientDarwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
