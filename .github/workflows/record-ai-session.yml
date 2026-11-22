@@ -1,0 +1,82 @@
+name: record-ai-session
+
+# Records live assistant sessions with the ANTHROPIC_API_KEY repository secret, for labelled replays
+# (docs/ai-studio.md). Started by hand from the Actions tab only: it never runs on pull requests or pushes, and it is
+# not a test (tests never call a live model). Each run has a dollar budget; the recordings and the games the assistant
+# made are uploaded as artifacts for review before anything is committed.
+on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: "One prompt to record instead of the demo set (leave empty for the demo set)"
+        required: false
+        default: ""
+      preset:
+        description: "Game the custom prompt starts from"
+        type: choice
+        options: [blank, coin-dash, tap-targets, maze-run]
+        default: blank
+      budget:
+        description: "Most this run may spend, in US dollars (at most 20)"
+        required: false
+        default: "3"
+
+concurrency:
+  group: record-ai-session
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  record:
+    name: record
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      KOTLIN_CLI_NO_WELCOME_BANNER: "1"
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Cache Kotlin Toolchain distribution, JDKs and dependencies
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/JetBrains/Kotlin
+          key: kotlin-toolchain-${{ runner.os }}-${{ hashFiles('kotlin', 'gradle/libs.versions.toml', '**/module.yaml', 'toolchain/*.yaml') }}
+          restore-keys: kotlin-toolchain-${{ runner.os }}-
+
+      - name: Record sessions with the live model
+        shell: bash
+        # Inputs reach the program through environment variables, never through the script text.
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SPAWNKIT_PROMPT: ${{ inputs.prompt }}
+          SPAWNKIT_PRESET: ${{ inputs.preset }}
+          SPAWNKIT_BUDGET: ${{ inputs.budget }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/recordings"
+          ./kotlin run -m agentRecorder -- "$RUNNER_TEMP/recordings" | tee "$RUNNER_TEMP/recordings/summary.txt"
+
+      - name: Summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo '### Recorded sessions'
+            echo '```'
+            cat "$RUNNER_TEMP/recordings/summary.txt" 2>/dev/null || echo "No summary was written."
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload recordings and games
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ai-recordings
+          path: ${{ runner.temp }}/recordings/
+          retention-days: 30
