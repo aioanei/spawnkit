@@ -14,6 +14,8 @@ public class GamePreset(
     public val name: String,
     /** One line that tells creators what the game is. */
     public val pitch: String,
+    /** Rule blocks the preset shows how to use, by their names in the rule editor; the picker lists them. */
+    public val teaches: List<String>,
 ) {
     /** A fresh copy of the preset's project. Throws [IllegalArgumentException] when the embedded file cannot be read. */
     public fun project(): Project =
@@ -25,8 +27,23 @@ public object GamePresets {
     /** Every preset. */
     public val all: List<GamePreset> =
         listOf(
-            GamePreset("coin-dash", "Coin Dash", "Move with the arrows and collect every coin."),
-            GamePreset("tap-targets", "Tap Targets", "Tap the moving targets before time runs out."),
-            GamePreset("maze-run", "Maze Run", "Find the exit without touching a wall."),
+            GamePreset(
+                "coin-dash",
+                "Coin Dash",
+                "Move with the arrows and collect every coin.",
+                listOf("Holding a key", "Touching", "Add to a number", "Count of objects", "Go to scene"),
+            ),
+            GamePreset(
+                "tap-targets",
+                "Tap Targets",
+                "Tap the moving targets before time runs out.",
+                listOf("Tapped", "Every … seconds", "Number is", "Set a number", "Go to scene"),
+            ),
+            GamePreset(
+                "maze-run",
+                "Maze Run",
+                "Find the exit without touching a wall.",
+                listOf("Holding a key", "Touching", "Go to scene"),
+            ),
         )
 }

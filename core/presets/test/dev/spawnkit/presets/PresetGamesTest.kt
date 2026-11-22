@@ -6,6 +6,7 @@ import dev.spawnkit.editing.buildSceneWorld
 import dev.spawnkit.editing.capabilityProblems
 import dev.spawnkit.gameplay.Action
 import dev.spawnkit.gameplay.Bounds
+import dev.spawnkit.gameplay.RuleBlockCatalog
 import dev.spawnkit.gameplay.RuleBlocks
 import dev.spawnkit.gameplay.RuleItem
 import dev.spawnkit.gameplay.StandardActions
@@ -96,6 +97,44 @@ class PresetGamesTest {
         assertEquals(EmbeddedPresets.all.keys, GamePresets.all.map { it.id }.toSet())
         GamePresets.all.forEach { assertEquals(it.name, it.project().name, "name of ${it.id}") }
         GamePresets.all.forEach { assertTrue(it.pitch.isNotBlank(), "pitch of ${it.id}") }
+        GamePresets.all.forEach { assertTrue(it.teaches.isNotEmpty(), "blocks taught by ${it.id}") }
+    }
+
+    @Test
+    fun listedBlocksAreUsed() {
+        GamePresets.all.forEach { preset ->
+            val used =
+                preset
+                    .project()
+                    .scenes
+                    .flatMap { it.objects }
+                    .flatMap { obj -> RuleBlocks.decompile(obj.rules).filterIsInstance<RuleItem.Blocks>() }
+                    .flatMap { item ->
+                        (listOf(item.rule.condition) + item.rule.alsoIf).map { RuleBlockCatalog.spec(it).authoring.name } +
+                            item.rule.actions.map { RuleBlockCatalog.spec(it).authoring.name }
+                    }.toSet()
+            assertEquals(emptyList(), preset.teaches.filter { it !in used }, "${preset.id} lists blocks it does not use; it uses $used")
+        }
+    }
+
+    @Test
+    fun everyPresetExplainsHowItWorks() {
+        GamePresets.all.forEach { preset ->
+            val project = preset.project()
+            val run = Run(project, project.scenes.first().id)
+            val how = run.tagged("how-button").single()
+
+            run.tap(how.centerX, how.centerY)
+
+            assertEquals("How it works", run.sceneName, "${preset.id}: the title's How it works button")
+            assertTrue(
+                project.scene(run.sceneId)!!.objects.count { it.component("graphics:text") != null } >= 4,
+                "${preset.id} explains its rules",
+            )
+            val back = run.tagged("back-button").single()
+            run.tap(back.centerX, back.centerY)
+            assertEquals("Title", run.sceneName, "${preset.id}: Back returns to the title")
+        }
     }
 
     @Test

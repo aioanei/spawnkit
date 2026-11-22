@@ -74,7 +74,19 @@ internal object PresetRecipes {
             val win = endScene("You win", "You win!", "Every coin collected.", "Play again", level, 0xFF1B5E20)
             open(level)
             rule(score, Rule(Condition.CountIs("coin", Comparison.Equal, 0), actions = listOf(Action.GoToScene(win))))
-            titleScreen(0xFF1B5E20, "Arrow keys or the on-screen arrows move you.")
+            titleScreen(
+                0xFF1B5E20,
+                "Arrow keys or the on-screen arrows move you.",
+                listOf(
+                    "Arrow keys move the Player.",
+                    "Edges push the Player back.",
+                    "A Coin touching the Player",
+                    "adds 1 to Coins, then goes.",
+                    "When no coin is left,",
+                    "Coins goes to scene You win.",
+                ),
+                listOf("Try this: select Player, open", "Rules and make Move speed 6."),
+            )
         }
 
     fun tapTargets(): Project =
@@ -109,7 +121,20 @@ internal object PresetRecipes {
             open(play)
             rule(timer, Rule(Condition.NumberIs(Target.Self, Comparison.AtMost, 0), actions = listOf(Action.GoToScene(timesUp))))
             rule(score, Rule(Condition.CountIs("target", Comparison.Equal, 0), actions = listOf(Action.GoToScene(win))))
-            titleScreen(0xFF4A148C, "Tap each target before the timer runs out.")
+            titleScreen(
+                0xFF4A148C,
+                "Tap each target before the timer runs out.",
+                listOf(
+                    "Each Target's number is its",
+                    "direction: 0 right, 1 left.",
+                    "Touching a wall flips it.",
+                    "Tapping a Target adds 1 to",
+                    "Score and removes it.",
+                    "Timer counts down each second;",
+                    "at 0 it goes to Time's up.",
+                ),
+                listOf("Try this: select Timer and", "set its Number to 10."),
+            )
         }
 
     fun mazeRun(): Project =
@@ -138,7 +163,18 @@ internal object PresetRecipes {
             val escaped = endScene("You escaped", "You escaped!", "You found the way out.", "Play again", maze, 0xFF1B5E20)
             open(maze)
             rule(player, Rule(Condition.Touching("exit"), actions = listOf(Action.GoToScene(escaped))))
-            titleScreen(0xFF37474F, "Reach the green exit. Walls send you back!")
+            titleScreen(
+                0xFF37474F,
+                "Reach the green exit. Walls send you back!",
+                listOf(
+                    "Arrow keys move the Player.",
+                    "Touching a wall goes to scene",
+                    "Maze: the maze starts again.",
+                    "Touching the exit goes to",
+                    "scene You escaped.",
+                ),
+                listOf("Try this: add a Box, give it", "the tag wall, make a new path."),
+            )
         }
 
     /** Seconds on the Tap Targets timer. */
@@ -319,17 +355,48 @@ private class Recipe(
         return id
     }
 
-    /** "Add title screen", then the game's colors and a line on how to play. */
+    /**
+     * "Add title screen", then the game's colors, a line on how to play, and a How it works button leading to a scene
+     * that explains the rules in [explain] lines (at most 32 characters each) and suggests one change in [tryThis].
+     */
     fun titleScreen(
         color: Long,
         howToPlay: String,
+        explain: List<String>,
+        tryThis: List<String>,
     ): Project {
         state.addTitleScreen()
         check(state.scene.name == "Title") { state.message ?: "No title screen" }
+        val title = sceneId
         val objects = state.scene.objects.associate { it.name to it.id }
         set(objects.getValue("Background"), "graphics:shape", "color", color)
         set(objects.getValue("Title text"), "graphics:text", "size", 1.1)
         label("How to play", 0.0, 0.0, howToPlay, 0.4)
+
+        val how = addScene("How it works")
+        box("Background", 0.0, 0.0, 16.0, 9.0, 0xFF212121, layer = -1)
+        label("Heading", 0.0, -3.3, "How it works", 0.7)
+        (explain + tryThis).forEachIndexed { index, line ->
+            require(line.length <= LINE) { "'$line' is longer than $LINE characters" }
+            val trying = index >= explain.size
+            // The suggestion sits a little lower and in yellow, so it reads as an invitation rather than a rule.
+            val y = -2.4 + index * 0.6 + if (trying) 0.4 else 0.0
+            val id = label(if (trying) "Try this ${index - explain.size + 1}" else "Rule ${index + 1}", 0.0, y, line, 0.34)
+            if (trying) set(id, "graphics:text", "color", 0xFFFFEB3B)
+        }
+        val back = box("Back button", 0.0, 3.3, 3.0, 0.8, 0xFF546E7A, tag = "back-button")
+        label("Back label", 0.0, 3.3, "Back", 0.45)
+        rule(back, Rule(Condition.Tapped, actions = listOf(Action.GoToScene(title))))
+
+        open(title)
+        val button = box("How it works button", 0.0, 3.4, 3.6, 0.8, 0xFF546E7A, tag = "how-button")
+        label("How it works label", 0.0, 3.4, "How it works", 0.45)
+        rule(button, Rule(Condition.Tapped, actions = listOf(Action.GoToScene(how))))
         return state.editor.saveSnapshot()
+    }
+
+    private companion object {
+        /** Longest line on a How it works scene that fits a phone held upright. */
+        const val LINE = 32
     }
 }
