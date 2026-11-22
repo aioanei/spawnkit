@@ -34,7 +34,15 @@ class DemoModelTest {
                 .first()
                 .id
         val score = if (withObjects) add("Score", 0.0, text("Score: 0"), ComponentDoc("gameplay:number"), tag("score")) else ""
-        val coins = if (withObjects) listOf(add("Coin", 3.0, shape(), tag("coin")), add("Coin", 20.0, shape(), tag("coin"))) else emptyList()
+        val coins =
+            if (withObjects) {
+                listOf(
+                    add("Coin", 3.0, shape(), tag("coin")),
+                    add("Coin", 20.0, shape(), tag("coin")),
+                )
+            } else {
+                emptyList()
+            }
         val player = if (withObjects) add("Player", 0.0, shape(), tag("player")) else ""
 
         fun add(
@@ -43,7 +51,9 @@ class DemoModelTest {
             vararg components: ComponentDoc,
         ): String {
             val docs = listOf(ComponentDoc("graphics:transform", mapOf("x" to x, "y" to 0.0))) + components
-            return assertIs<OperationResult.Applied>(editor.apply(EditOperation.AddObject(scene, name, components = docs))).createdIds.single()
+            return assertIs<OperationResult.Applied>(
+                editor.apply(EditOperation.AddObject(scene, name, components = docs)),
+            ).createdIds.single()
         }
 
         fun rules(id: String): List<RuleItem> =

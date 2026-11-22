@@ -140,7 +140,11 @@ class DesktopSecretStore(
                 ?: Paths.get(System.getProperty("user.home"), ".spawnkit", "secrets")
 
         private fun onPath(tool: String): Boolean =
-            System.getenv("PATH").orEmpty().split(java.io.File.pathSeparator).any { Files.isExecutable(Paths.get(it, tool)) }
+            System
+                .getenv("PATH")
+                .orEmpty()
+                .split(java.io.File.pathSeparator)
+                .any { Files.isExecutable(Paths.get(it, tool)) }
 
         /** Runs a tool and returns its output, or `null` when it fails. */
         private fun run(

@@ -38,6 +38,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import dev.spawnkit.app.assistant.AskAiButton
 import dev.spawnkit.editing.EditOperation
 import dev.spawnkit.editing.ObjectDoc
 import dev.spawnkit.editing.OperationResult
@@ -75,6 +76,7 @@ internal val Swatches =
 fun Inspector(
     state: EditorState,
     modifier: Modifier = Modifier,
+    onAskAi: ((String) -> Unit)? = null,
 ) {
     val obj = state.selection?.let(state.scene::find)
     Column(
@@ -90,6 +92,7 @@ fun Inspector(
             return@Column
         }
         NameField(state, obj)
+        if (onAskAi != null) AskAiButton { onAskAi("Help me change ${obj.name}.") }
         for (doc in obj.components) {
             val descriptor =
                 state.engine.runtime.catalog

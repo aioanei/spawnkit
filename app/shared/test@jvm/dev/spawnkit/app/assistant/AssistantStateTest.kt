@@ -13,6 +13,7 @@ import dev.spawnkit.app.editor.EditorState
 import dev.spawnkit.editing.EditOperation
 import dev.spawnkit.editing.Project
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -25,6 +26,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class AssistantStateTest {
     private val editor = EditorState()
     private val secrets = MemorySecretStore()
@@ -35,7 +37,10 @@ class AssistantStateTest {
         }
     }
 
-    private fun coinRules() = editor.scene.objects.first { it.name == "Coin" }.rules
+    private fun coinRules() =
+        editor.scene.objects
+            .first { it.name == "Coin" }
+            .rules
 
     private fun TestScope.assistant(live: (String) -> AgentModel = { error("No live model in this test") }) =
         AssistantState(editor, secrets, this, live)
@@ -207,7 +212,12 @@ class AssistantStateTest {
             assistant.accept()
 
             assertTrue(assistant.notice.orEmpty().isNotBlank())
-            assertEquals(emptyList(), editor.scene.objects.first { it.name == "Gold" }.rules)
+            assertEquals(
+                emptyList(),
+                editor.scene.objects
+                    .first { it.name == "Gold" }
+                    .rules,
+            )
         }
 
     @Test
@@ -233,8 +243,9 @@ class AssistantStateTest {
             assertEquals("sk-secret-999", secrets.read(AssistantState.KEY_NAME))
             assertEquals(listOf("sk-secret-999"), received, "Only the live model factory receives the key")
             assertTrue(assistant.useLive)
-            val shown = listOf(assistant.modelLabel, assistant.notice.orEmpty(), assistant.costText) + assistant.progress +
-                assistant.transcript.map { it.toString() }
+            val shown =
+                listOf(assistant.modelLabel, assistant.notice.orEmpty(), assistant.costText) + assistant.progress +
+                    assistant.transcript.map { it.toString() }
             assertTrue(shown.none { "sk-secret-999" in it }, shown.toString())
             assistant.removeKey()
             assertNull(secrets.read(AssistantState.KEY_NAME))

@@ -38,6 +38,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import dev.spawnkit.app.assistant.AskAiButton
 import dev.spawnkit.editing.Parameter
 import dev.spawnkit.editing.ParameterType
 import dev.spawnkit.editing.Picked
@@ -74,6 +75,7 @@ private data class Editing(
 fun RulesPanel(
     state: EditorState,
     modifier: Modifier = Modifier,
+    onAskAi: ((String) -> Unit)? = null,
 ) {
     val obj = state.selection?.let(state.scene::find)
     var editing by remember(obj?.id) { mutableStateOf<Editing?>(null) }
@@ -85,6 +87,7 @@ fun RulesPanel(
             Text("Select an object to give it rules.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             return@Column
         }
+        if (onAskAi != null) AskAiButton { onAskAi("Help me with the rules of ${obj.name}.") }
         val items = state.ruleItems(obj.id)
         val problems = remember(state.revision, obj.id) { state.ruleProblems(obj.id) }
         if (items.isEmpty()) {

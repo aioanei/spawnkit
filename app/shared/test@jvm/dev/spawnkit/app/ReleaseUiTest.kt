@@ -8,6 +8,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onAllNodesWithText
@@ -126,6 +127,8 @@ class ReleaseUiTest {
             val address = "https://arcade.example.org"
             onNodeWithTag("release-address").performTextReplacement(address)
             onNodeWithTag("release-publish").performClick()
+            onNodeWithTag("publish-confirm").assertExists()
+            onNodeWithTag("publish-confirm-yes").performClick()
             expectMessage("Uploading your game")
             onNodeWithTag("release-back").assertIsNotEnabled()
             onNodeWithTag("release-cancel").performClick()
@@ -135,10 +138,25 @@ class ReleaseUiTest {
             val url = "$address/play/nine-stars/"
             platform.publication.complete(url)
             onNodeWithTag("release-publish").performClick()
+            onNodeWithTag("publish-confirm-yes").performClick()
             expectMessage(url)
             onNodeWithText("Open game").performScrollTo().performClick()
             waitForIdle()
             assertEquals(url, opened)
             onNodeWithText("Copy link").assertExists()
+        }
+
+    @Test
+    fun dismissingTheConfirmationDoesNotPublish() =
+        runDesktopComposeUiTest(width = 1280, height = 800) {
+            val platform = RecordingPlatform()
+            open(platform)
+            onNodeWithTag("release-address").performTextReplacement("https://arcade.example.org")
+            onNodeWithTag("release-publish").performClick()
+            onNodeWithText("Anyone with the play link can play it.", substring = true).assertExists()
+            onNodeWithTag("publish-confirm-no").performClick()
+            waitForIdle()
+            assertEquals(null, platform.address)
+            onNodeWithTag("release-publish").assertIsEnabled()
         }
 }

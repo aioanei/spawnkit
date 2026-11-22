@@ -82,7 +82,18 @@ class AssistantState(
     /** The conversation, for a details view. */
     val transcript: List<AgentMessage> get() = session?.transcript.orEmpty()
 
-    fun canAsk(): Boolean = !running && editor.play == null && prompt.isNotBlank()
+    /** Whether the game is playing; the assistant only works on a stopped game. */
+    val playing: Boolean get() = editor.play != null
+
+    /** Changes when another project is loaded or the scene changes; see [refresh]. */
+    val gameKey: Pair<Int, String> get() = editor.projectGeneration to editor.sceneId
+
+    fun canAsk(): Boolean = !running && !playing && prompt.isNotBlank()
+
+    /** Drops a proposal made for a project or scene that is no longer open, with a notice. */
+    fun refresh() {
+        dropIfStale()
+    }
 
     fun saveKey(key: String) {
         require(key.isNotBlank()) { "Enter a key" }
@@ -123,7 +134,9 @@ class AssistantState(
                 notice = null
             }
 
-            is AcceptResult.Refused -> notice = result.message
+            is AcceptResult.Refused -> {
+                notice = result.message
+            }
         }
     }
 

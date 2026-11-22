@@ -48,15 +48,22 @@ public class DemoModel : AgentModel {
         if (players.isEmpty() || (prompt != MOVE && (coins.isEmpty() || scores.isEmpty()))) return finish(MISSING)
         val actions =
             when (prompt) {
-                COLLECT -> coins.map { coin -> addRule(scene, coin, touching("player"), collect()) }
-                MOVE ->
+                COLLECT -> {
+                    coins.map { coin -> addRule(scene, coin, touching("player"), collect()) }
+                }
+
+                MOVE -> {
                     listOf(
                         StandardActions.LEFT to "Left",
                         StandardActions.RIGHT to "Right",
                         StandardActions.UP to "Up",
                         StandardActions.DOWN to "Down",
                     ).map { (action, direction) -> addRule(scene, players.first(), keyHeld(action), listOf(move(direction))) }
-                else -> listOf(call(AgentToolbox.TRACE, json("""{"seconds":3,"hold":[{"action":"${StandardActions.RIGHT}"}]}""")))
+                }
+
+                else -> {
+                    listOf(call(AgentToolbox.TRACE, json("""{"seconds":3,"hold":[{"action":"${StandardActions.RIGHT}"}]}""")))
+                }
             }
         val check = if (prompt == WHY) emptyList() else listOf(call(AgentToolbox.CHECK, JsonObject(emptyMap())))
         return reply(*(actions + check).toTypedArray())
