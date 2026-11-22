@@ -1,9 +1,10 @@
 tasks:
   generate:
     action: !dev.spawnkit.build.templates.generateEmbeddedTemplates
-      templatesDir: ${project.rootDir}/templates
+      templatesDir: ${project.rootDir}/${pluginSettings.directory}
       outputDir: ${taskOutputDir}
       packageName: ${pluginSettings.packageName}
+      objectName: ${pluginSettings.objectName}
 
 generated:
   sources:

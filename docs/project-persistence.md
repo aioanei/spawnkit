@@ -8,7 +8,7 @@ platformer codec in `core/model` remains a separate format.
 
 Open **Project** in the toolbar on either a phone or desktop:
 
-- **New game** starts a blank workspace.
+- **New game…** opens a picker: **Blank**, or one of the preset games (see below).
 - **Open project file…** imports a `.spawnkit` file through the system picker.
 - **Save** writes to the selected file, or asks for a location the first time.
 - **Save a copy…** chooses another location and writes a portable project file.
@@ -16,6 +16,35 @@ Open **Project** in the toolbar on either a phone or desktop:
 
 On narrow phones, **☰** opens Project and **⋯** opens the selected object's Duplicate/Delete actions. Both controls
 have accessible descriptions. Some Android document providers append `.json` to `.spawnkit`; either name opens.
+
+### Preset games (C10)
+
+The picker lists Blank and three preset games, each with a picture of its game scene and a one-line pitch. Phones
+show one column; wider screens show two.
+
+| Preset | Game | Uses |
+|---|---|---|
+| Coin Dash | Move with the arrows and collect every coin; the last coin leads to "You win". | Key held, Touching, Count is |
+| Tap Targets | Tap the moving targets before the 20-second timer runs out. | Tapped, Every second, Number is |
+| Maze Run | Reach the exit; touching a wall restarts the maze. | Key held, Touching, Go to scene |
+
+- **Ordinary projects.** Each preset is a normal project file in `presets/<id>/project.json` with a title screen. It
+  is embedded into the app by `core/presets` (`EmbeddedPresets`, listed by `GamePresets`).
+- **How they were made.** With the builder's own calls: palette presets, catalog operations, rule operations and
+  "Add title screen". The recipes are in `app/shared/test@jvm/.../presets/PresetRecipes.kt`, and a test checks the
+  files against them ([presets/README.md](../presets/README.md)).
+- **Only today's blocks.** Edge walls and bouncing targets are built from Touching, Move and Set number. Spawning,
+  random placement and game-wide numbers need new blocks, so games that depend on them are not presets yet.
+- **A copy with no file.** Choosing a preset asks about unsaved changes like New and Open. It then loads a fresh copy
+  that opens on its title screen, with a new undo history. Save asks where to keep it, so a file opened earlier is
+  never overwritten, and autosave covers it from the start. A preset that cannot be read keeps the current game and
+  says so.
+- **Outside the editing catalog.** Starting from a preset is a project-file action like New and Open, so it has no
+  agent tool and no parity case (ADR-0009). An agent builds the same content through the catalog's operations.
+- **Evidence.** [Desktop picker](media/presets-picker-desktop.png). On the Android emulator,
+  `tools/android-preset-smoke.py` used real taps: [the picker](media/android-presets-picker.png), then
+  [Coin Dash's title screen playing](media/android-presets-title-play.png). Holding the on-screen Right arrow then
+  [collected a coin](media/android-presets-coin.png).
 
 New and Open ask before replacing unsaved changes. Save and continue, Discard changes, and Cancel are explicit.
 Cancelling a picker, opening a bad file, and a failed write keep the current project and its undo history. Opening a

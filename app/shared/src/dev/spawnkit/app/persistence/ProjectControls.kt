@@ -57,9 +57,9 @@ fun ProjectMenu(
     ) { Text(if (compact) "☰" else "Project ▾", maxLines = 1, softWrap = false) }
     DropdownMenu(expanded, { expanded = false }) {
         Text(session.state.project.name, Modifier.padding(16.dp), style = MaterialTheme.typography.titleSmall)
-        MenuAction("New game", "project-new") {
+        MenuAction("New game…", "project-new") {
             expanded = false
-            session.request(ProjectAction.New)
+            session.chooseNew()
         }
         MenuAction("Open project file…", "project-open", session.files.picker != null) {
             expanded = false
@@ -194,6 +194,7 @@ fun ProjectDialogs(session: ProjectSession) {
 
         else -> {}
     }
+    NewGamePicker(session)
     val action = session.pending ?: return
     AlertDialog(
         onDismissRequest = session::cancelNavigation,

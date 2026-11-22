@@ -27,8 +27,9 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
   PRs #54 and #55 are merged.
 - **Done:** C5, project persistence (PR #57).
 - **Done:** K1 Kotlin Toolchain adoption, C6 Release Manager and Arcade, and C7a–C7b (catalogs and AI Studio core).
-- **Done:** C7c, the assistant UI; C9, title screens (scene list, Go to scene, Add title screen).
-- **Now:** C10 preset games. Then, C10 presets, C11 accounts and C12 test ads (owner decision
+- **Done:** C7c, the assistant UI; C9, title screens (scene list, Go to scene, Add title screen); C10, preset games
+  (New game picker with Coin Dash, Tap Targets and Maze Run).
+- **Now:** C11 accounts. Then C12 test ads (owner decision
   2026-11-22, [design](docs/design/2026-11-22-title-screens-presets-accounts-ads.md),
   [ADR-0010](docs/adr/0010-accounts-on-ktor.md)), and C8 last, in the
   [contest delivery track](docs/plans/2026-11-20-engine-foundation-revision.md#contest-delivery-track). Track K
@@ -72,6 +73,7 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
 | `build-logic/` | Gradle included build (coexistence) | convention plugins `spawnkit.kmp.core`, `spawnkit.kmp.client`, `spawnkit.kmp.compose`, `spawnkit.quality`; read the Toolchain layout |
 | `core/model` | KMP, all targets | existing v1 document schema, IDs, serialization and migrations; legacy import boundary in the target design |
 | `core/templates` | KMP, all targets | existing embedded template fixtures; preserve during migration |
+| `core/presets` | KMP, all targets | preset games (C10): `presets/<id>/project.json` embedded as `EmbeddedPresets`, listed by `GamePresets` |
 | `core/engine` | KMP, all targets | preserved tested platformer runtime and compatibility regression baseline |
 | `core/runtime` | KMP, all targets | provisional headless world/component/scheduler and explicit checkpoint/replay APIs; no legacy model dependency |
 | `core/program` | KMP, all targets | portable program executor: typed programs, type checking, resumable bytecode VM, atomic segments, checkpointed waits |
