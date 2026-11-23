@@ -142,6 +142,24 @@ transcripts or tool inputs.
 
 Without a key, the labelled scripted demo answers its three example prompts.
 
+## Hosted AI and accounts in the builder (C11b)
+
+Creators no longer need a key ([ADR-0011](adr/0011-hosted-ai-model-proxy.md)). **Project → Account…** signs in to a
+SpawnKit server (see [Arcade hosting](arcade-hosting.md)): enter its address, then sign in, create an account with the
+emailed 6-digit code, or reset a forgotten password. Signed in, the screen shows the account with Sign out and Delete
+account (which asks first).
+
+- **Which model answers.** The creator's own key, when switched on under **Developer settings**; otherwise **SpawnKit
+  AI** (`HostedModel`) when signed in to a server that offers it; otherwise the labelled demo, with a hint to sign in.
+  The label always names the model that answers.
+- **Limits.** The server's refusals, such as a reached daily allowance, show as plain notices, and nothing in the game
+  changes.
+- **A new account or server starts a new conversation.**
+- **The session token** is kept in the same platform `SecretStore` as keys (`spawnkit-session`, with the server under
+  `spawnkit-server`). It is never shown or logged, and never goes into projects, exports or the assistant. A token the
+  server no longer accepts signs the builder out with "Your session ended. Sign in again."
+- `AccountClient` (`ai`) is the client for the C11a routes; `AccountState` (`app/shared`) holds the builder's account.
+
 ## Evidence
 
 - `StagedChangesTest` (`core/editing`, 3 tests): the workspace is untouched until accept; accept is one undo step;

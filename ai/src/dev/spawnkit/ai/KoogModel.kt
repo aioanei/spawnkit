@@ -16,6 +16,7 @@ import ai.koog.prompt.message.Message
 import ai.koog.prompt.message.MessagePart
 import ai.koog.prompt.message.RequestMetaInfo
 import ai.koog.prompt.message.ResponseMetaInfo
+import ai.koog.prompt.params.LLMParams
 import dev.spawnkit.editing.ToolDefinition
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -26,17 +27,19 @@ import kotlinx.serialization.json.jsonPrimitive
 /**
  * A live model through Koog (C7): converts the session's messages and derived tool definitions to a Koog [Prompt] and
  * [ToolDescriptor]s and asks [executor]. The API key stays inside the Koog client; it is never part of [info], requests,
- * replies, recordings or tool inputs, and the agent's tools cannot read it.
+ * replies, recordings or tool inputs, and the agent's tools cannot read it. [maxOutputTokens], when set, caps every
+ * reply, which bounds what one call can cost.
  */
 public class KoogModel(
     private val executor: PromptExecutor,
     private val model: LLModel,
     override val info: ModelInfo,
+    private val maxOutputTokens: Int? = null,
 ) : AgentModel {
     private var promptCounter = 0
 
     override suspend fun reply(request: ModelRequest): ModelReply {
-        val prompt = Prompt(koogMessages(request), "spawnkit-assistant-${promptCounter++}")
+        val prompt = Prompt(koogMessages(request), "spawnkit-assistant-${promptCounter++}", LLMParams(maxTokens = maxOutputTokens))
         val response = executor.execute(prompt, model, request.tools.map(::toolDescriptor))
         val text =
             response.parts
@@ -58,13 +61,14 @@ public class KoogModel(
 
         /**
          * An Anthropic model through Koog. [apiKey] comes from device secure storage or the environment, never from a
-         * project. Prices are per million tokens and only used to show an estimate.
+         * project. Prices are per million tokens and only used to show an estimate. [maxOutputTokens] caps each reply.
          */
         public fun anthropic(
             apiKey: String,
             modelId: String = DEFAULT_ANTHROPIC_MODEL,
             inputPricePerMillion: Double? = 3.0,
             outputPricePerMillion: Double? = 15.0,
+            maxOutputTokens: Int? = null,
         ): KoogModel {
             require(apiKey.isNotBlank()) { "Add an Anthropic API key in the assistant settings first" }
             val base = AnthropicModels.Sonnet_5
@@ -80,7 +84,7 @@ public class KoogModel(
                     inputPricePerMillion,
                     outputPricePerMillion,
                 )
-            return KoogModel(MultiLLMPromptExecutor(client), model, info)
+            return KoogModel(MultiLLMPromptExecutor(client), model, info, maxOutputTokens)
         }
     }
 }

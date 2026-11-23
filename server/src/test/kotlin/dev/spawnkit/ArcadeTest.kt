@@ -6,7 +6,6 @@ import dev.spawnkit.editing.GamePackageCodec
 import dev.spawnkit.editing.ObjectDoc
 import dev.spawnkit.editing.Project
 import dev.spawnkit.editing.SceneDoc
-import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -23,11 +22,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import java.io.ByteArrayOutputStream
 import java.nio.file.Files
-import java.nio.file.Path
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -170,32 +165,5 @@ class ArcadeTest {
         assertFalse(limits.allow("c"))
         now += 60_000
         assertTrue(limits.allow("c"))
-    }
-
-    private suspend fun HttpClient.publish(text: String) =
-        post("/api/games") {
-            contentType(ContentType.Application.Json)
-            setBody(text)
-        }
-
-    private fun playerFixture(): WebPlayerBundle {
-        val bytes = ByteArrayOutputStream()
-        ZipOutputStream(bytes).use { zip ->
-            for ((name, data) in mapOf("index.html" to "index", "nested/player.mjs" to "script", "player.wasm" to "wasm")) {
-                zip.putNextEntry(ZipEntry(name))
-                zip.write(data.encodeToByteArray())
-                zip.closeEntry()
-            }
-        }
-        return WebPlayerBundle { bytes.toByteArray().inputStream() }
-    }
-
-    private fun withStore(block: (Path) -> Unit) {
-        val directory = Files.createTempDirectory("spawnkit-arcade-test")
-        try {
-            block(directory)
-        } finally {
-            directory.toFile().deleteRecursively()
-        }
     }
 }

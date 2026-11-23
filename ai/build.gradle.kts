@@ -12,6 +12,7 @@ kotlin {
             api(libs.koog.anthropic)
             api(libs.koog.executor)
             implementation(libs.koog.httpKtor)
+            api(libs.ktor.clientCore)
         }
         jvmMain.dependencies { implementation(libs.ktor.clientOkhttp) }
         androidMain.dependencies { implementation(libs.ktor.clientOkhttp) }
