@@ -162,6 +162,22 @@ class CharacterForgeTest {
         }
 
     @Test
+    fun theBuildersClientReadsTheForgesAnswer() =
+        forge {
+            images.refuse += CharacterStyle.Chibi
+            val result =
+                dev.spawnkit.ai
+                    .AccountClient("", client)
+                    .character(token(), photo, listOf("pixel", "chibi"), consent = true)
+
+            assertEquals(listOf("pixel"), result.images.map { it.style })
+            assertEquals("Pixel art", result.images.single().label)
+            assertEquals("Fake image-1, 2026-11-23", result.images.single().provenance)
+            assertEquals(256, ProjectImages.check(result.images.single().data).width)
+            assertEquals("The image model declined this photo. Try a different photo.", result.refused["chibi"])
+        }
+
+    @Test
     fun aServerWithoutTheImageKeySaysSo() =
         forge(configured = false) {
             val answer = client.make(token())

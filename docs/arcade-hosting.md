@@ -29,6 +29,7 @@ Java 25 classes. Use the installed server, or set `-Dio.ktor.development=false`.
 | `SPAWNKIT_SMTP_USER`, `SPAWNKIT_SMTP_PASSWORD` | unset | SMTP sign-in. |
 | `SPAWNKIT_SMTP_FROM` | `SpawnKit <no-reply@HOST>` | Sender of account emails. |
 | `ANTHROPIC_API_KEY` | unset | The owner's model key. Without it, `/api/ai/reply` answers that SpawnKit AI is not set up. |
+| `OPENAI_API_KEY` | unset | The owner's image model key for Character Forge (ADR-0013). Without it, `/api/ai/character` answers that Character Forge is not set up, and the builder hides "Character from photo…". |
 | `SPAWNKIT_AI_MONTHLY_DOLLARS` | `20` | Everything the server may spend on AI in one calendar month (UTC). |
 | `SPAWNKIT_AI_ACCOUNT_DAILY_DOLLARS` | `1` | What one account may spend on AI in one UTC day. |
 

@@ -237,7 +237,11 @@ internal class OperationApplier(
                     }
                 project.images.firstOrNull { it.hash == info.hash }?.let { reject("This picture is already in the game as ${it.name}") }
                 if (project.images.size >= ProjectImages.MAX_IMAGES) reject("A game can hold at most ${ProjectImages.MAX_IMAGES} images")
-                if ((operation.provenance?.length ?: 0) > MAX_PROVENANCE) reject("Describe where the image came from in at most $MAX_PROVENANCE characters")
+                if ((operation.provenance?.length ?: 0) >
+                    MAX_PROVENANCE
+                ) {
+                    reject("Describe where the image came from in at most $MAX_PROVENANCE characters")
+                }
                 val image = ImageAsset("img-${project.nextId}", operation.name.trim(), info.hash, operation.data, operation.provenance)
                 if (ProjectImages.totalBytes(project.images + image) > ProjectImages.MAX_TOTAL_BYTES) {
                     reject("A game's images can take at most ${ProjectImages.MAX_TOTAL_BYTES / (1024 * 1024)} MB; remove one first")

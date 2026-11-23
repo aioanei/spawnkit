@@ -111,7 +111,13 @@ public object ProjectCodec {
             version = 3L
         }
         if (version == 3L) {
-            val images = (fields["images"] as? JsonArray)?.map { image -> (image as? JsonObject)?.let { JsonObject(it + ("provenance" to JsonNull)) } ?: image }
+            val images =
+                (fields["images"] as? JsonArray)?.map { image ->
+                    (image as? JsonObject)?.let {
+                        JsonObject(it + ("provenance" to JsonNull))
+                    }
+                        ?: image
+                }
             fields = JsonObject(fields + mapOf("schemaVersion" to JsonPrimitive(4), "images" to JsonArray(images ?: emptyList())))
         }
         return fields

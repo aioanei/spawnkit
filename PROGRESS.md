@@ -1,6 +1,23 @@
 # SpawnKit progress
 
-## Current checkpoint — C17 complete-game templates (2026-11-23)
+## Current checkpoint — C16a Character Forge (2026-11-23)
+
+- **Branch.** `feat/90-character-forge`, stacked on C17 (`feat/91-complete-games`, PR #103). Open stack in merge order:
+  #99, #100, #101, #102, #103, then this branch. The owner provided `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` as
+  repository secrets; neither is on this machine, so live runs need a server or workflow with the key.
+- **Added.** [ADR-0013](docs/adr/0013-character-forge-image-model.md).
+  - Image provenance (workspace schema 4) and PNG metadata stripping.
+  - The server's `/api/ai/character`, with an OpenAI image gateway over the JDK HTTP client, consent, the shared spend
+    ledger and deterministic pixel art.
+  - `AccountClient.character`.
+  - The builder's Character from photo… flow, ending in a playable Character. [AI Studio](docs/ai-studio.md#character-forge-c16a).
+- **Evidence.** `CharacterForgeTest` 7, `CharacterForgeUiTest` 2, `ImagesTest` +3. No live image calls in tests.
+- **Build note.** Gradle builds in this checkout sometimes failed with missing or newer-Java class files while other
+  JVM processes (likely the IDE's own build) wrote to the same `build/` folders; the same tasks passed on rerun.
+- **Next.** C16b: the agent tool with confirmation (ADR-0009), a manual workflow for a live run with the repository
+  secret, and Android emulator evidence. Then C13, C11c, C19 and C8.
+
+## Previous checkpoint — C17 complete-game templates (2026-11-23)
 
 - **Branch.** `feat/91-complete-games`, stacked on C12b (`feat/77-test-purchases`, PR #102). Open stack in merge
   order: #99 (C15a), #100 (C15b), #101 (C12a), #102 (C12b), then this branch.

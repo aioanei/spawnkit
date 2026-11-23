@@ -58,6 +58,28 @@ public data class ServerStatus(
     public val aiAvailable: Boolean,
     /** The server's sentence about AI, for the creator. */
     public val ai: String,
+    /** Whether Character Forge works on this server (ADR-0013). */
+    public val characterAvailable: Boolean = false,
+)
+
+/** A character image Character Forge made (ADR-0013). */
+public data class ForgedImage(
+    /** Style ID: `pixel`, `cartoon` or `chibi`. */
+    public val style: String,
+    /** Style name for the creator. */
+    public val label: String,
+    /** The PNG in Base64. */
+    public val data: String,
+    /** Provider, model and date. */
+    public val provenance: String,
+)
+
+/** What Character Forge made, and the styles it could not make with the reason to show. */
+public data class CharacterResult(
+    /** Images, in the order of the requested styles. */
+    public val images: List<ForgedImage>,
+    /** Style ID to plain-language reason. */
+    public val refused: Map<String, String>,
 )
 
 /** A game published to a SpawnKit Arcade. */
@@ -169,6 +191,17 @@ public interface AccountService {
         slug: String,
     )
 
+    /**
+     * Makes characters in [styles] from [photo] (Base64 PNG, already resized and stripped of metadata on the device).
+     * [consent] records that the photo shows the creator or someone who agreed; the server refuses without it.
+     */
+    public suspend fun character(
+        token: String,
+        photo: String,
+        styles: List<String>,
+        consent: Boolean,
+    ): CharacterResult
+
     /** Test ad statistics of the owned game [slug] (C12). */
     public suspend fun adStats(
         token: String,
@@ -189,7 +222,8 @@ public class AccountClient(
 
     override suspend fun status(): ServerStatus {
         val json = call(HttpMethod.Get, "/api/server").obj()
-        return ServerStatus(json.bool("emailSignIn"), json.bool("aiAvailable"), json.text("ai"))
+        val characters = (json["characterAvailable"] as? JsonPrimitive)?.booleanOrNull ?: false
+        return ServerStatus(json.bool("emailSignIn"), json.bool("aiAvailable"), json.text("ai"), characters)
     }
 
     override suspend fun register(
@@ -316,6 +350,34 @@ public class AccountClient(
             (json["email"] as? JsonPrimitive)?.contentOrNull,
             json.text("plan"),
         )
+
+    override suspend fun character(
+        token: String,
+        photo: String,
+        styles: List<String>,
+        consent: Boolean,
+    ): CharacterResult {
+        val body =
+            JsonObject(
+                mapOf(
+                    "consent" to JsonPrimitive(consent),
+                    "styles" to JsonArray(styles.map(::JsonPrimitive)),
+                    "photo" to JsonPrimitive(photo),
+                ),
+            )
+        val json = call(HttpMethod.Post, "/api/ai/character", body.toString(), token).obj()
+        val images =
+            (json["images"] as? JsonArray ?: unreadable()).map {
+                val image = it.obj()
+                ForgedImage(image.text("style"), image.text("label"), image.text("data"), image.text("provenance"))
+            }
+        val refused =
+            (json["refused"] as? JsonArray ?: unreadable()).associate {
+                val item = it.obj()
+                item.text("style") to item.text("reason")
+            }
+        return CharacterResult(images, refused)
+    }
 
     override suspend fun adStats(
         token: String,

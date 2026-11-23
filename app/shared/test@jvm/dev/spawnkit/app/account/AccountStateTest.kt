@@ -6,6 +6,7 @@ import dev.spawnkit.ai.AccountService
 import dev.spawnkit.ai.AccountSession
 import dev.spawnkit.ai.AdStatsReport
 import dev.spawnkit.ai.ArcadeGame
+import dev.spawnkit.ai.CharacterResult
 import dev.spawnkit.ai.ServerStatus
 import dev.spawnkit.app.assistant.MemorySecretStore
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -204,12 +205,14 @@ internal class FakeAccountService : AccountService {
     var deleted = 0
     private val profile = AccountProfile(1, "Ada", "ada@example.com", "free")
     var aiAvailable = true
+    var charactersAvailable = true
 
     override suspend fun status() =
         ServerStatus(
             emailSignIn = true,
             aiAvailable = aiAvailable,
             ai = if (aiAvailable) "SpawnKit AI is available." else "SpawnKit AI is not set up on this server.",
+            characterAvailable = charactersAvailable,
         )
 
     override suspend fun register(
@@ -281,6 +284,21 @@ internal class FakeAccountService : AccountService {
     }
 
     var stats = AdStatsReport(0, 0, emptyList())
+
+    /** What the fake forge answers, and the last photo it received (for checks that metadata was stripped). */
+    var forged = CharacterResult(emptyList(), emptyMap())
+    var lastPhoto: String? = null
+
+    override suspend fun character(
+        token: String,
+        photo: String,
+        styles: List<String>,
+        consent: Boolean,
+    ): CharacterResult {
+        require(consent)
+        lastPhoto = photo
+        return forged.copy(images = forged.images.filter { it.style in styles })
+    }
 
     override suspend fun adStats(
         token: String,
