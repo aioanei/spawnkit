@@ -1,6 +1,29 @@
 # SpawnKit progress
 
-## Current checkpoint — C16a Character Forge (2026-11-23)
+## Current checkpoint — C16b Character Forge agent tool (2026-11-23)
+
+- **Branch.** `feat/90-character-agent`, stacked on C16a (`feat/90-character-forge`, PR #104). With C16a this completes
+  [#90](https://github.com/aioanei/spawnkit/issues/90). [Plan](docs/plans/2026-11-23-c16b-character-agent.md),
+  [AI Studio](docs/ai-studio.md#character-forge-from-the-chat-c16b).
+- **Added.**
+  - `make_character`, a toolbox tool that never sees the photo. The session pauses with `AgentOutcome.Confirmation`
+    until the creator confirms with consent or declines.
+  - `CharacterMaker` and `CharacterRecipe`, shared by the builder's dialog and the agent. `StagedChanges.nextId`.
+  - Attach photo and the confirmation card in the assistant; the cost line counts character images.
+  - A fourth scripted-demo example.
+- **Fixed.** The builder's HTTP client now waits up to four minutes; the engines' 10–15 second defaults made every
+  Character Forge request fail on devices.
+- **Evidence.**
+  - Gradle `spotlessCheck allJvmAndWebTests localNativeTests` and the Toolchain `check ktlint`, `test -p jvm -p android`
+    and `test -p mingwX64` pass. Before the timeout fix: ai 124 tests and app/shared 109 tests, all passing.
+  - New tests: `CharacterToolTest` 7, `DemoModelTest` +2, `CharacterAgentUiTest` 3 (phone, desktop, decline).
+  - Android API 36: `tools/android-character-smoke.py` ran from an illustrated portrait to a playable character, with
+    live images and the labelled demo.
+- **Found.** Koog 1.3.0's Anthropic client rejects `AnyOf` tool parameters. Live Anthropic requests with the full
+  toolbox therefore fail, both SpawnKit AI and the creator's own key. Needs a fix before C13.
+- **Next.** Fix the Koog `AnyOf` conversion with a live check. Then C13, C11c, C19 and C8.
+
+## Previous checkpoint — C16a Character Forge (2026-11-23)
 
 - **Branch.** `feat/90-character-forge`, stacked on C17 (`feat/91-complete-games`, PR #103). Open stack in merge order:
   #99, #100, #101, #102, #103, then this branch. The owner provided `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` as

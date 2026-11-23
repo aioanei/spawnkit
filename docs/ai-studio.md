@@ -239,6 +239,23 @@ demo.
     - the cost line counts the images;
     - parity with the builder's dialog, and one undo;
     - declined photos are never sent.
+- **Android emulator (API 36, 2026-11-23).** `tools/android-character-smoke.py` ran from photo to playable character
+  with real taps against a local server.
+  - The photo was an original illustrated portrait drawn by the script.
+  - Steps: sign up with the emailed code; add a Platform to a blank game; attach the portrait in the AI tab; ask the
+    scripted demo's character example; tick consent; send; accept.
+  - The server's image model was live and made pixel art and cartoon characters. SpawnKit AI was off, so the labelled
+    demo chose the tool calls.
+  - In play, the Character stood on the platform, walked right and jumped.
+  - Screenshots: [confirmation](media/android-character-confirm.png), [review](media/android-character-review.png),
+    [standing](media/android-character-play.png), [jumping](media/android-character-jump.png).
+- **Fixed on the way.** The builder's HTTP client used the engines' default timeouts (about 10 seconds on Android), so
+  every Character Forge request failed with "Unable to reach the SpawnKit server", in the C16a dialog too. It now waits
+  up to four minutes for server work.
+- **Found, not fixed here.** Koog 1.3.0's Anthropic client refuses tool parameters of type `AnyOf` before sending
+  ("AnyOf type is not supported"). `KoogModel` gives `set_property`, `add_rule`, `add_block` and `change_block` such
+  parameters, so live Anthropic requests with the full toolbox fail: SpawnKit AI and the creator's own key. Fake-executor
+  tests did not catch it. It needs its own fix before C13.
 
 ## Evidence
 
