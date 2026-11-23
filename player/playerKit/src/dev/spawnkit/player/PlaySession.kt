@@ -1,6 +1,7 @@
 package dev.spawnkit.player
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -43,6 +44,13 @@ class PlaySession(
 
     /** Incremented after every presented frame so the play surface redraws. */
     var frame by mutableLongStateOf(0L)
+
+    /** How many times the game changed scene, including restarts of the same scene. */
+    var sceneChanges by mutableIntStateOf(0)
+        private set
+
+    /** While true the play loop does not advance the game, for example during a full-screen ad. */
+    var paused by mutableStateOf(false)
 
     private val held = mutableMapOf<String, MutableSet<String>>()
     private val pointers = LinkedHashMap<Int, Pointer>()
@@ -107,6 +115,7 @@ class PlaySession(
         onSceneChange(scene.world, next.world)
         scene = next
         sceneId = requested
+        sceneChanges++
         message = null
         pointers.clear()
         unsubmitted.clear()
