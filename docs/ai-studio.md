@@ -28,10 +28,12 @@ It has no screens; the assistant UI comes in C7c.
 | `check_game` | toolbox | rule and capability problems found by the real engine, exactly as Play reports them |
 | `trace_rules` | toolbox | headless play with held inputs, reporting which rules ran, when, and which conditions were never true |
 | `ask_creator` | toolbox | pause the session with a clarifying question and suggested answers |
+| `make_character` | toolbox | ask to turn the photo attached in the chat into characters; the session waits for the creator's consent before anything is sent (C16b) |
 | `finish` | toolbox | end with a summary in the creator's words |
 
 There is no tool for publishing, exporting, store builds or deleting saved files. No tool takes or returns
-credentials.
+credentials. `make_character` is the only tool that sends something off the device, and it cannot do so by itself: see
+[Character Forge from the chat](#character-forge-from-the-chat-c16b).
 
 ## Rule traces
 
@@ -195,8 +197,48 @@ account (which asks first).
   - `gpt-image-1` turned out to be retired, so the model is now set with `SPAWNKIT_IMAGE_MODEL`, by default
     `gpt-image-1-mini`.
   - The pixel palette gained skin tones after faces came out pink.
-- **Not yet (C16b).** The agent tool that asks before uploading, and Android emulator evidence from photo to playable
-  character.
+
+### Character Forge from the chat (C16b)
+
+[Plan](plans/2026-11-23-c16b-character-agent.md). The same capability as an agent tool (ADR-0009): a photo attached in
+the chat with "make this person a character in the game" works with SpawnKit AI, a creator's own key or the scripted
+demo.
+
+- **Attach photo** under the assistant's prompt attaches a picture. The model is never given the photo: the prompt only
+  says that one is attached (`AgentSession.PHOTO_ATTACHED`).
+- **`make_character`** takes one to three styles, which style the Character shows, and where it stands. It uploads
+  nothing. The session pauses with `AgentOutcome.Confirmation`, like a clarifying question.
+- **The confirmation card** says that the photo leaves the device for the image model only, is not saved, and uses the
+  allowance. **Send photo** stays disabled until "This is me, or this person agreed" is ticked. **Don't send** tells the
+  agent that nothing was sent, and the session goes on.
+- **Sending** goes through `CharacterMaker` (`ai`), which the builder implements with the account's forge, so metadata
+  is stripped on the device as in the dialog. The photo is let go once sent. Refusals and failures are reported to the
+  agent and stage nothing.
+- **The result** is staged with `CharacterRecipe`, the same batch the builder's dialog applies: every image with its
+  provenance and the Character, as one proposal step ("Add character") the creator accepts or rejects. The tool returns
+  the new IDs, so the agent can go on arranging the Character.
+- **Cost line.** After images are made, the assistant's cost line counts them against the SpawnKit AI allowance, also
+  under the scripted demo, whose text is free but whose pictures are real.
+- **The scripted demo** has a fourth example, "Make this person a character in the game.", which asks for pixel art and
+  cartoon.
+- **Without a photo, or without a server that offers Character Forge**, the tool is refused with what to do. Recordings
+  never send photos: the recorder has no maker.
+- **Tests.**
+  - `CharacterToolTest` 7, with scripted fixtures and a fake maker:
+    - nothing is sent before confirmation, and accepting is one undo step;
+    - the agent makes what the builder's recipe makes;
+    - consent is required, and declining sends nothing;
+    - without a photo or a server, the tool is refused;
+    - bad choices are refused before asking;
+    - refusals and failures stage nothing;
+    - a refused style falls back to one that was made.
+  - `DemoModelTest` +2.
+  - `CharacterAgentUiTest` 3, on phone and desktop with a fake server:
+    - consent gating and metadata stripping;
+    - the photo is let go once sent;
+    - the cost line counts the images;
+    - parity with the builder's dialog, and one undo;
+    - declined photos are never sent.
 
 ## Evidence
 
