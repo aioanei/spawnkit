@@ -34,7 +34,7 @@ class KoogAnthropicWireTest {
             val reply =
                 """
                 {"id":"msg_1","type":"message","role":"assistant","model":"claude-sonnet-5-5","stop_reason":"tool_use",
-                 "stop_sequence":null,"usage":{"input_tokens":1500,"output_tokens":40},
+                 "stop_sequence":null,"usage":{"input_tokens":1500,"output_tokens":40,"cache_creation_input_tokens":9000,"cache_read_input_tokens":30000},
                  "content":[{"type":"tool_use","id":"toolu_1","name":"set_property",
                    "input":{"scene":"scene-1","object":"obj-2","component":"graphics:shape","property":"width","value":{"number":2.5}}}]}
                 """.trimIndent()
@@ -73,7 +73,8 @@ class KoogAnthropicWireTest {
                 assertEquals(tools.map { it.name }, sentTools)
                 assertFalse("anyOf" in request["tools"].toString() || "oneOf" in request["tools"].toString())
                 assertEquals(JsonPrimitive(2.5), answer.calls.single().input["value"], "the flat choice comes back as a plain value")
-                assertEquals(Usage(1500, 40), answer.usage)
+                assertEquals(Usage(1500, 40, 9000, 30000), answer.usage, "cache writes and reads are counted")
+                assertTrue("cache_control" in request.toString(), "the instructions and tools are cached: $request".take(300))
                 assertTrue("sk-test" !in request.toString(), "the key is never in the body")
             } finally {
                 server.stop(0)

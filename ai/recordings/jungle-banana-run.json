@@ -1,0 +1,3902 @@
+{
+ "format": "spawnkit-agent-recording",
+ "version": 1,
+ "model": "claude-sonnet-5-5",
+ "provider": "Anthropic",
+ "recordedOn": "2026-11-23",
+ "note": "Recorded locally with the owner's key during C13a: one prompt on a blank game, run by tools/agentRecorder with a $3 budget (about $1.51 spent).",
+ "script": [
+  {
+   "kind": "prompt",
+   "text": "Make a complete jungle platformer: the player collects bananas and avoids snakes to reach a flag. It needs a title screen with Play, two levels, bananas kept between levels, a shop that sells an extra life as a test purchase, test ads between levels, and win and lose screens."
+  }
+ ],
+ "replies": [
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_01CbM5cenojPFhZBxAeBaKtK",
+     "name": "look_at_game",
+     "input": {}
+    },
+    {
+     "id": "toolu_01UviYt4pFeGToYpEAvdqhex",
+     "name": "look_at_example",
+     "input": {
+      "example": "sky-hopper"
+     }
+    },
+    {
+     "id": "toolu_01TWow7bKXjYgTbX63DF25iZ",
+     "name": "describe_components",
+     "input": {}
+    }
+   ],
+   "usage": {
+    "input": 4,
+    "output": 120,
+    "cacheWrite": 22017,
+    "cacheRead": 0
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_01R8qA8jcffWgPGn6jMGJ9Ui",
+     "name": "look_at_example",
+     "input": {
+      "example": "sky-hopper",
+      "scene": "scene-1"
+     }
+    },
+    {
+     "id": "toolu_011ie4SnGx8YbeiAmGsV6WVW",
+     "name": "look_at_example",
+     "input": {
+      "example": "sky-hopper",
+      "scene": "scene-4"
+     }
+    },
+    {
+     "id": "toolu_01EC54cRcVD5JkWcvLbfjyGV",
+     "name": "look_at_example",
+     "input": {
+      "example": "sky-hopper",
+      "scene": "scene-10"
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 231,
+    "cacheWrite": 2506,
+    "cacheRead": 22017
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_01Rupb2vqcMgNUUD3ZWYnzB6",
+     "name": "rename_scene",
+     "input": {
+      "scene": "scene-1",
+      "name": "Title"
+     }
+    },
+    {
+     "id": "toolu_01Ri2Rkz2JxbYJC2cfMZq8j8",
+     "name": "add_scene",
+     "input": {
+      "name": "Level 1"
+     }
+    },
+    {
+     "id": "toolu_01AWBr5nLJnR19bF3up6DdYw",
+     "name": "add_scene",
+     "input": {
+      "name": "Level 2"
+     }
+    },
+    {
+     "id": "toolu_01NkUmp6yGEUcqqaVN1x4p44",
+     "name": "add_scene",
+     "input": {
+      "name": "Shop"
+     }
+    },
+    {
+     "id": "toolu_01N32bsHzchFZKPDriya9yHc",
+     "name": "add_scene",
+     "input": {
+      "name": "Jungle Champion"
+     }
+    },
+    {
+     "id": "toolu_01UjzpoduGJ5zDWqRTMy1umv",
+     "name": "add_scene",
+     "input": {
+      "name": "Game Over"
+     }
+    },
+    {
+     "id": "toolu_014eu1AuMKf2icSFufRARLnf",
+     "name": "rename_project",
+     "input": {
+      "name": "Jungle Banana Run"
+     }
+    },
+    {
+     "id": "toolu_01N2sYRfhNxXP8b1GWJnhCTm",
+     "name": "set_ads",
+     "input": {
+      "banner": true,
+      "interstitial": true,
+      "every": 2
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 4260,
+    "cacheWrite": 7515,
+    "cacheRead": 24523
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_01NPi4EnDFt2tXoczeyRuA8h",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-1",
+      "name": "Background",
+      "components": [
+       {
+        "component": "graphics:transform"
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 40,
+         "height": 24,
+         "color": "#1B5E20",
+         "layer": -1
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01UybJeHxi5CeksKrXXahiBx",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-1",
+      "name": "Title text",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "y": -2.6
+        }
+       },
+       {
+        "component": "graphics:text",
+        "values": {
+         "text": "Jungle Banana Run",
+         "size": 1.0,
+         "color": "#FFEB3B",
+         "layer": 2
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01Bua5HNU8GFZ9WkzeJXDgJL",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-1",
+      "name": "How to play",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "y": -1.4
+        }
+       },
+       {
+        "component": "graphics:text",
+        "values": {
+         "text": "Grab bananas, dodge snakes, reach the flag!",
+         "size": 0.4,
+         "layer": 2
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01GT66yGQxpWksLy7z7cTSjZ",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-1",
+      "name": "Play button",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "y": 0
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 4.4,
+         "height": 1.1,
+         "color": "#43A047",
+         "layer": 1
+        }
+       },
+       {
+        "component": "gameplay:tag",
+        "values": {
+         "tag": "play-button"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_011egQBzn4t5ZsgtFKdfPxNQ",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-1",
+      "name": "Play label",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "y": 0
+        }
+       },
+       {
+        "component": "graphics:text",
+        "values": {
+         "text": "Play",
+         "size": 0.7,
+         "layer": 2
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01RW2YYgZXspiD4T5qvvvK9z",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-1",
+      "name": "Shop button",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "y": 1.5
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 4.4,
+         "height": 1.1,
+         "color": "#F57C00",
+         "layer": 1
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01Qpug2aUUqk6r5QV7n5EvkL",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-1",
+      "name": "Shop label",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "y": 1.5
+        }
+       },
+       {
+        "component": "graphics:text",
+        "values": {
+         "text": "Shop",
+         "size": 0.7,
+         "layer": 2
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_016aot9RvWtNZUC3aqnGVoTV",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-4",
+      "name": "Background",
+      "components": [
+       {
+        "component": "graphics:transform"
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 40,
+         "height": 24,
+         "color": "#4E342E",
+         "layer": -1
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01PTBGAJLnbta331oewoYiuZ",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-4",
+      "name": "Heading",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "y": -3.2
+        }
+       },
+       {
+        "component": "graphics:text",
+        "values": {
+         "text": "Jungle Shop",
+         "size": 1.0,
+         "color": "#FFEB3B",
+         "layer": 2
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01PigiYtSyMUkNg2YiHF1KsJ",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-4",
+      "name": "Shop text",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "y": -1.9
+        }
+       },
+       {
+        "component": "graphics:text",
+        "values": {
+         "text": "Test purchases: no money is charged.",
+         "size": 0.45,
+         "layer": 2
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01Dz8t5AmtA6kQ2uQyzxFWPK",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-4",
+      "name": "Bananas",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": -2.4,
+         "y": -3.0
+        }
+       },
+       {
+        "component": "graphics:text",
+        "values": {
+         "text": "Bananas: 0",
+         "size": 0.4,
+         "layer": 2
+        }
+       },
+       {
+        "component": "gameplay:number",
+        "values": {
+         "keep": true
+        }
+       },
+       {
+        "component": "gameplay:tag",
+        "values": {
+         "tag": "bananas"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01LyFevNRrkR7w4d58uCDpYL",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-4",
+      "name": "Lives",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": 0.6,
+         "y": -3.0
+        }
+       },
+       {
+        "component": "graphics:text",
+        "values": {
+         "text": "Lives: 3",
+         "size": 0.4,
+         "layer": 2
+        }
+       },
+       {
+        "component": "gameplay:number",
+        "values": {
+         "keep": true,
+         "number": 3
+        }
+       },
+       {
+        "component": "gameplay:tag",
+        "values": {
+         "tag": "lives"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01VskNVdjewZrUeJzwuya62p",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-4",
+      "name": "Extra life button",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "y": 0
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 5,
+         "height": 1.1,
+         "color": "#FF9800",
+         "layer": 1
+        }
+       },
+       {
+        "component": "gameplay:tag",
+        "values": {
+         "tag": "extra-life"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_015Bar7t4rjkTMPHtRZtDbTb",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-4",
+      "name": "Extra life label",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "y": 0
+        }
+       },
+       {
+        "component": "graphics:text",
+        "values": {
+         "text": "Extra life: $0.49",
+         "size": 0.5,
+         "layer": 2
+        }
+       }
+      ]
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 5391,
+    "cacheWrite": 897,
+    "cacheRead": 32038
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_013cJ1QjqTCJQYKi28yqFYAe",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-4",
+      "name": "Back button",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "y": 2.5
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 4.4,
+         "height": 1.1,
+         "color": "#43A047",
+         "layer": 1
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01N2ovgFVpTSDZvL4dbQ4UiT",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-4",
+      "name": "Back label",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "y": 2.5
+        }
+       },
+       {
+        "component": "graphics:text",
+        "values": {
+         "text": "Back",
+         "size": 0.6,
+         "layer": 2
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01LtPEGZpprVXpU9AuvokgGy",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-4",
+      "object": "obj-19",
+      "when": {
+       "block": "Tapped"
+      },
+      "do": [
+       {
+        "block": "TestPurchase",
+        "product": "Extra life",
+        "price": 49,
+        "target": {
+         "kind": "tagged",
+         "tag": "lives"
+        },
+        "amount": 1
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01PnHzmRxxDNP8hR7ESd8QnB",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-4",
+      "object": "obj-17",
+      "when": {
+       "block": "Always"
+      },
+      "do": [
+       {
+        "block": "ShowNumber",
+        "target": {
+         "kind": "self"
+        },
+        "prefix": "Bananas: "
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01M4pU7Gi8hbbH2dHqoCagi5",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-4",
+      "object": "obj-18",
+      "when": {
+       "block": "Always"
+      },
+      "do": [
+       {
+        "block": "ShowNumber",
+        "target": {
+         "kind": "self"
+        },
+        "prefix": "Lives: "
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01AprpB6hnzkG1s9AAu4XbtB",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-1",
+      "object": "obj-10",
+      "when": {
+       "block": "Tapped"
+      },
+      "do": [
+       {
+        "block": "GoToScene",
+        "scene": "scene-2"
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01MKRxcH4jZR2jq8gTAwoFTV",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-1",
+      "object": "obj-12",
+      "when": {
+       "block": "Tapped"
+      },
+      "do": [
+       {
+        "block": "GoToScene",
+        "scene": "scene-4"
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_013ggJYPUfNg2bpcH17v71Mw",
+     "name": "move_into",
+     "input": {
+      "scene": "scene-1",
+      "object": "obj-11",
+      "parent": "obj-10"
+     }
+    },
+    {
+     "id": "toolu_019HxvjLDzCss4QQZitMWfLE",
+     "name": "move_into",
+     "input": {
+      "scene": "scene-1",
+      "object": "obj-13",
+      "parent": "obj-12"
+     }
+    },
+    {
+     "id": "toolu_01JXGW77HcLQaR1uuZfQGXGe",
+     "name": "look_at_game",
+     "input": {
+      "scene": "scene-4"
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 1658,
+    "cacheWrite": 3232,
+    "cacheRead": 32935
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_019xy3rj7ku1Pfhz8dh6UtXo",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-4",
+      "object": "obj-21",
+      "when": {
+       "block": "Tapped"
+      },
+      "do": [
+       {
+        "block": "GoToScene",
+        "scene": "scene-1"
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01L6gauqP5GraKXJYn8qhqFR",
+     "name": "move_into",
+     "input": {
+      "scene": "scene-4",
+      "object": "obj-22",
+      "parent": "obj-21"
+     }
+    },
+    {
+     "id": "toolu_0138uAfpv7zPVYFgXeMCzSbo",
+     "name": "move_into",
+     "input": {
+      "scene": "scene-4",
+      "object": "obj-20",
+      "parent": "obj-19"
+     }
+    },
+    {
+     "id": "toolu_01NFMg3yfY7DCqsmEq2sNxrM",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-2",
+      "name": "Background",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": 18
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 80,
+         "height": 24,
+         "color": "#2E7D32",
+         "layer": -1
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01284qJ3H9f2zuGSbSzT84it",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-2",
+      "name": "Camera",
+      "components": [
+       {
+        "component": "graphics:transform"
+       },
+       {
+        "component": "graphics:camera"
+       },
+       {
+        "component": "gameplay:follow",
+        "values": {
+         "down": false
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01Pw1J4PkWyz8MQyXxg1h3zL",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-2",
+      "name": "Bananas",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": -2.4,
+         "y": -3.0
+        }
+       },
+       {
+        "component": "graphics:text",
+        "values": {
+         "text": "Bananas: 0",
+         "size": 0.4,
+         "color": "#FFEB3B",
+         "layer": 5
+        }
+       },
+       {
+        "component": "gameplay:number",
+        "values": {
+         "keep": true
+        }
+       },
+       {
+        "component": "gameplay:tag",
+        "values": {
+         "tag": "bananas"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01Nw1N3Ckwc8powh4E2cKTxV",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-2",
+      "name": "Lives",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": 0.6,
+         "y": -3.0
+        }
+       },
+       {
+        "component": "graphics:text",
+        "values": {
+         "text": "Lives: 3",
+         "size": 0.4,
+         "layer": 5
+        }
+       },
+       {
+        "component": "gameplay:number",
+        "values": {
+         "keep": true,
+         "number": 3
+        }
+       },
+       {
+        "component": "gameplay:tag",
+        "values": {
+         "tag": "lives"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01WLogrWr4ypHTNBhnoacoJq",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-2",
+      "name": "Level label",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "y": -3.6
+        }
+       },
+       {
+        "component": "graphics:text",
+        "values": {
+         "text": "Level 1",
+         "size": 0.45,
+         "layer": 5
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_0117GtBaFphwJkuCaowDRFzi",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-2",
+      "name": "Ground 1",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": 0,
+         "y": 3.5
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 6,
+         "height": 0.6,
+         "color": "#6D4C41"
+        }
+       },
+       {
+        "component": "gameplay:solid"
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01PJyVoCuscmsjTLJpfp9cfB",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-2",
+      "name": "Ground 2",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": 7.5,
+         "y": 3.5
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 6,
+         "height": 0.6,
+         "color": "#6D4C41"
+        }
+       },
+       {
+        "component": "gameplay:solid"
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01LDp61JT8gfh23xh7WS5g44",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-2",
+      "name": "Ground 3",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": 15,
+         "y": 3.5
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 6,
+         "height": 0.6,
+         "color": "#6D4C41"
+        }
+       },
+       {
+        "component": "gameplay:solid"
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01MSu1gHGo6odDCNYabK33hs",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-2",
+      "name": "Ground 4",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": 22.5,
+         "y": 3.5
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 6,
+         "height": 0.6,
+         "color": "#6D4C41"
+        }
+       },
+       {
+        "component": "gameplay:solid"
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_016zVYxUVCDFbLUwJqnRGQtT",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-2",
+      "name": "Ground 5",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": 30,
+         "y": 3.5
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 6,
+         "height": 0.6,
+         "color": "#6D4C41"
+        }
+       },
+       {
+        "component": "gameplay:solid"
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01Y3ZVAMwQyYWA7BZMziJFZi",
+     "name": "look_at_game",
+     "input": {
+      "scene": "scene-2"
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 4464,
+    "cacheWrite": 3246,
+    "cacheRead": 36167
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_01XLJn4omXQFNTJa25MTsBHC",
+     "name": "move_into",
+     "input": {
+      "scene": "scene-2",
+      "object": "obj-25",
+      "parent": "obj-24"
+     }
+    },
+    {
+     "id": "toolu_01XknXuaMMd21c6FBFZQQpZF",
+     "name": "move_into",
+     "input": {
+      "scene": "scene-2",
+      "object": "obj-26",
+      "parent": "obj-24"
+     }
+    },
+    {
+     "id": "toolu_01GAtqcqsS4qVR72xuWU8t74",
+     "name": "move_into",
+     "input": {
+      "scene": "scene-2",
+      "object": "obj-27",
+      "parent": "obj-24"
+     }
+    },
+    {
+     "id": "toolu_01SWChdttTLdNyfCctu9dUkz",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-2",
+      "object": "obj-25",
+      "when": {
+       "block": "Always"
+      },
+      "do": [
+       {
+        "block": "ShowNumber",
+        "target": {
+         "kind": "self"
+        },
+        "prefix": "Bananas: "
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_014RQhwHfri6kce3jhohHMAf",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-2",
+      "object": "obj-26",
+      "when": {
+       "block": "Always"
+      },
+      "do": [
+       {
+        "block": "ShowNumber",
+        "target": {
+         "kind": "self"
+        },
+        "prefix": "Lives: "
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_017qEHGc1zwqsyqwUzkLExCV",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-2",
+      "object": "obj-26",
+      "when": {
+       "block": "NumberIs",
+       "target": {
+        "kind": "self"
+       },
+       "comparison": "AtMost",
+       "value": 0
+      },
+      "do": [
+       {
+        "block": "GoToScene",
+        "scene": "scene-6"
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01KQRnd76a2eGK9HwtV7T6iz",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-2",
+      "name": "Player",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": 0,
+         "y": 2.5
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 0.9,
+         "height": 0.9,
+         "color": "#8D6E63",
+         "layer": 3
+        }
+       },
+       {
+        "component": "gameplay:tag",
+        "values": {
+         "tag": "player"
+        }
+       },
+       {
+        "component": "gameplay:body"
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01KBYKpg5VWTov34VHQs34NK",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-2",
+      "name": "Flag",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": 31.5,
+         "y": 2.2
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 0.5,
+         "height": 2.0,
+         "color": "#FF5252",
+         "layer": 1
+        }
+       },
+       {
+        "component": "gameplay:tag",
+        "values": {
+         "tag": "flag"
+        }
+       }
+      ]
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 2674,
+    "cacheWrite": 4223,
+    "cacheRead": 39413
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_01SmNjLdh8DUqTW1xjherTRa",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-2",
+      "object": "obj-33",
+      "when": {
+       "block": "KeyHeld",
+       "action": "input:left"
+      },
+      "do": [
+       {
+        "block": "Move",
+        "direction": "Left",
+        "speed": 5
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01VSREt9BkQxwiN1Ty9VWRmz",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-2",
+      "object": "obj-33",
+      "when": {
+       "block": "KeyHeld",
+       "action": "input:right"
+      },
+      "do": [
+       {
+        "block": "Move",
+        "direction": "Right",
+        "speed": 5
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01Dvu6qMxAeWhD95D2Nadf1x",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-2",
+      "object": "obj-33",
+      "when": {
+       "block": "KeyPressed",
+       "action": "input:jump"
+      },
+      "do": [
+       {
+        "block": "Jump",
+        "speed": 15
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_011wLWmVjnTWvCGKNjdSGfMM",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-2",
+      "object": "obj-33",
+      "when": {
+       "block": "Touching",
+       "tag": "snake"
+      },
+      "do": [
+       {
+        "block": "ChangeNumber",
+        "target": {
+         "kind": "tagged",
+         "tag": "lives"
+        },
+        "amount": -1
+       },
+       {
+        "block": "GoToScene",
+        "scene": "scene-2"
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_012CTD6H5QwMQV3Doed5E5UP",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-2",
+      "object": "obj-33",
+      "when": {
+       "block": "LeftArea",
+       "width": 40,
+       "height": 24
+      },
+      "do": [
+       {
+        "block": "ChangeNumber",
+        "target": {
+         "kind": "tagged",
+         "tag": "lives"
+        },
+        "amount": -1
+       },
+       {
+        "block": "GoToScene",
+        "scene": "scene-2"
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01V1K6qs8YZYKR7k2jjJncjD",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-2",
+      "object": "obj-34",
+      "when": {
+       "block": "Touching",
+       "tag": "player"
+      },
+      "do": [
+       {
+        "block": "GoToScene",
+        "scene": "scene-3"
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01XLTBeqf363gcR75PmisUFT",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-2",
+      "name": "Banana 1",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": 1.5,
+         "y": 2.0
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "form": "ellipse",
+         "width": 0.5,
+         "height": 0.7,
+         "color": "#FFEB3B",
+         "layer": 2
+        }
+       },
+       {
+        "component": "gameplay:tag",
+        "values": {
+         "tag": "banana"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01W3hqF2DkaHuTsEKt4ZLZmG",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-2",
+      "name": "Snake 1",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": 7.5,
+         "y": 3.0
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 0.9,
+         "height": 0.4,
+         "color": "#76FF03",
+         "layer": 2
+        }
+       },
+       {
+        "component": "gameplay:tag",
+        "values": {
+         "tag": "snake"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01WqVqpjLki1uxVyhffxfCbs",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-2",
+      "name": "Snake 2",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": 22.5,
+         "y": 3.0
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 0.9,
+         "height": 0.4,
+         "color": "#76FF03",
+         "layer": 2
+        }
+       },
+       {
+        "component": "gameplay:tag",
+        "values": {
+         "tag": "snake"
+        }
+       }
+      ]
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 2202,
+    "cacheWrite": 1636,
+    "cacheRead": 43636
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_018GYEP6p2QXrvV7M4vwapFn",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-2",
+      "object": "obj-35",
+      "when": {
+       "block": "Touching",
+       "tag": "player"
+      },
+      "do": [
+       {
+        "block": "ChangeNumber",
+        "target": {
+         "kind": "tagged",
+         "tag": "bananas"
+        },
+        "amount": 1
+       },
+       {
+        "block": "RemoveSelf"
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01WxjyF2gqefzvhKeD6W9mg6",
+     "name": "duplicate_object",
+     "input": {
+      "scene": "scene-2",
+      "object": "obj-35"
+     }
+    },
+    {
+     "id": "toolu_01LRqqMw4YHPM6dBFJZdmXsm",
+     "name": "duplicate_object",
+     "input": {
+      "scene": "scene-2",
+      "object": "obj-35"
+     }
+    },
+    {
+     "id": "toolu_01TsnsMDDAYdrAxW7hrCvHad",
+     "name": "duplicate_object",
+     "input": {
+      "scene": "scene-2",
+      "object": "obj-35"
+     }
+    },
+    {
+     "id": "toolu_01KUnPhVyaHeyQg26yoSBdh2",
+     "name": "duplicate_object",
+     "input": {
+      "scene": "scene-2",
+      "object": "obj-35"
+     }
+    },
+    {
+     "id": "toolu_01E38n1dBPYqcCu5K23gK147",
+     "name": "duplicate_object",
+     "input": {
+      "scene": "scene-2",
+      "object": "obj-35"
+     }
+    },
+    {
+     "id": "toolu_01DqYQVvH7d1n6afceiBFYe6",
+     "name": "look_at_game",
+     "input": {
+      "scene": "scene-2"
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 1016,
+    "cacheWrite": 2138,
+    "cacheRead": 45272
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_01KjxAnR2dsksS37sa6p3uig",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-2",
+      "object": "obj-42",
+      "component": "graphics:transform",
+      "property": "x",
+      "value": 4.5
+     }
+    },
+    {
+     "id": "toolu_01T1XohBnM8amzBWqJU7A6BA",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-2",
+      "object": "obj-41",
+      "component": "graphics:transform",
+      "property": "x",
+      "value": 7.5
+     }
+    },
+    {
+     "id": "toolu_01EWFCc3sWhAG4qdXGSS6RFV",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-2",
+      "object": "obj-41",
+      "component": "graphics:transform",
+      "property": "y",
+      "value": 1.2
+     }
+    },
+    {
+     "id": "toolu_01DDmacwSK2yDvt2EdZJUZvH",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-2",
+      "object": "obj-40",
+      "component": "graphics:transform",
+      "property": "x",
+      "value": 15
+     }
+    },
+    {
+     "id": "toolu_01BFXP8wkpdatLYxobX2boMk",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-2",
+      "object": "obj-39",
+      "component": "graphics:transform",
+      "property": "x",
+      "value": 19
+     }
+    },
+    {
+     "id": "toolu_01PnegaaR2NWm29G5gxZARnA",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-2",
+      "object": "obj-38",
+      "component": "graphics:transform",
+      "property": "x",
+      "value": 26
+     }
+    },
+    {
+     "id": "toolu_0179qkMVssFC8EDg1ffgpJ71",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-2",
+      "object": "obj-38",
+      "component": "graphics:transform",
+      "property": "y",
+      "value": 2.6
+     }
+    },
+    {
+     "id": "toolu_017zEEg8NZahDmthmLpk6i3U",
+     "name": "look_at_game",
+     "input": {
+      "scene": "scene-3"
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 1410,
+    "cacheWrite": 4844,
+    "cacheRead": 47410
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_017aYZ1w17iouubqmTcdYsvc",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-3",
+      "name": "Background",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": 20
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 90,
+         "height": 24,
+         "color": "#1B5E20",
+         "layer": -1
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01CJC317Htmo3kQNiFpqz8Ac",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-3",
+      "name": "Camera",
+      "components": [
+       {
+        "component": "graphics:transform"
+       },
+       {
+        "component": "graphics:camera"
+       },
+       {
+        "component": "gameplay:follow",
+        "values": {
+         "down": false
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01C1jdTdyqh9vem8xF8Ju8dD",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-3",
+      "name": "Player",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": 0,
+         "y": 2.5
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 0.9,
+         "height": 0.9,
+         "color": "#8D6E63",
+         "layer": 3
+        }
+       },
+       {
+        "component": "gameplay:tag",
+        "values": {
+         "tag": "player"
+        }
+       },
+       {
+        "component": "gameplay:body"
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01V1xzPJh2pPqSzGDVjq5xQY",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-3",
+      "name": "Flag",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": 40.5,
+         "y": 2.2
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 0.5,
+         "height": 2.0,
+         "color": "#FF5252",
+         "layer": 1
+        }
+       },
+       {
+        "component": "gameplay:tag",
+        "values": {
+         "tag": "flag"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01Rg8UBjQ4SMZfMzgCG9Prgh",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-3",
+      "name": "Ground 1",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": 0,
+         "y": 3.5
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 5,
+         "height": 0.6,
+         "color": "#6D4C41"
+        }
+       },
+       {
+        "component": "gameplay:solid"
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01FQwVXH2jQubiP6Ehfp2mYe",
+     "name": "duplicate_object",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-33"
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 1307,
+    "cacheWrite": 1699,
+    "cacheRead": 52254
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_01617LVC3CJwJb4kGxUxsfbR",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-46",
+      "component": "graphics:transform",
+      "property": "x",
+      "value": "38.8"
+     }
+    },
+    {
+     "id": "toolu_01TGNwpHoDCwNU7ihkfq9ZgM",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-3",
+      "name": "Ground 2",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": 7.5,
+         "y": 3.5
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 5,
+         "height": 0.6,
+         "color": "#6D4C41"
+        }
+       },
+       {
+        "component": "gameplay:solid"
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01PLPr7MNAMztkrKnMcDUZot",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-3",
+      "name": "Ground 3",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": 15,
+         "y": 3.5
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 5,
+         "height": 0.6,
+         "color": "#6D4C41"
+        }
+       },
+       {
+        "component": "gameplay:solid"
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_012FW7NkyP7BgBR3hgEWLqyS",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-3",
+      "name": "Ground 4",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": 22.5,
+         "y": 3.5
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 5,
+         "height": 0.6,
+         "color": "#6D4C41"
+        }
+       },
+       {
+        "component": "gameplay:solid"
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01VxCgjmV53B4BRzhLpmdbBf",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-3",
+      "name": "Ground 5",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": 30,
+         "y": 3.5
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 5,
+         "height": 0.6,
+         "color": "#6D4C41"
+        }
+       },
+       {
+        "component": "gameplay:solid"
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01DFCE4i8CxY4rpst4SQdd2Y",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-3",
+      "name": "Ground 6",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": 37.5,
+         "y": 3.5
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 5,
+         "height": 0.6,
+         "color": "#6D4C41"
+        }
+       },
+       {
+        "component": "gameplay:solid"
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_015AoM5pqKaRaX4pCziiKrWc",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-3",
+      "name": "Bananas",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": -2.4,
+         "y": -3.0
+        }
+       },
+       {
+        "component": "graphics:text",
+        "values": {
+         "text": "Bananas: 0",
+         "size": 0.4,
+         "color": "#FFEB3B",
+         "layer": 5
+        }
+       },
+       {
+        "component": "gameplay:number",
+        "values": {
+         "keep": true
+        }
+       },
+       {
+        "component": "gameplay:tag",
+        "values": {
+         "tag": "bananas"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01Vo51AH8VMgZJvUn7kJDVzr",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-3",
+      "name": "Lives",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": 0.6,
+         "y": -3.0
+        }
+       },
+       {
+        "component": "graphics:text",
+        "values": {
+         "text": "Lives: 3",
+         "size": 0.4,
+         "layer": 5
+        }
+       },
+       {
+        "component": "gameplay:number",
+        "values": {
+         "keep": true,
+         "number": 3
+        }
+       },
+       {
+        "component": "gameplay:tag",
+        "values": {
+         "tag": "lives"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01FJbLktnZ8CEExggrSTbczP",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-3",
+      "name": "Level label",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "y": -3.6
+        }
+       },
+       {
+        "component": "graphics:text",
+        "values": {
+         "text": "Level 2",
+         "size": 0.45,
+         "layer": 5
+        }
+       }
+      ]
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 2056,
+    "cacheWrite": 1315,
+    "cacheRead": 53953
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_01AV6wKLHh5eKLMcYpmNgVhL",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-46",
+      "component": "graphics:transform",
+      "property": "x",
+      "value": 38.8
+     }
+    },
+    {
+     "id": "toolu_01QNxL8kxgwzzkWCJbUEeCw1",
+     "name": "move_into",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-53",
+      "parent": "obj-44"
+     }
+    },
+    {
+     "id": "toolu_01JHdY1vBR5VCESCsNwnvmWb",
+     "name": "move_into",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-54",
+      "parent": "obj-44"
+     }
+    },
+    {
+     "id": "toolu_01V2ZquZNzCa9dxS174RAJvp",
+     "name": "move_into",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-55",
+      "parent": "obj-44"
+     }
+    },
+    {
+     "id": "toolu_01G4YQVVMVJEooqaH9E4FDTW",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-53",
+      "when": {
+       "block": "Always"
+      },
+      "do": [
+       {
+        "block": "ShowNumber",
+        "target": {
+         "kind": "self"
+        },
+        "prefix": "Bananas: "
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01XGLeC7FEg7sBZL8FKD41GW",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-54",
+      "when": {
+       "block": "Always"
+      },
+      "do": [
+       {
+        "block": "ShowNumber",
+        "target": {
+         "kind": "self"
+        },
+        "prefix": "Lives: "
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01EGRtqiWhpBKma9CjCLMYyS",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-54",
+      "when": {
+       "block": "NumberIs",
+       "target": {
+        "kind": "self"
+       },
+       "comparison": "AtMost",
+       "value": 0
+      },
+      "do": [
+       {
+        "block": "GoToScene",
+        "scene": "scene-6"
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_0189h9yEW8Bk5heuJ1H9dtVf",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-46",
+      "when": {
+       "block": "Touching",
+       "tag": "player"
+      },
+      "do": [
+       {
+        "block": "GoToScene",
+        "scene": "scene-5"
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01LEJcKXZ75YVSNPT4xQQMNs",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-45",
+      "when": {
+       "block": "KeyHeld",
+       "action": "input:left"
+      },
+      "do": [
+       {
+        "block": "Move",
+        "direction": "Left",
+        "speed": 5
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_0119wxPHLGAAU7aeQgA4FySv",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-45",
+      "when": {
+       "block": "KeyHeld",
+       "action": "input:right"
+      },
+      "do": [
+       {
+        "block": "Move",
+        "direction": "Right",
+        "speed": 5
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_0123z6DGuVsGQKRiNSXXgG1F",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-45",
+      "when": {
+       "block": "KeyPressed",
+       "action": "input:jump"
+      },
+      "do": [
+       {
+        "block": "Jump",
+        "speed": 15
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01BFansAgcsdNTShnRsxgzry",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-45",
+      "when": {
+       "block": "Touching",
+       "tag": "snake"
+      },
+      "do": [
+       {
+        "block": "ChangeNumber",
+        "target": {
+         "kind": "tagged",
+         "tag": "lives"
+        },
+        "amount": -1
+       },
+       {
+        "block": "GoToScene",
+        "scene": "scene-3"
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01YMeweoq7P8kLmb8VvTowfj",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-45",
+      "when": {
+       "block": "LeftArea",
+       "width": 40,
+       "height": 24
+      },
+      "do": [
+       {
+        "block": "ChangeNumber",
+        "target": {
+         "kind": "tagged",
+         "tag": "lives"
+        },
+        "amount": -1
+       },
+       {
+        "block": "GoToScene",
+        "scene": "scene-3"
+       }
+      ]
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 2142,
+    "cacheWrite": 2175,
+    "cacheRead": 55268
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_01Gh1pSUxpwatjZrHwD1TY4A",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-3",
+      "name": "Banana 1",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": 2,
+         "y": 2.0
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "form": "ellipse",
+         "width": 0.5,
+         "height": 0.7,
+         "color": "#FFEB3B",
+         "layer": 2
+        }
+       },
+       {
+        "component": "gameplay:tag",
+        "values": {
+         "tag": "banana"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_0126iioLMbhwGeDY6LcFvvSe",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-3",
+      "name": "Snake 1",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": 7.5,
+         "y": 3.0
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 0.9,
+         "height": 0.4,
+         "color": "#76FF03",
+         "layer": 2
+        }
+       },
+       {
+        "component": "gameplay:tag",
+        "values": {
+         "tag": "snake"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01UMTEk59VHntsh58inWVafE",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-3",
+      "name": "Snake 2",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": 15,
+         "y": 3.0
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 0.9,
+         "height": 0.4,
+         "color": "#76FF03",
+         "layer": 2
+        }
+       },
+       {
+        "component": "gameplay:tag",
+        "values": {
+         "tag": "snake"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_013Hgp2VgQoJnYdaiEPdR9XS",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-3",
+      "name": "Snake 3",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": 30,
+         "y": 3.0
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 0.9,
+         "height": 0.4,
+         "color": "#76FF03",
+         "layer": 2
+        }
+       },
+       {
+        "component": "gameplay:tag",
+        "values": {
+         "tag": "snake"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01CgPEAVsndezv3R1TCA2EMs",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-3",
+      "name": "Snake 4",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "x": 36.5,
+         "y": 3.0
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 0.9,
+         "height": 0.4,
+         "color": "#76FF03",
+         "layer": 2
+        }
+       },
+       {
+        "component": "gameplay:tag",
+        "values": {
+         "tag": "snake"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01EfpnjnhPm8noP6Af95srMS",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-56",
+      "when": {
+       "block": "Touching",
+       "tag": "player"
+      },
+      "do": [
+       {
+        "block": "ChangeNumber",
+        "target": {
+         "kind": "tagged",
+         "tag": "bananas"
+        },
+        "amount": 1
+       },
+       {
+        "block": "RemoveSelf"
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_015ZLZNdZYd2mcznohaUSEuV",
+     "name": "duplicate_object",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-56"
+     }
+    },
+    {
+     "id": "toolu_015MAtxJQfEL8nUkwRN6oFbt",
+     "name": "duplicate_object",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-56"
+     }
+    },
+    {
+     "id": "toolu_01HymjjNhV9mTpqb1DdTvaN6",
+     "name": "duplicate_object",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-56"
+     }
+    },
+    {
+     "id": "toolu_0157bHKB4XCY9Y163KTyRPht",
+     "name": "duplicate_object",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-56"
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 1677,
+    "cacheWrite": 2638,
+    "cacheRead": 57443
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_015GjiA9YLejBbcSMeJcGHXG",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-61",
+      "component": "graphics:transform",
+      "property": "x",
+      "value": "7.5"
+     }
+    },
+    {
+     "id": "toolu_01CvriTR4rUFw5BMwqn2UmzZ",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-61",
+      "component": "graphics:transform",
+      "property": "y",
+      "value": "1.2"
+     }
+    },
+    {
+     "id": "toolu_019UvofH3uNAKJSMpACh46H2",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-62",
+      "component": "graphics:transform",
+      "property": "x",
+      "value": "15"
+     }
+    },
+    {
+     "id": "toolu_01GS64ckDJtrrhTGtacuyDxN",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-62",
+      "component": "graphics:transform",
+      "property": "y",
+      "value": "1.2"
+     }
+    },
+    {
+     "id": "toolu_01K7gvuUMcTndC4R6KRRbPWe",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-63",
+      "component": "graphics:transform",
+      "property": "x",
+      "value": "23"
+     }
+    },
+    {
+     "id": "toolu_01JVYT4j8trztEBgaDbrSZVX",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-64",
+      "component": "graphics:transform",
+      "property": "x",
+      "value": "30"
+     }
+    },
+    {
+     "id": "toolu_01MU2BpF7YhemScWq7GBj3ud",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-64",
+      "component": "graphics:transform",
+      "property": "y",
+      "value": "1.2"
+     }
+    },
+    {
+     "id": "toolu_014AtECNoGCRUQKudDpEK14r",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-5",
+      "name": "Background",
+      "components": [
+       {
+        "component": "graphics:transform"
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 40,
+         "height": 24,
+         "color": "#F9A825",
+         "layer": -1
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01RK48ga7GJ6cmZ7HLWxSxSn",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-5",
+      "name": "Win text",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "y": -2.4
+        }
+       },
+       {
+        "component": "graphics:text",
+        "values": {
+         "text": "Jungle Champion!",
+         "size": 1.0,
+         "layer": 2
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01EG3PMHEycvm63mLtMY1GMz",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-5",
+      "name": "Bananas",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "y": -1.0
+        }
+       },
+       {
+        "component": "graphics:text",
+        "values": {
+         "text": "Bananas: 0",
+         "size": 0.6,
+         "layer": 2
+        }
+       },
+       {
+        "component": "gameplay:number",
+        "values": {
+         "keep": true
+        }
+       },
+       {
+        "component": "gameplay:tag",
+        "values": {
+         "tag": "bananas"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_019wzGcRFydistV1RokgzkNs",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-5",
+      "name": "Lives",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "y": 3.5
+        }
+       },
+       {
+        "component": "graphics:text",
+        "values": {
+         "text": "Lives: 3",
+         "size": 0.3,
+         "layer": 2,
+         "visible": false
+        }
+       },
+       {
+        "component": "gameplay:number",
+        "values": {
+         "keep": true,
+         "number": 3
+        }
+       },
+       {
+        "component": "gameplay:tag",
+        "values": {
+         "tag": "lives"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01XBQiGsN5wytGvyFqXmA1ji",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-5",
+      "name": "Menu button",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "y": 1.0
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 5,
+         "height": 1.1,
+         "color": "#2E7D32",
+         "layer": 1
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01JeU6Z7eV7jre9yK9pAayXT",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-5",
+      "name": "Menu label",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "y": 1.0
+        }
+       },
+       {
+        "component": "graphics:text",
+        "values": {
+         "text": "Play again",
+         "size": 0.6,
+         "layer": 2
+        }
+       }
+      ]
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 2398,
+    "cacheWrite": 2084,
+    "cacheRead": 60081
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_01UAY9yfSbLkLFQU9jKQSFyv",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-61",
+      "component": "graphics:transform",
+      "property": "x",
+      "value": 7.5
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 302,
+    "cacheWrite": 2706,
+    "cacheRead": 62165
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_01MW5mxbtwWNJnEYfeoRViFb",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-61",
+      "component": "graphics:transform",
+      "property": "y",
+      "value": 1.2
+     }
+    },
+    {
+     "id": "toolu_0151MwFzUfbhxUfCiYpU1QCz",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-62",
+      "component": "graphics:transform",
+      "property": "x",
+      "value": 15
+     }
+    },
+    {
+     "id": "toolu_01HN3bkzeHYkZdntYTunKUKN",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-62",
+      "component": "graphics:transform",
+      "property": "y",
+      "value": 1.2
+     }
+    },
+    {
+     "id": "toolu_01Ja8PVN58EyYPnLyK2oGyuB",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-63",
+      "component": "graphics:transform",
+      "property": "x",
+      "value": 23
+     }
+    },
+    {
+     "id": "toolu_01LpvQudPMew6cSnRCVxy2xq",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-64",
+      "component": "graphics:transform",
+      "property": "x",
+      "value": 30
+     }
+    },
+    {
+     "id": "toolu_01K7SEArwUYNWo15XLh7fHVG",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-64",
+      "component": "graphics:transform",
+      "property": "y",
+      "value": 1.2
+     }
+    },
+    {
+     "id": "toolu_018KjZ9h9ub8ZBut1gDkTC9N",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-5",
+      "object": "obj-67",
+      "when": {
+       "block": "Always"
+      },
+      "do": [
+       {
+        "block": "ShowNumber",
+        "target": {
+         "kind": "self"
+        },
+        "prefix": "Bananas collected: "
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01B7EU4FmasGekGTuhjkJwK9",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-5",
+      "object": "obj-69",
+      "when": {
+       "block": "Tapped"
+      },
+      "do": [
+       {
+        "block": "GoToScene",
+        "scene": "scene-1"
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01NcmZcsydjz7jexT8tS13R1",
+     "name": "move_into",
+     "input": {
+      "scene": "scene-5",
+      "object": "obj-70",
+      "parent": "obj-69"
+     }
+    },
+    {
+     "id": "toolu_01H5DLJjKatRhkp1VoyRtttM",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-6",
+      "name": "Background",
+      "components": [
+       {
+        "component": "graphics:transform"
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 40,
+         "height": 24,
+         "color": "#212121",
+         "layer": -1
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_015u7UU9rokcRTh3JdbhuvAP",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-6",
+      "name": "Lose text",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "y": -2.4
+        }
+       },
+       {
+        "component": "graphics:text",
+        "values": {
+         "text": "The snakes got you!",
+         "size": 0.9,
+         "color": "#76FF03",
+         "layer": 2
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01Qju3gHNkYcbsiTrVE9EXXq",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-6",
+      "name": "Lives",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "y": -1.0
+        }
+       },
+       {
+        "component": "graphics:text",
+        "values": {
+         "text": "Lives: 3",
+         "size": 0.5,
+         "layer": 2
+        }
+       },
+       {
+        "component": "gameplay:number",
+        "values": {
+         "keep": true,
+         "number": 3
+        }
+       },
+       {
+        "component": "gameplay:tag",
+        "values": {
+         "tag": "lives"
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01UU5Sm5Qz7iuCbsA3Z3KAb9",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-6",
+      "name": "Retry button",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "y": 1.0
+        }
+       },
+       {
+        "component": "graphics:shape",
+        "values": {
+         "width": 5,
+         "height": 1.1,
+         "color": "#43A047",
+         "layer": 1
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01WWJTuQnoRBF1iJTHPwTeis",
+     "name": "add_object",
+     "input": {
+      "scene": "scene-6",
+      "name": "Retry label",
+      "components": [
+       {
+        "component": "graphics:transform",
+        "values": {
+         "y": 1.0
+        }
+       },
+       {
+        "component": "graphics:text",
+        "values": {
+         "text": "Back to title",
+         "size": 0.55,
+         "layer": 2
+        }
+       }
+      ]
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 2234,
+    "cacheWrite": 179,
+    "cacheRead": 64871
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_019Pc7SFCY2c3NWbjrxN7C1M",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-6",
+      "object": "obj-74",
+      "when": {
+       "block": "Tapped"
+      },
+      "do": [
+       {
+        "block": "SetNumber",
+        "target": {
+         "kind": "tagged",
+         "tag": "lives"
+        },
+        "value": 3
+       },
+       {
+        "block": "GoToScene",
+        "scene": "scene-1"
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01V2UudimTruR8wWsR6fMQCi",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-6",
+      "object": "obj-73",
+      "when": {
+       "block": "Always"
+      },
+      "do": [
+       {
+        "block": "ShowNumber",
+        "target": {
+         "kind": "self"
+        },
+        "prefix": "Lives: "
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_017Er6yJCE3kmrE63bQXAJDs",
+     "name": "move_into",
+     "input": {
+      "scene": "scene-6",
+      "object": "obj-75",
+      "parent": "obj-74"
+     }
+    },
+    {
+     "id": "toolu_013bWbJUABwAvkrcmPet4hMe",
+     "name": "remove_rule",
+     "input": {
+      "scene": "scene-5",
+      "object": "obj-69",
+      "rule": 1
+     }
+    },
+    {
+     "id": "toolu_01A58hcuBFLuuwhDAGqTW1kK",
+     "name": "add_rule",
+     "input": {
+      "scene": "scene-5",
+      "object": "obj-69",
+      "when": {
+       "block": "Tapped"
+      },
+      "do": [
+       {
+        "block": "SetNumber",
+        "target": {
+         "kind": "tagged",
+         "tag": "lives"
+        },
+        "value": 3
+       },
+       {
+        "block": "SetNumber",
+        "target": {
+         "kind": "tagged",
+         "tag": "bananas"
+        },
+        "value": 0
+       },
+       {
+        "block": "GoToScene",
+        "scene": "scene-1"
+       }
+      ]
+     }
+    },
+    {
+     "id": "toolu_01RmXkAH2ZyKkN7e7GsCCbSD",
+     "name": "check_game",
+     "input": {
+      "scene": "all"
+     }
+    },
+    {
+     "id": "toolu_016iiuMBTn5KxFTXHgnaJcLA",
+     "name": "trace_rules",
+     "input": {
+      "scene": "scene-2",
+      "seconds": 8,
+      "hold": [
+       {
+        "action": "input:right"
+       }
+      ]
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 1223,
+    "cacheWrite": 2881,
+    "cacheRead": 65050
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_0159aSKGs87EVda195ztQFUW",
+     "name": "trace_rules",
+     "input": {
+      "scene": "scene-2",
+      "seconds": 12,
+      "hold": [
+       {
+        "action": "input:right"
+       },
+       {
+        "action": "input:jump"
+       }
+      ],
+      "objects": [
+       "obj-33",
+       "obj-34"
+      ]
+     }
+    },
+    {
+     "id": "toolu_019X27GpyXbgdejDsaw9ixMr",
+     "name": "trace_rules",
+     "input": {
+      "scene": "scene-3",
+      "seconds": 14,
+      "hold": [
+       {
+        "action": "input:right"
+       },
+       {
+        "action": "input:jump"
+       }
+      ],
+      "objects": [
+       "obj-45",
+       "obj-46"
+      ]
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 470,
+    "cacheWrite": 1950,
+    "cacheRead": 67931
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_01LynnD53ibtgdXgMJaRCgVz",
+     "name": "trace_rules",
+     "input": {
+      "scene": "scene-2",
+      "seconds": 4,
+      "objects": [
+       "obj-33"
+      ]
+     }
+    },
+    {
+     "id": "toolu_01CwmDfzQu6hQG91wCfaoXi2",
+     "name": "trace_rules",
+     "input": {
+      "scene": "scene-2",
+      "seconds": 3,
+      "hold": [
+       {
+        "action": "input:right",
+        "from": 0,
+        "to": 0.6
+       }
+      ],
+      "objects": [
+       "obj-33"
+      ]
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 1038,
+    "cacheWrite": 797,
+    "cacheRead": 69881
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_01QzGk1gAtE7jqsfbzjqpHqa",
+     "name": "trace_rules",
+     "input": {
+      "scene": "scene-2",
+      "seconds": 8,
+      "hold": [
+       {
+        "action": "input:right"
+       },
+       {
+        "action": "input:jump",
+        "from": 0.5,
+        "to": 0.55
+       },
+       {
+        "action": "input:jump",
+        "from": 1.2,
+        "to": 1.25
+       },
+       {
+        "action": "input:jump",
+        "from": 2.2,
+        "to": 2.25
+       },
+       {
+        "action": "input:jump",
+        "from": 3.4,
+        "to": 3.45
+       },
+       {
+        "action": "input:jump",
+        "from": 4.0,
+        "to": 4.05
+       },
+       {
+        "action": "input:jump",
+        "from": 4.9,
+        "to": 4.95
+       }
+      ],
+      "objects": [
+       "obj-33",
+       "obj-34"
+      ]
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 1542,
+    "cacheWrite": 698,
+    "cacheRead": 70678
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_018UM1Fa9LWY7X1b9PqGyXNj",
+     "name": "trace_rules",
+     "input": {
+      "scene": "scene-2",
+      "seconds": 9,
+      "hold": [
+       {
+        "action": "input:right"
+       },
+       {
+        "action": "input:jump",
+        "from": 0.4,
+        "to": 0.45
+       },
+       {
+        "action": "input:jump",
+        "from": 1.2,
+        "to": 1.25
+       },
+       {
+        "action": "input:jump",
+        "from": 1.9,
+        "to": 1.95
+       },
+       {
+        "action": "input:jump",
+        "from": 3.4,
+        "to": 3.45
+       },
+       {
+        "action": "input:jump",
+        "from": 4.2,
+        "to": 4.25
+       },
+       {
+        "action": "input:jump",
+        "from": 5.0,
+        "to": 5.05
+       }
+      ],
+      "objects": [
+       "obj-33",
+       "obj-34"
+      ]
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 1111,
+    "cacheWrite": 528,
+    "cacheRead": 71376
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_012p5w1bqAg3cFm4r4CtGnkX",
+     "name": "trace_rules",
+     "input": {
+      "scene": "scene-3",
+      "seconds": 12,
+      "hold": [
+       {
+        "action": "input:right"
+       },
+       {
+        "action": "input:jump",
+        "from": 0.6,
+        "to": 0.65
+       },
+       {
+        "action": "input:jump",
+        "from": 1.3,
+        "to": 1.35
+       },
+       {
+        "action": "input:jump",
+        "from": 2.0,
+        "to": 2.05
+       },
+       {
+        "action": "input:jump",
+        "from": 2.9,
+        "to": 2.95
+       },
+       {
+        "action": "input:jump",
+        "from": 3.6,
+        "to": 3.65
+       },
+       {
+        "action": "input:jump",
+        "from": 4.3,
+        "to": 4.35
+       },
+       {
+        "action": "input:jump",
+        "from": 5.0,
+        "to": 5.05
+       },
+       {
+        "action": "input:jump",
+        "from": 5.8,
+        "to": 5.85
+       },
+       {
+        "action": "input:jump",
+        "from": 6.5,
+        "to": 6.55
+       },
+       {
+        "action": "input:jump",
+        "from": 7.2,
+        "to": 7.25
+       }
+      ],
+      "objects": [
+       "obj-45",
+       "obj-46"
+      ]
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 584,
+    "cacheWrite": 530,
+    "cacheRead": 71904
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_01NwZ5wxnswSmRWWjUHU5GBA",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-47",
+      "component": "graphics:shape",
+      "property": "width",
+      "value": "5.6"
+     }
+    },
+    {
+     "id": "toolu_011WAmXC2Ea9ogvj3kCTyQbU",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-48",
+      "component": "graphics:shape",
+      "property": "width",
+      "value": "5.6"
+     }
+    },
+    {
+     "id": "toolu_01MS8wPnP3X6hoL4YonUDyRc",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-49",
+      "component": "graphics:shape",
+      "property": "width",
+      "value": "5.6"
+     }
+    },
+    {
+     "id": "toolu_01SDajdATdYZZe4f9m6LNnR8",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-50",
+      "component": "graphics:shape",
+      "property": "width",
+      "value": "5.6"
+     }
+    },
+    {
+     "id": "toolu_01QF4CeRmarofJddw4h4vbZv",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-51",
+      "component": "graphics:shape",
+      "property": "width",
+      "value": "5.6"
+     }
+    },
+    {
+     "id": "toolu_01MrU9AmNdxkTQcBKUA3JSUg",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-52",
+      "component": "graphics:shape",
+      "property": "width",
+      "value": "5.6"
+     }
+    },
+    {
+     "id": "toolu_01XiCPraE5vNfRC9oN6G5qqK",
+     "name": "trace_rules",
+     "input": {
+      "scene": "scene-3",
+      "seconds": 10,
+      "hold": [
+       {
+        "action": "input:right"
+       },
+       {
+        "action": "input:jump",
+        "from": 0.3,
+        "to": 0.35
+       },
+       {
+        "action": "input:jump",
+        "from": 1.2,
+        "to": 1.25
+       },
+       {
+        "action": "input:jump",
+        "from": 2.0,
+        "to": 2.05
+       },
+       {
+        "action": "input:jump",
+        "from": 3.3,
+        "to": 3.35
+       },
+       {
+        "action": "input:jump",
+        "from": 4.0,
+        "to": 4.05
+       },
+       {
+        "action": "input:jump",
+        "from": 5.0,
+        "to": 5.05
+       },
+       {
+        "action": "input:jump",
+        "from": 6.0,
+        "to": 6.05
+       }
+      ],
+      "objects": [
+       "obj-45",
+       "obj-46"
+      ]
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 1672,
+    "cacheWrite": 636,
+    "cacheRead": 72434
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_01G85bd5EDf2TUkikkunrexN",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-47",
+      "component": "graphics:shape",
+      "property": "width",
+      "value": 5.6
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 286,
+    "cacheWrite": 1705,
+    "cacheRead": 73070
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_01MwhT8N8kurWrj7E5vjk8oN",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-48",
+      "component": "graphics:shape",
+      "property": "width",
+      "value": "5.6"
+     }
+    },
+    {
+     "id": "toolu_01Wp4QL6LuERP9163G25ivpE",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-49",
+      "component": "graphics:shape",
+      "property": "width",
+      "value": "5.6"
+     }
+    },
+    {
+     "id": "toolu_01TQFn4FTYNxZYZtedQgs3uJ",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-50",
+      "component": "graphics:shape",
+      "property": "width",
+      "value": "5.6"
+     }
+    },
+    {
+     "id": "toolu_011duQRV9PReafZ28oqdgGgL",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-51",
+      "component": "graphics:shape",
+      "property": "width",
+      "value": "5.6"
+     }
+    },
+    {
+     "id": "toolu_01FtcDAHXhsQasPy6wweLYFn",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-52",
+      "component": "graphics:shape",
+      "property": "width",
+      "value": "5.6"
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 768,
+    "cacheWrite": 177,
+    "cacheRead": 74775
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_01HpgtY9MDS1gYykzXHJC5Fx",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-48",
+      "component": "graphics:shape",
+      "property": "width",
+      "value": 5.6
+     }
+    },
+    {
+     "id": "toolu_01PBdLAuEnC8eMsoJPKfxUVz",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-49",
+      "component": "graphics:shape",
+      "property": "width",
+      "value": 5.6
+     }
+    },
+    {
+     "id": "toolu_019nAjNjBTp51WNfUKd8GEmp",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-50",
+      "component": "graphics:shape",
+      "property": "width",
+      "value": 5.6
+     }
+    },
+    {
+     "id": "toolu_01YTnB2WvsuCBmen74f1D5PW",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-51",
+      "component": "graphics:shape",
+      "property": "width",
+      "value": 5.6
+     }
+    },
+    {
+     "id": "toolu_01J6RMAcLCeCV9z1CMbbefco",
+     "name": "set_property",
+     "input": {
+      "scene": "scene-3",
+      "object": "obj-52",
+      "component": "graphics:shape",
+      "property": "width",
+      "value": 5.6
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 862,
+    "cacheWrite": 944,
+    "cacheRead": 74952
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_01Gg5EdWY5zBJRbdMTTV2RBK",
+     "name": "trace_rules",
+     "input": {
+      "scene": "scene-3",
+      "seconds": 10,
+      "hold": [
+       {
+        "action": "input:right"
+       },
+       {
+        "action": "input:jump",
+        "from": 0.4,
+        "to": 0.45
+       },
+       {
+        "action": "input:jump",
+        "from": 1.2,
+        "to": 1.25
+       },
+       {
+        "action": "input:jump",
+        "from": 1.9,
+        "to": 1.95
+       },
+       {
+        "action": "input:jump",
+        "from": 3.4,
+        "to": 3.45
+       },
+       {
+        "action": "input:jump",
+        "from": 4.2,
+        "to": 4.25
+       },
+       {
+        "action": "input:jump",
+        "from": 5.0,
+        "to": 5.05
+       }
+      ],
+      "objects": [
+       "obj-45",
+       "obj-46"
+      ]
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 424,
+    "cacheWrite": 979,
+    "cacheRead": 75896
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_019PGXDPLinjkxk7e6RjS6HM",
+     "name": "trace_rules",
+     "input": {
+      "scene": "scene-3",
+      "seconds": 10,
+      "hold": [
+       {
+        "action": "input:right"
+       },
+       {
+        "action": "input:jump",
+        "from": 1.2,
+        "to": 1.25
+       },
+       {
+        "action": "input:jump",
+        "from": 1.9,
+        "to": 1.95
+       },
+       {
+        "action": "input:jump",
+        "from": 2.7,
+        "to": 2.75
+       },
+       {
+        "action": "input:jump",
+        "from": 3.4,
+        "to": 3.45
+       },
+       {
+        "action": "input:jump",
+        "from": 4.9,
+        "to": 4.95
+       },
+       {
+        "action": "input:jump",
+        "from": 5.7,
+        "to": 5.75
+       },
+       {
+        "action": "input:jump",
+        "from": 6.4,
+        "to": 6.45
+       },
+       {
+        "action": "input:jump",
+        "from": 7.1,
+        "to": 7.15
+       }
+      ],
+      "objects": [
+       "obj-45",
+       "obj-46"
+      ]
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 1179,
+    "cacheWrite": 529,
+    "cacheRead": 76875
+   }
+  },
+  {
+   "text": null,
+   "calls": [
+    {
+     "id": "toolu_01CEvwHrviHU4JQdjtCDz4VG",
+     "name": "finish",
+     "input": {
+      "summary": "Built \"Jungle Banana Run\": a Title screen (Play and Shop), Level 1 and Level 2 (platforms, bananas, snakes, flag goal, 3 lives), a Shop selling an Extra life as a test purchase ($0.49), a Jungle Champion win screen and a Game Over lose screen with buttons back to the title. Bananas and lives carry between scenes, and test banner and between-scene ads are on (every 2 scene changes). All scenes pass the game check, and Level 1 can be finished in a simulated play. I couldn't reach Level 2's flag in a simulated play, so please try it yourself."
+     }
+    }
+   ],
+   "usage": {
+    "input": 2,
+    "output": 1054,
+    "cacheWrite": 582,
+    "cacheRead": 77404
+   }
+  }
+ ]
+}

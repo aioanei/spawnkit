@@ -18,7 +18,8 @@ import kotlinx.serialization.json.longOrNull
  *
  * - A request is `{"system", "messages", "tools"}`. Messages have a `role`: `user` (`text`), `assistant` (`text`,
  *   `calls`) or `tools` (`replies`).
- * - A reply is `{"text", "calls", "usage": {"inputTokens", "outputTokens"}}`.
+ * - A reply is `{"text", "calls", "usage": {"inputTokens", "outputTokens", "cacheWriteTokens", "cacheReadTokens"}}`;
+ *   the cache counts are optional.
  */
 public object ModelRequestJson {
     /** [request] as JSON text. */
@@ -50,6 +51,8 @@ public object ModelRequestJson {
                 buildJsonObject {
                     put("inputTokens", JsonPrimitive(reply.usage.inputTokens))
                     put("outputTokens", JsonPrimitive(reply.usage.outputTokens))
+                    put("cacheWriteTokens", JsonPrimitive(reply.usage.cacheWriteTokens))
+                    put("cacheReadTokens", JsonPrimitive(reply.usage.cacheReadTokens))
                 },
             )
         }.toString()
@@ -62,7 +65,13 @@ public object ModelRequestJson {
             ModelReply(
                 text = root.optionalString("text"),
                 calls = root.array("calls").map { call(it.obj()) },
-                usage = Usage(usage?.long("inputTokens") ?: 0, usage?.long("outputTokens") ?: 0),
+                usage =
+                    Usage(
+                        usage?.long("inputTokens") ?: 0,
+                        usage?.long("outputTokens") ?: 0,
+                        usage?.long("cacheWriteTokens") ?: 0,
+                        usage?.long("cacheReadTokens") ?: 0,
+                    ),
             )
         }
 

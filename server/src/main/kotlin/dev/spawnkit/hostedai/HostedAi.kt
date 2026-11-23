@@ -78,7 +78,7 @@ internal class HostedAi(
         const val MAX_REQUEST_BYTES: Int = 512 * 1024
 
         /** Longest reply, in tokens. */
-        const val DEFAULT_MAX_OUTPUT_TOKENS: Int = 4096
+        const val DEFAULT_MAX_OUTPUT_TOKENS: Int = KoogModel.DEFAULT_MAX_OUTPUT_TOKENS
     }
 }
 

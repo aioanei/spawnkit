@@ -5,9 +5,11 @@ import ai.koog.agents.core.tools.ToolParameterDescriptor
 import ai.koog.agents.core.tools.ToolParameterType
 import ai.koog.http.client.ktor.KtorKoogHttpClient
 import ai.koog.prompt.Prompt
+import ai.koog.prompt.executor.clients.anthropic.AnthropicCacheControl
 import ai.koog.prompt.executor.clients.anthropic.AnthropicClientSettings
 import ai.koog.prompt.executor.clients.anthropic.AnthropicLLMClient
 import ai.koog.prompt.executor.clients.anthropic.AnthropicModels
+import ai.koog.prompt.executor.clients.anthropic.AnthropicParams
 import ai.koog.prompt.executor.llms.MultiLLMPromptExecutor
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLMProvider
@@ -25,6 +27,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.longOrNull
 
 /**
  * A live model through Koog (C7): converts the session's messages and derived tool definitions to a Koog [Prompt] and
@@ -46,7 +49,15 @@ public class KoogModel(
     private var promptCounter = 0
 
     override suspend fun reply(request: ModelRequest): ModelReply {
-        val prompt = Prompt(koogMessages(request), "spawnkit-assistant-${promptCounter++}", LLMParams(maxTokens = maxOutputTokens))
+        // Anthropic caches the instructions, the tools and the conversation so far: each later call of a session pays a
+        // tenth of the input price for them instead of the full price.
+        val params =
+            if (model.provider == LLMProvider.Anthropic) {
+                AnthropicParams(maxTokens = maxOutputTokens, cacheControl = AnthropicCacheControl.Default)
+            } else {
+                LLMParams(maxTokens = maxOutputTokens)
+            }
+        val prompt = Prompt(koogMessages(request), "spawnkit-assistant-${promptCounter++}", params)
         val response = executor.execute(prompt, model, request.tools.map(::toolDescriptor))
         val text =
             response.parts
@@ -60,11 +71,22 @@ public class KoogModel(
                 ToolCall(call.id ?: "call-${prompt.id}-$index", call.tool, input)
             }
         val meta = response.metaInfo
-        return ModelReply(text, calls, Usage(meta.inputTokensCount?.toLong() ?: 0, meta.outputTokensCount?.toLong() ?: 0))
+        val cache = meta.metadata
+        val usage =
+            Usage(
+                meta.inputTokensCount?.toLong() ?: 0,
+                meta.outputTokensCount?.toLong() ?: 0,
+                (cache?.get("cacheCreationInputTokens") as? JsonPrimitive)?.longOrNull ?: 0,
+                (cache?.get("cacheReadInputTokens") as? JsonPrimitive)?.longOrNull ?: 0,
+            )
+        return ModelReply(text, calls, usage)
     }
 
     /** Factories for supported providers. */
     public companion object {
+        /** Output cap per reply: room for a batch of building steps (C13a); Koog's own default of 2048 cut them off. */
+        public const val DEFAULT_MAX_OUTPUT_TOKENS: Int = 8192
+
         /** Default Anthropic model for the assistant. */
         public const val DEFAULT_ANTHROPIC_MODEL: String = "claude-sonnet-5-5"
 
@@ -77,7 +99,7 @@ public class KoogModel(
             modelId: String = DEFAULT_ANTHROPIC_MODEL,
             inputPricePerMillion: Double? = 3.0,
             outputPricePerMillion: Double? = 15.0,
-            maxOutputTokens: Int? = null,
+            maxOutputTokens: Int? = DEFAULT_MAX_OUTPUT_TOKENS,
         ): KoogModel {
             require(apiKey.isNotBlank()) { "Add an Anthropic API key in the assistant settings first" }
             val base = AnthropicModels.Sonnet_5

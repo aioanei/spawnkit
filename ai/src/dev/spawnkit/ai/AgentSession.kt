@@ -213,6 +213,7 @@ public class AgentSession(
         val changes = checkNotNull(staged)
         val tools = checkNotNull(toolbox)
         var step = 0
+        var empties = 0
         while (step < maxSteps) {
             step++
             onEvent(AgentEvent.Thinking(step))
@@ -227,8 +228,17 @@ public class AgentSession(
                     return AgentOutcome.Failed("The assistant could not answer: ${problem.message ?: "unknown problem"}", cost)
                 }
             usage += reply.usage
+            if (reply.calls.isEmpty() && reply.text.isNullOrBlank()) {
+                // An empty reply is usually a long one cut off at the output cap: never take it as "done".
+                if (++empties > MAX_EMPTY_REPLIES) {
+                    changes.discard()
+                    return AgentOutcome.Failed(EMPTY, cost)
+                }
+                messages += AgentMessage.User(CUT_OFF)
+                continue
+            }
             messages += AgentMessage.Assistant(reply.text, reply.calls)
-            if (reply.calls.isEmpty()) return conclude(reply.text.orEmpty().ifBlank { "Done." })
+            if (reply.calls.isEmpty()) return conclude(reply.text.orEmpty())
             val replies = mutableListOf<ToolReply>()
             for ((index, call) in reply.calls.withIndex()) {
                 val outcome = tools.call(call.name, call.input)
@@ -294,9 +304,14 @@ public class AgentSession(
     /** Session defaults. */
     public companion object {
         /** Model calls allowed per request. */
-        public const val DEFAULT_MAX_STEPS: Int = 30
+        public const val DEFAULT_MAX_STEPS: Int = 60
 
         private const val NOT_RUN = "Not run: the session paused for the creator."
+        private const val MAX_EMPTY_REPLIES = 1
+        private const val CUT_OFF =
+            "(Your last reply came back empty, probably cut off because it was too long. Go on from where you were, with " +
+                "fewer tool calls per reply.)"
+        private const val EMPTY = "The assistant's replies came back empty. Nothing in your game changed; try a shorter request."
         private const val DECLINED = "The creator chose not to send the photo, so nothing was sent and no characters were made."
 
         /** Added to the creator's prompt when a photo is attached; the model never receives the photo itself. */
@@ -316,9 +331,29 @@ public class AgentSession(
             - Test rule changes with trace_rules and check_game before you finish. To explain why a rule did not
               fire, trace it and report what the trace shows.
             - Finish with finish and a short summary in plain words, without technical IDs.
+            - Make at most 15 tool calls per reply, so a reply is never cut off.
             - When the creator asks for a character from an attached photo, call make_character. You never see the
               photo, and the creator confirms before it is sent. Then arrange or extend the Character if asked.
             - You cannot publish, export or delete saved files; the creator does that in the builder.
+
+            Building a whole game (the creator describes a game rather than one change):
+            - Study a complete example first: look_at_example lists them; read the scenes that match the request.
+            - Plan before building: the scenes (title screen, levels, win and lose scenes), the mechanics, the values
+              kept between scenes (coins, lives), the shop and the ad spots. Keep it small enough to finish well.
+            - The first scene is where play starts: make it the title screen, with a Play button (a shape with a text
+              inside it and "When tapped, go to scene" to the first level). Add scenes with add_scene; look inside any
+              scene with look_at_game and its scene ID.
+            - Each level needs a goal and a way to lose. Going to the win and lose scenes ends a level; give them a
+              button back to the title screen.
+            - Kept values carry between scenes: a number with "Keep across scenes" on and a tag (describe_components
+              names the property), shown with a text.
+            - A shop sells upgrades with the Test purchase block (test purchases only, no real money). Ad spots are
+              set with set_ads (test ads only).
+            - Use body and solid for platforms, spawning for falling or flying objects, and random numbers for
+              variety, as the examples do.
+            - After building, check every scene with check_game and scene "all", trace the main rules of each level,
+              and fix what they show.
+            - Finish with a short summary: what you made, how to play it, and how to change it by hand.
             """.trimIndent()
     }
 }

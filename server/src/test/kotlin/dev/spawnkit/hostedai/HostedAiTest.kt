@@ -211,6 +211,19 @@ class HostedAiTest {
         }
 
     @Test
+    fun promptCacheTokensAreChargedAndSentToTheBuilder() =
+        proxy { ledger ->
+            gateway.reply = gateway.reply.copy(usage = Usage(1000, 100, cacheWriteTokens = 8000, cacheReadTokens = 20000))
+            val ada = signedUp()
+
+            val answer = HostedModel("", ada.token, client).reply(prompt)
+
+            // 4,500 µ$ as above, plus 8,000 written at 3.75 µ$ (30,000) and 20,000 read at 0.3 µ$ (6,000).
+            assertEquals(40_500L, ledger.monthMicros())
+            assertEquals(Usage(1000, 100, 8000, 20000), answer.usage)
+        }
+
+    @Test
     fun aFailedModelCallCostsNothing() =
         proxy { ledger ->
             gateway.failure = IllegalStateException("provider exploded with key sk-secret")

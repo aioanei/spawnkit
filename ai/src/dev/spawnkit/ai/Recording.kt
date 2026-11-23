@@ -100,6 +100,8 @@ public data class RecordedSession(
                             mapOf(
                                 "input" to JsonPrimitive(reply.usage.inputTokens),
                                 "output" to JsonPrimitive(reply.usage.outputTokens),
+                                "cacheWrite" to JsonPrimitive(reply.usage.cacheWriteTokens),
+                                "cacheRead" to JsonPrimitive(reply.usage.cacheReadTokens),
                             ),
                         ),
                 ),
@@ -116,6 +118,8 @@ public data class RecordedSession(
                 Usage(
                     usage?.get("input")?.jsonPrimitive?.longOrNull ?: 0,
                     usage?.get("output")?.jsonPrimitive?.longOrNull ?: 0,
+                    usage?.get("cacheWrite")?.jsonPrimitive?.longOrNull ?: 0,
+                    usage?.get("cacheRead")?.jsonPrimitive?.longOrNull ?: 0,
                 ),
             )
         }

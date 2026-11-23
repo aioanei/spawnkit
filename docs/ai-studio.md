@@ -23,10 +23,11 @@ It has no screens; the assistant UI comes in C7c.
 | Tools | Source | Effect |
 |---|---|---|
 | `rename_project`, `add_object`, … `add_rule`, `change_block`, … | derived from `StandardEngine.operations` | stage one builder operation |
-| `look_at_game` | toolbox | scene ID; objects with their IDs, component values and rules as blocks, in the form the rule tools take |
+| `look_at_game` | toolbox | every scene in play order (the first is where play starts), the images and the ad settings; inside one scene (`scene`, default the open one), objects with their IDs, component values and rules as blocks, in the form the rule tools take |
+| `look_at_example` | toolbox | the preset games as read-only worked examples: the list, one game's scenes, or one scene in `look_at_game`'s form (C13a) |
 | `describe_components` | toolbox | installed components, properties, kinds, limits and defaults |
-| `check_game` | toolbox | rule and capability problems found by the real engine, exactly as Play reports them |
-| `trace_rules` | toolbox | headless play with held inputs, reporting which rules ran, when, and which conditions were never true |
+| `check_game` | toolbox | rule and capability problems found by the real engine, exactly as Play reports them, for one scene or `all` |
+| `trace_rules` | toolbox | headless play of a scene with held inputs, reporting which rules ran, when, and which conditions were never true |
 | `ask_creator` | toolbox | pause the session with a clarifying question and suggested answers |
 | `make_character` | toolbox | ask to turn the photo attached in the chat into characters; the session waits for the creator's consent before anything is sent (C16b) |
 | `finish` | toolbox | end with a summary in the creator's words |
@@ -170,6 +171,53 @@ account (which asks first).
   `spawnkit-server`). It is never shown or logged, and never goes into projects, exports or the assistant. A token the
   server no longer accepts signs the builder out with "Your session ended. Sign in again."
 - `AccountClient` (`ai`) is the client for the C11a routes; `AccountState` (`app/shared`) holds the builder's account.
+
+## Game Architect (C13a)
+
+[Plan](plans/2026-11-24-c13a-game-architect.md), [#85](https://github.com/aioanei/spawnkit/issues/85). The assistant can
+plan and build a **complete** game from one prompt with the builder's own operations.
+
+- **The whole game in view.** `look_at_game` lists every scene and looks inside any of them. `check_game` checks one
+  scene or `all`. `trace_rules` plays any scene.
+- **Worked examples.** `look_at_example` shows the preset games, including the complete ones (C17), read-only and in
+  the same form as `look_at_game`, so the agent copies patterns rather than guessing them.
+- **Instructions.** For a whole game the agent:
+  1. studies an example and plans the scenes, mechanics, kept values, shop and ad spots;
+  2. makes the first scene a title screen with a Play button;
+  3. builds levels with a goal and a way to lose, and win and lose scenes with a way back;
+  4. uses kept numbers, Test purchase blocks and `set_ads`;
+  5. checks every scene, traces the main rules and summarizes how to change the game by hand.
+- **Budget.** A request may take 60 model calls (30 before); the recorder uses the same limit, bounded by its dollar
+  budget.
+- **Prompt caching.** `KoogModel` asks Anthropic to cache the instructions, tools and conversation
+  (`AnthropicParams.cacheControl`). `Usage` counts cache writes and reads from Koog's metadata. `Cost`, the server's
+  ledger, recordings and the request JSON price writes at 1.25 × and reads at 0.1 × the input price.
+- **Tests.**
+  - `GameArchitectTest`: a scripted fixture builds a title screen, a level and a win scene, reading created IDs as a
+    model would. Every scene checks clean, the trace shows the level's goal rule firing, and one undo removes it all.
+  - `AgentToolboxScenesTest` +2, `ExamplesToolTest` 3.
+  - `KoogAnthropicWireTest`: `cache_control` is sent and cache tokens are counted.
+  - `HostedAiTest`: cache tokens are charged and returned.
+- **Empty replies.** A reply with no text and no tool calls is usually one cut off at the output cap. It is never taken
+  as "done": the session asks the model once to go on with fewer calls per reply, then fails plainly. Replies may now
+  use 8,192 output tokens (Koog's default of 2,048 cut a first whole-game attempt off). The instructions ask for at
+  most 15 tool calls per reply.
+- **Live recording (2026-11-23).** One prompt on a blank game, through `tools/agentRecorder` with the owner's key and a
+  $3 budget: "Make a complete jungle platformer … title screen with Play, two levels, bananas kept between levels, a
+  shop that sells an extra life as a test purchase, test ads between levels, and win and lose screens."
+  - `claude-sonnet-5-5` built **Jungle Banana Run** in 30 model calls and 142 steps. It has six scenes: Title, Level 1,
+    Level 2, Shop, Jungle Champion (win) and Game Over (lose).
+  - Platforms, bananas, snakes and a flag; kept bananas and lives; an Extra life test purchase; test banner and
+    between-scene ads.
+  - Every scene passed `check_game`. The summary said Level 2's flag was not reached in a simulated play.
+  - Cost: about $1.51 (47,755 output tokens; 1,671,672 input tokens read from the cache).
+  - Committed as a labelled replay, `ai/recordings/jungle-banana-run.json`, with the game it made. `WholeGameReplayTest`
+    replays it through today's tools to exactly that game. `AiBuiltGameTest` plays the game:
+    - Play opens Level 1 with 3 lives;
+    - running into snakes ends on Game Over, and Retry restores the lives;
+    - the shop's Extra life is a test purchase that adds a life.
+  - **Cost against the limits.** A whole game costs more than the default per-account allowance of $1 a day, so with
+    SpawnKit AI it would stop partway. The owner decides the limit (`SPAWNKIT_AI_ACCOUNT_DAILY_DOLLARS` on the server, default $1).
 
 ## Character Forge (C16a)
 

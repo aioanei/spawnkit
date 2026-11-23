@@ -3,6 +3,7 @@ package dev.spawnkit.ai
 import dev.spawnkit.editing.OperationResult
 import dev.spawnkit.editing.Parameter
 import dev.spawnkit.editing.Picked
+import dev.spawnkit.editing.Project
 import dev.spawnkit.editing.StagedChanges
 import dev.spawnkit.editing.ToolDefinition
 import dev.spawnkit.editing.buildFromJson
@@ -13,6 +14,7 @@ import dev.spawnkit.gameplay.RuleBlockCatalog
 import dev.spawnkit.gameplay.RuleBlocks
 import dev.spawnkit.gameplay.RuleItem
 import dev.spawnkit.gameplay.StandardEngine
+import dev.spawnkit.presets.GamePresets
 import dev.spawnkit.runtime.ValueKind
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -94,9 +96,10 @@ public class AgentToolbox(
         input: JsonObject,
     ): ToolOutcome =
         when (name) {
-            LOOK -> ToolOutcome.Looked(look().toString())
+            LOOK -> scene(input)?.let { ToolOutcome.Looked(look(staged.project, it).toString()) } ?: unknownScene(input)
+            EXAMPLE -> example(input)
             COMPONENTS -> ToolOutcome.Looked(components().toString())
-            CHECK -> ToolOutcome.Looked(check())
+            CHECK -> check(input)
             TRACE -> trace(input)
             ASK -> ask(input)
             FINISH -> finish(input)
@@ -136,13 +139,44 @@ public class AgentToolbox(
         }
     }
 
-    /** The staged game as the creator sees it: objects with their values and rules as blocks. */
-    private fun look(): JsonObject {
-        val project = staged.project
-        val scene = checkNotNull(project.scene(sceneId))
+    /** The scene named by the input's `scene`, or the session's scene; `null` when there is no such scene. */
+    private fun scene(input: JsonObject): String? {
+        val asked = (input["scene"] as? JsonPrimitive)?.content ?: return sceneId
+        return asked.takeIf { staged.project.scene(it) != null }
+    }
+
+    private fun unknownScene(input: JsonObject): ToolOutcome.Refused {
+        val names = staged.project.scenes.joinToString { "${it.id} (${it.name})" }
+        return ToolOutcome.Refused(problem("There is no scene '${(input["scene"] as? JsonPrimitive)?.content}'. Scenes: $names"))
+    }
+
+    /**
+     * The staged game as the creator sees it: every scene in play order (the first is where play starts), the images
+     * and the ad settings, and inside scene [lookAt] the objects with their values and rules as blocks.
+     */
+    private fun look(
+        project: Project,
+        lookAt: String,
+    ): JsonObject {
+        val scene = checkNotNull(project.scene(lookAt))
         return JsonObject(
             mapOf(
                 "game" to JsonPrimitive(project.name),
+                "scenes" to scenes(project),
+                "images" to
+                    JsonArray(
+                        project.images.map { image ->
+                            JsonObject(mapOf("id" to JsonPrimitive(image.id), "name" to JsonPrimitive(image.name)))
+                        },
+                    ),
+                "ads" to
+                    JsonObject(
+                        mapOf(
+                            "banner" to JsonPrimitive(project.ads.banner),
+                            "interstitial" to JsonPrimitive(project.ads.interstitial),
+                            "every" to JsonPrimitive(project.ads.every),
+                        ),
+                    ),
                 "scene" to JsonPrimitive(scene.id),
                 "sceneName" to JsonPrimitive(scene.name),
                 "objects" to
@@ -167,6 +201,66 @@ public class AgentToolbox(
                     ),
             ),
         )
+    }
+
+    /** Every scene in play order; the first is where play starts. */
+    private fun scenes(project: Project): JsonArray =
+        JsonArray(
+            project.scenes.mapIndexed { index, doc ->
+                JsonObject(
+                    mapOf(
+                        "id" to JsonPrimitive(doc.id),
+                        "name" to JsonPrimitive(doc.name),
+                        "start" to JsonPrimitive(index == 0),
+                        "objects" to JsonPrimitive(doc.objects.size),
+                    ),
+                )
+            },
+        )
+
+    /**
+     * The preset games as worked examples (C13a): the list, one game's overview, or one of its scenes in the form
+     * [look] gives. Read-only: nothing is staged, and the example's IDs belong to the example.
+     */
+    private fun example(input: JsonObject): ToolOutcome {
+        val id = (input["example"] as? JsonPrimitive)?.content
+        if (id == null) {
+            val list =
+                GamePresets.all.map { preset ->
+                    JsonObject(
+                        mapOf(
+                            "id" to JsonPrimitive(preset.id),
+                            "name" to JsonPrimitive(preset.name),
+                            "complete" to JsonPrimitive(preset.complete),
+                            "pitch" to JsonPrimitive(preset.pitch),
+                            "teaches" to JsonArray(preset.teaches.map(::JsonPrimitive)),
+                        ),
+                    )
+                }
+            return ToolOutcome.Looked(JsonObject(mapOf("examples" to JsonArray(list))).toString())
+        }
+        val preset =
+            GamePresets.all.firstOrNull { it.id == id }
+                ?: return ToolOutcome.Refused(problem("There is no example '$id'. Examples: ${GamePresets.all.joinToString { it.id }}"))
+        val project = preset.project()
+        val scene = (input["scene"] as? JsonPrimitive)?.content
+        if (scene == null) {
+            val overview =
+                mapOf(
+                    "game" to JsonPrimitive(project.name),
+                    "pitch" to JsonPrimitive(preset.pitch),
+                    "complete" to JsonPrimitive(preset.complete),
+                    "scenes" to scenes(project),
+                    "note" to JsonPrimitive("Look inside a scene with its ID. These IDs belong to the example; never use them here."),
+                )
+            return ToolOutcome.Looked(JsonObject(overview).toString())
+        }
+        if (project.scene(scene) == null) {
+            return ToolOutcome.Refused(
+                problem("${preset.name} has no scene '$scene'. Scenes: ${project.scenes.joinToString { "${it.id} (${it.name})" }}"),
+            )
+        }
+        return ToolOutcome.Looked(look(project, scene).toString())
     }
 
     private fun rule(
@@ -231,16 +325,24 @@ public class AgentToolbox(
             },
         )
 
-    /** Problems the real engine finds in the staged game, as Play would report them. */
-    private fun check(): String {
+    /** Problems the real engine finds in one scene or (with `all`) every scene of the staged game, as Play reports them. */
+    private fun check(input: JsonObject): ToolOutcome {
         val project = staged.project
         val capabilities = project.capabilityProblems(engine.runtime)
-        if (capabilities.isNotEmpty()) return "The game cannot run: ${capabilities.joinToString("; ")}"
-        val world = staged.buildWorld(sceneId)
-        val scene = checkNotNull(project.scene(sceneId))
+        if (capabilities.isNotEmpty()) return ToolOutcome.Looked("The game cannot run: ${capabilities.joinToString("; ")}")
+        if ((input["scene"] as? JsonPrimitive)?.content == ALL) {
+            return ToolOutcome.Looked(project.scenes.joinToString("\n") { "${it.name} (${it.id}): ${check(it.id)}" })
+        }
+        val scene = scene(input) ?: return unknownScene(input)
+        return ToolOutcome.Looked(check(scene))
+    }
+
+    private fun check(id: String): String {
+        val world = staged.buildWorld(id)
+        val scene = checkNotNull(staged.project.scene(id))
         if (world.diagnostics.isEmpty()) return "No problems: every object's rules are ready to run."
-        return world.diagnostics.entries.joinToString("\n") { (id, problems) ->
-            "${scene.find(id)?.name ?: id}: " + problems.joinToString("; ") { it.message }
+        return world.diagnostics.entries.joinToString("\n") { (objectId, problems) ->
+            "${scene.find(objectId)?.name ?: objectId}: " + problems.joinToString("; ") { it.message }
         }
     }
 
@@ -263,7 +365,8 @@ public class AgentToolbox(
         ) {
             return ToolOutcome.Refused(problem("Play from 0.1 to $MAX_TRACE_SECONDS seconds"))
         }
-        return ToolOutcome.Looked(RuleTrace(engine).run(staged.project, sceneId, seconds, held, objects).explain())
+        val scene = scene(input) ?: return unknownScene(input)
+        return ToolOutcome.Looked(RuleTrace(engine).run(staged.project, scene, seconds, held, objects).explain())
     }
 
     private fun ask(input: JsonObject): ToolOutcome {
@@ -393,6 +496,9 @@ public class AgentToolbox(
         /** Finish with a summary. */
         public const val FINISH: String = "finish"
 
+        /** Study a preset game as a worked example (C13a). */
+        public const val EXAMPLE: String = "look_at_example"
+
         /** Make characters from the creator's attached photo, after the creator confirms (C16b, ADR-0013). */
         public const val MAKE_CHARACTER: String = "make_character"
 
@@ -404,9 +510,28 @@ public class AgentToolbox(
             listOf(
                 ToolDefinition(
                     LOOK,
-                    "Look at the game. Returns the scene ID and every object with its ID, name, component values and rules " +
-                        "as blocks (in the same form the rule tools take). Call it first, and again after changes.",
-                    schema(),
+                    "Look at the game. Returns every scene in play order (the first is where play starts), the images and " +
+                        "the ad settings, and inside one scene every object with its ID, name, component values and rules as " +
+                        "blocks (in the same form the rule tools take). Call it first, and again after changes.",
+                    schema("scene" to text("Scene ID to look inside. Default: the scene the creator has open.")),
+                ),
+                ToolDefinition(
+                    EXAMPLE,
+                    "Study a ready-made SpawnKit game as a worked example, read-only. Without input it lists the examples; " +
+                        "complete ones have a title screen, levels, kept values, a shop with test purchases, ads, and win and lose " +
+                        "scenes. With an example it lists its scenes; with a scene too it shows that scene exactly as look_at_game " +
+                        "would. Copy its patterns with the editing tools; its IDs belong to the example, never use them here.",
+                    schema(
+                        "example" to
+                            JsonObject(
+                                mapOf(
+                                    "type" to JsonPrimitive("string"),
+                                    "enum" to JsonArray(GamePresets.all.map { JsonPrimitive(it.id) }),
+                                    "description" to JsonPrimitive("Which example."),
+                                ),
+                            ),
+                        "scene" to text("Scene ID inside the example."),
+                    ),
                 ),
                 ToolDefinition(
                     COMPONENTS,
@@ -416,13 +541,14 @@ public class AgentToolbox(
                 ToolDefinition(
                     CHECK,
                     "Check the game in the real engine, exactly as Play does, and list rule problems. Call it before finishing.",
-                    schema(),
+                    schema("scene" to text("Scene ID to check, or \"$ALL\" for every scene. Default: the scene the creator has open.")),
                 ),
                 ToolDefinition(
                     TRACE,
                     "Play the game headlessly in the real engine and report which rules ran, when, and which conditions were " +
                         "never true. Use it to test changes and to explain why a rule did not fire.",
                     schema(
+                        "scene" to text("Scene ID to play. Default: the scene the creator has open."),
                         "seconds" to number("How long to play, up to $MAX_TRACE_SECONDS seconds. Default 3."),
                         "hold" to
                             JsonObject(
@@ -531,8 +657,12 @@ public class AgentToolbox(
         private fun number(description: String): JsonObject =
             JsonObject(mapOf("type" to JsonPrimitive("number"), "description" to JsonPrimitive(description)))
 
+        private fun text(description: String): JsonObject =
+            JsonObject(mapOf("type" to JsonPrimitive("string"), "description" to JsonPrimitive(description)))
+
         private const val MAX_TRACE_SECONDS = 120.0
         private const val REMOVE_SCENE = "remove_scene"
+        private const val ALL = "all"
         private const val NO_FORGE =
             "Making characters from photos needs the creator to sign in to a SpawnKit server that offers it (Project, then Account)."
     }
