@@ -16,6 +16,7 @@ import dev.spawnkit.ai.CharacterResult
 import dev.spawnkit.ai.HostedModel
 import dev.spawnkit.ai.ServerStatus
 import dev.spawnkit.app.assistant.HostedChoice
+import dev.spawnkit.app.assistant.PhotoForge
 import dev.spawnkit.app.assistant.SecretStore
 import dev.spawnkit.editing.ProjectImages
 import io.ktor.client.HttpClient
@@ -208,6 +209,12 @@ class AccountState(
         val token = token() ?: throw AccountException(SIGN_IN_FIRST, 401)
         val photo = ProjectImages.encode(ProjectImages.stripMetadata(png))
         return signedInApi().character(token, photo, styles, consent)
+    }
+
+    /** Character Forge for the assistant (C16b), when signed in to a server that offers it; otherwise `null`. */
+    fun photoForge(): PhotoForge? {
+        if (!signedIn || status?.characterAvailable != true) return null
+        return PhotoForge(::forge)
     }
 
     /** Test ad statistics of the owned game [slug] from Arcade plays (C12). Throws [AccountException] with a plain message. */

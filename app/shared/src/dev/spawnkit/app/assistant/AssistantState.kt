@@ -10,10 +10,13 @@ import dev.spawnkit.ai.AgentModel
 import dev.spawnkit.ai.AgentOutcome
 import dev.spawnkit.ai.AgentSession
 import dev.spawnkit.ai.AgentToolbox
+import dev.spawnkit.ai.CharacterMaker
+import dev.spawnkit.ai.CharacterResult
 import dev.spawnkit.ai.Cost
 import dev.spawnkit.ai.DemoModel
 import dev.spawnkit.ai.KoogModel
 import dev.spawnkit.app.editor.EditorState
+import dev.spawnkit.app.images.PickedImage
 import dev.spawnkit.editing.AcceptResult
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -28,12 +31,28 @@ class HostedChoice(
 )
 
 /**
+ * Character Forge for the signed-in account (ADR-0013), as the assistant uses it: the builder passes the account's
+ * forge, which strips the photo's metadata before it leaves the device.
+ */
+fun interface PhotoForge {
+    suspend fun make(
+        png: ByteArray,
+        styles: List<String>,
+        consent: Boolean,
+    ): CharacterResult
+}
+
+/**
  * The builder's assistant (C7c): one [AgentSession] over the game in [editor], with the creator's review in between.
  * Nothing reaches the game until [accept]; [reject], [cancel] and failures leave it unchanged.
  *
  * Which model answers (C11b, ADR-0011): the creator's own key when switched on in Developer settings, otherwise SpawnKit
  * AI through [hosted] when signed in to a server that offers it, otherwise the labelled [DemoModel]. The key lives only
  * in [secrets] and is handed only to [liveModel].
+ *
+ * Character Forge (C16b): the creator can attach a [photo]. The model is told only that one is attached; when it asks
+ * to make characters, the assistant waits for [confirm] with consent, or [decline], before anything is sent through
+ * [forge] (`null` when not signed in to a server that offers it).
  */
 class AssistantState(
     private val editor: EditorState,
@@ -41,6 +60,7 @@ class AssistantState(
     private val scope: CoroutineScope,
     private val liveModel: (String) -> AgentModel = { KoogModel.anthropic(it) },
     private val hosted: () -> HostedChoice? = { null },
+    private val forge: () -> PhotoForge? = { null },
 ) {
     /** The creator's request being typed. */
     var prompt by mutableStateOf("")
@@ -52,6 +72,10 @@ class AssistantState(
     val progress = mutableStateListOf<String>()
 
     var outcome by mutableStateOf<AgentOutcome?>(null)
+        private set
+
+    /** The photo attached for Character Forge; it is never shown to the model and is let go once sent. */
+    var photo by mutableStateOf<PickedImage?>(null)
         private set
 
     /** Cancellations, refusals and failures, in plain words. */
@@ -84,6 +108,30 @@ class AssistantState(
     private var modelFor: String? = null
     private var job: Job? = null
 
+    /** The attached photo as the agent's `make_character` sees it: whether there is one, and sending it on confirmation. */
+    private val maker =
+        object : CharacterMaker {
+            override val photoAttached: Boolean get() = photo != null
+
+            override fun unavailable(): String? =
+                when {
+                    photo == null -> NO_PHOTO
+                    forge() == null -> NO_FORGE
+                    else -> null
+                }
+
+            override suspend fun make(
+                styles: List<String>,
+                consent: Boolean,
+            ): CharacterResult {
+                val png = photo?.png ?: error(NO_PHOTO)
+                val made = (forge() ?: error(NO_FORGE)).make(png, styles, consent)
+                photo = null
+                imagesMade += made.images.size
+                return made
+            }
+        }
+
     /** Whether the scripted demo answers, so its example prompts are worth showing. */
     val isDemo: Boolean get() = modelKey() == DEMO
 
@@ -93,8 +141,18 @@ class AssistantState(
     /** Label of the model that answers: live, or the scripted demo. */
     val modelLabel: String get() = runCatching { currentModel().info.label }.getOrElse { it.message ?: "The live model is unavailable" }
 
-    /** Tokens and estimated price so far, or that nothing is paid. */
-    val costText: String get() = costText(runCatching { currentModel().info.live }.getOrDefault(false), session?.cost)
+    /** Character images made in this conversation; they use the account's SpawnKit AI allowance. */
+    var imagesMade by mutableStateOf(0)
+        private set
+
+    /** Tokens and estimated price so far, or that nothing is paid, and any character images made. */
+    val costText: String
+        get() {
+            val live = runCatching { currentModel().info.live }.getOrDefault(false)
+            if (imagesMade == 0) return costText(live, session?.cost)
+            val text = if (live) costText(true, session?.cost) else "Scripted text (no cost)"
+            return "$text · $imagesMade character images from your SpawnKit AI allowance"
+        }
 
     /** The conversation, for a details view. */
     val transcript: List<AgentMessage> get() = session?.transcript.orEmpty()
@@ -138,6 +196,27 @@ class AssistantState(
     fun answer(text: String) {
         if (dropIfStale() || running || outcome !is AgentOutcome.Question || text.isBlank()) return
         start(keepProgress = true) { session, onEvent -> session.answer(text.trim(), onEvent) }
+    }
+
+    /** Attaches [picked] for Character Forge, replacing any earlier photo. */
+    fun attach(picked: PickedImage) {
+        photo = picked
+    }
+
+    fun removePhoto() {
+        photo = null
+    }
+
+    /** The creator agreed to send the photo; [consent] must be ticked ("This is me, or this person agreed"). */
+    fun confirm(consent: Boolean) {
+        if (!consent || dropIfStale() || running || outcome !is AgentOutcome.Confirmation) return
+        start(keepProgress = true) { session, onEvent -> session.confirm(consent, onEvent) }
+    }
+
+    /** The creator chose not to send the photo; the assistant goes on without it. */
+    fun decline() {
+        if (dropIfStale() || running || outcome !is AgentOutcome.Confirmation) return
+        start(keepProgress = true) { session, onEvent -> session.decline(onEvent) }
     }
 
     /** Applies the proposal as one undoable step. */
@@ -205,6 +284,9 @@ class AssistantState(
         if (event !is AgentEvent.UsedTool) return
         val line =
             when {
+                event.name == AgentToolbox.MAKE_CHARACTER && event.staged != null -> "Made characters from your photo"
+                event.name == AgentToolbox.MAKE_CHARACTER && event.refused -> "No characters were made"
+                event.name == AgentToolbox.MAKE_CHARACTER -> "Asked to send your photo to the image model"
                 event.refused -> "A step was refused (${event.name})"
                 event.staged != null -> "Staged: ${event.staged}"
                 event.name == AgentToolbox.LOOK -> "Looked at the game"
@@ -228,7 +310,7 @@ class AssistantState(
                 return null
             }
         sessionFor = key
-        return AgentSession(editor.engine, editor.editor, editor.sceneId, chosen).also { session = it }
+        return AgentSession(editor.engine, editor.editor, editor.sceneId, chosen, characters = maker).also { session = it }
     }
 
     /** Drops a proposal or question whose project or scene is gone; `true` when one was dropped. */
@@ -239,6 +321,7 @@ class AssistantState(
             when (outcome) {
                 is AgentOutcome.Proposal -> DROPPED
                 is AgentOutcome.Question -> DROPPED_QUESTION
+                is AgentOutcome.Confirmation -> DROPPED_PHOTO
                 else -> null
             }
         reset(dropped)
@@ -252,6 +335,7 @@ class AssistantState(
         sessionFor = null
         model = null
         outcome = null
+        imagesMade = 0
         progress.clear()
         notice = message
     }
@@ -289,6 +373,10 @@ class AssistantState(
         private const val CANCELLED = "Cancelled. Nothing in your game changed."
         private const val DROPPED = "Your game changed, so the proposal was dropped. Nothing was applied."
         private const val DROPPED_QUESTION = "Your game changed, so the question was dropped. Nothing was applied."
+        private const val DROPPED_PHOTO = "Your game changed, so the request to send your photo was dropped. Nothing was sent."
+        private const val NO_PHOTO = "Attach a photo in the chat first (Attach photo, under the prompt)."
+        private const val NO_FORGE =
+            "Making characters from photos needs you to sign in to a SpawnKit server that offers it (Project → Account)."
 
         /** Plain cost text for [cost] from a [live] model or not. */
         internal fun costText(

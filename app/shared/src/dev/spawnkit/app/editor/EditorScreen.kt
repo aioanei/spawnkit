@@ -102,7 +102,8 @@ fun EditorScreen(
     val scope = rememberCoroutineScope()
     val accounts = remember(secrets) { AccountState(secrets, scope, accountService) }
     LaunchedEffect(accounts) { accounts.start() }
-    val assistant = remember(state, secrets) { AssistantState(state, secrets, scope, liveModel, accounts::hostedChoice) }
+    val assistant =
+        remember(state, secrets) { AssistantState(state, secrets, scope, liveModel, accounts::hostedChoice, accounts::photoForge) }
     val openAccount = { accountOpen = true }
     CompositionLocalProvider(LocalAccounts provides accounts) {
         BoxWithConstraints(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).safeDrawingPadding()) {
