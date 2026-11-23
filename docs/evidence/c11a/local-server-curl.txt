@@ -1,0 +1,26 @@
+$ GET /api/server
+{"emailSignIn":true,"aiAvailable":false,"ai":"SpawnKit AI is not set up on this server."}
+$ POST /api/auth/register
+{"message":"Check your email for a 6-digit code to finish."} (202)
+$ server console (local mode)
+[SpawnKit local mode: email NOT sent] To: ada@example.com | Your SpawnKit code: 506791 | Enter 506791 to finish creating your SpawnKit account. The code works for 15 minutes.
+$ POST /api/auth/verify (code from the console)
+{"token":"<redacted>","account":{"id":1,"displayName":"Ada","email":"ada@example.com","plan":"free"}} (200)
+$ POST /api/auth/sign-in
+{"token":"<redacted>","account":{"id":1,"displayName":"Ada","email":"ada@example.com","plan":"free"}}
+$ GET /api/me
+{"id":1,"displayName":"Ada","email":"ada@example.com","plan":"free"} (200)
+$ POST /api/games (signed in)
+{"slug":"13510006-279c-43bd-a4e0-85396917410e","title":"Coin Dash","playUrl":"/play/13510006-279c-43bd-a4e0-85396917410e/"}
+$ GET /api/me/games
+[{"slug":"13510006-279c-43bd-a4e0-85396917410e","title":"Coin Dash","playUrl":"/play/13510006-279c-43bd-a4e0-85396917410e/"}]
+$ PUT /api/games/{slug} (owner)
+{"slug":"13510006-279c-43bd-a4e0-85396917410e","title":"Coin Dash Deluxe","playUrl":"/play/13510006-279c-43bd-a4e0-85396917410e/"} (200)
+$ PUT /api/games/{slug} (signed out)
+{"error":"Sign in to do this. Your session may have ended."} (401)
+$ GET /play/{slug}/
+200 text/html; charset=UTF-8
+$ POST /api/ai/reply (no model key on this server)
+{"error":"SpawnKit AI is not set up on this server. You can keep building by hand."} (503)
+$ POST /api/ai/reply (signed out)
+{"error":"Sign in to do this. Your session may have ended."} (401)

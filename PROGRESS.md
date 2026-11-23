@@ -1,6 +1,27 @@
 # SpawnKit progress
 
-## Current checkpoint — C10b brain-rot presets and guidance (2026-11-22)
+## Current checkpoint — C11a accounts server and hosted AI proxy (2026-11-23)
+
+- **Branch.** `feat/76-accounts-server` ([#76](https://github.com/aioanei/spawnkit/issues/76)). Plan:
+  [C11a](docs/plans/2026-11-22-c11a-accounts-server.md). #86, #87 and #93 are merged into `main`, and `main` is
+  merged into this branch.
+- **Added.**
+  - SQLite through Exposed with a versioned schema; email accounts with Argon2id, hashed codes and session tokens,
+    limits and no enumeration; console codes only in local mode.
+  - Auth routes, `GET`/`DELETE /api/me`, and owned Arcade games: signed-in publishing, My games, owner-only
+    republish and unpublish. Older game files are indexed as unowned.
+  - The hosted AI proxy: `ModelRequestJson` and `HostedModel` in `ai`; `/api/ai/reply` forces the server's
+    instructions and tool definitions, and `SpendLedger` reserves each call's worst case against the $20 monthly cap
+    and the $1 daily account limit before it runs.
+  - `ServerConfig.fromEnvironment()`, `GET /api/server`, and [Arcade hosting](docs/arcade-hosting.md).
+- **Evidence.** Server 52 tests and `ai` 21 on JVM, in both builds, with fake mail and a fake model gateway. A local
+  server driven by curl registered, verified with the console code, signed in, published, listed, republished and
+  got the AI route's "not set up" answer ([transcript](docs/evidence/c11a/local-server-curl.txt)).
+- **Not live.** No model was called: there is no `ANTHROPIC_API_KEY` on a server yet. No public host, SMTP or Google
+  OAuth client yet (owner actions).
+- **Next.** C11b: email sign-in in the builder, `HostedModel` for the assistant, and My games in the Release Manager.
+
+## Previous checkpoint — C10b brain-rot presets and guidance (2026-11-22)
 
 - **Branch.** `feat/84-brainrot-presets` from `main`. Plan:
   [C10b](docs/plans/2026-11-22-c10b-brainrot-presets.md).

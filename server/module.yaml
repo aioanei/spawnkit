@@ -10,9 +10,17 @@ apply:
 dependencies:
   - //core/editing
   - //core/gameplay
+  # Hosted AI (C11a): the wire format, the toolbox definitions and the Koog adapter.
+  - //ai
   - $libs.logback
   - $libs.ktor.serverCore
   - $libs.ktor.serverNetty
+  # Accounts (C11a): SQLite through Exposed, Argon2id from Bouncy Castle, mail through Angus Mail.
+  - $libs.exposed.core
+  - $libs.exposed.jdbc
+  - $libs.sqlite.jdbc
+  - $libs.bouncycastle.prov
+  - $libs.angus.mail
 
 test-dependencies:
   - $libs.ktor.serverTestHost

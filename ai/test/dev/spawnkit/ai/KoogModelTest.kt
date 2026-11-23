@@ -109,6 +109,30 @@ class KoogModelTest {
         }
 
     @Test
+    fun outputTokensAreCappedWhenAsked() =
+        runTest {
+            val answer = Message.Assistant(listOf(MessagePart.Text("Hi.")), ResponseMetaInfo(Instant.fromEpochSeconds(0)))
+            val info = ModelInfo("test-model", "Test", live = true, label = "Live: test-model")
+            val capped = FakeExecutor(answer)
+            val uncapped = FakeExecutor(answer)
+
+            KoogModel(
+                capped,
+                LLModel(LLMProvider.Anthropic, "test-model"),
+                info,
+                maxOutputTokens = 512,
+            ).reply(ModelRequest("Be brief.", emptyList(), emptyList()))
+            KoogModel(
+                uncapped,
+                LLModel(LLMProvider.Anthropic, "test-model"),
+                info,
+            ).reply(ModelRequest("Be brief.", emptyList(), emptyList()))
+
+            assertEquals(512, capped.prompt!!.params.maxTokens)
+            assertEquals(null, uncapped.prompt!!.params.maxTokens)
+        }
+
+    @Test
     fun theAnthropicFactoryNeedsAKeyAndLabelsTheModelLiveWithoutStoringTheKey() {
         val error = runCatching { KoogModel.anthropic("  ") }.exceptionOrNull()
         assertEquals("Add an Anthropic API key in the assistant settings first", error?.message)

@@ -12,11 +12,6 @@ import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.util.UUID
 
-internal class ArcadeProblem(
-    val status: HttpStatusCode,
-    message: String,
-) : Exception(message)
-
 internal data class PublishedGame(
     val slug: String,
     val title: String,
@@ -45,17 +40,41 @@ internal class ArcadeStore(
         val full = Files.newDirectoryStream(directory, "*.game").use { files -> files.asSequence().take(maxGames).count() >= maxGames }
         if (full) throw ArcadeProblem(HttpStatusCode.ServiceUnavailable, "This Arcade is full. Contact its operator or use web export.")
         val game = PublishedGame(UUID.randomUUID().toString(), title)
+        write(game, bytes)
+        return game
+    }
+
+    /** Replaces the release at [slug] with [bytes] titled [title], atomically; its play link stays the same. */
+    @Synchronized
+    fun replace(
+        slug: String,
+        title: String,
+        bytes: ByteArray,
+    ): PublishedGame {
+        find(slug)
+        return PublishedGame(slug, title).also { write(it, bytes) }
+    }
+
+    /** Removes the release at [slug]. */
+    @Synchronized
+    fun delete(slug: String) {
+        Files.deleteIfExists(find(slug))
+    }
+
+    private fun write(
+        game: PublishedGame,
+        bytes: ByteArray,
+    ) {
         val temp = Files.createTempFile(directory, "release-", ".tmp")
         try {
             DataOutputStream(Files.newOutputStream(temp).buffered()).use {
-                it.writeUTF(title)
+                it.writeUTF(game.title)
                 it.write(bytes)
             }
-            Files.move(temp, directory.resolve("${game.slug}.game"), StandardCopyOption.ATOMIC_MOVE)
+            Files.move(temp, directory.resolve("${game.slug}.game"), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
         } finally {
             Files.deleteIfExists(temp)
         }
-        return game
     }
 
     fun list(): List<PublishedGame> {

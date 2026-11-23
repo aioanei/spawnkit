@@ -21,6 +21,11 @@ kotlinx-serialization = "1.13.0"
 kotlinx-collections-immutable = "0.5.2"
 ktor = "3.6.1"
 logback = "1.6.7"
+# Accounts server (C11a, ADR-0010).
+exposed = "1.6.1"
+sqlite-jdbc = "3.54.1.0"
+bouncycastle = "1.87"
+angus-mail = "2.0.5"
 material3 = "1.12.0-alpha03"
 spotless = "8.11.0"
 ktlint = "1.8.0"
@@ -48,6 +53,11 @@ compose-uiToolingPreview = { module = "org.jetbrains.compose.ui:ui-tooling-previ
 compose-uiTest = { module = "org.jetbrains.compose.ui:ui-test", version.ref = "composeMultiplatform" }
 kotlinx-coroutinesSwing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
 logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
+exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
+sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc" }
+bouncycastle-prov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
+angus-mail = { module = "org.eclipse.angus:angus-mail", version.ref = "angus-mail" }
 ktor-serverCore = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor" }
 ktor-serverNetty = { module = "io.ktor:ktor-server-netty-jvm", version.ref = "ktor" }
 ktor-serverTestHost = { module = "io.ktor:ktor-server-test-host-jvm", version.ref = "ktor" }
@@ -56,6 +66,7 @@ jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
 koog-anthropic = { module = "ai.koog:prompt-executor-anthropic-client", version.ref = "koog" }
 koog-executor = { module = "ai.koog:prompt-executor-model", version.ref = "koog" }
 koog-httpKtor = { module = "ai.koog:http-client-ktor", version.ref = "koog" }
+ktor-clientCore = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-clientOkhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
 ktor-clientJs = { module = "io.ktor:ktor-client-js", version.ref = "ktor" }
 ktor-clientDarwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
