@@ -1,6 +1,28 @@
 # SpawnKit progress
 
-## Current checkpoint — live Anthropic tool calls fixed (2026-11-23)
+## Current checkpoint — C13a Game Architect (2026-11-24)
+
+- **Branch.** `feat/85-game-architect`, stacked on `fix/koog-anyof` (PR #106). [Plan](docs/plans/2026-11-24-c13a-game-architect.md),
+  part of [#85](https://github.com/aioanei/spawnkit/issues/85), [AI Studio](docs/ai-studio.md#game-architect-c13a).
+- **Added.**
+  - The whole game in view: `look_at_game` with every scene and a `scene` input; `check_game` with `scene`/`all`;
+    `trace_rules` with `scene`.
+  - `look_at_example`, which shows the preset games as worked examples. `ai` now depends on `core/presets`.
+  - Game Architect instructions and 60 model calls per request.
+  - Prompt caching, with cache tokens counted and priced on the device, on the server and in recordings.
+  - An 8,192-token reply cap; empty (cut-off) replies are no longer taken as done.
+- **Evidence.**
+  - A live recording from one prompt built Jungle Banana Run (six scenes, 142 steps, about $1.51). It is committed as
+    a labelled replay that `WholeGameReplayTest` rebuilds exactly. `AiBuiltGameTest` plays its title, level, lose
+    path, retry and shop.
+  - New tests: `GameArchitectTest` 4, `ExamplesToolTest` 3, `AgentToolboxScenesTest` +2, `WholeGameReplayTest` 2,
+    `AiBuiltGameTest` 2, and caching in `KoogAnthropicWireTest` and `HostedAiTest`.
+- **Owner decision needed.** A whole game costs about $1.50, more than the $1 daily allowance per account
+  (`SPAWNKIT_AI_ACCOUNT_DAILY_DOLLARS`). SpawnKit AI would stop a whole-game build partway until the limit is raised.
+- **Next.** C13b: prompt-first New game, the chat as the main panel, apply right away with Revert. Then C13c (emulator
+  evidence), C11c, C19 and C8.
+
+## Previous checkpoint — live Anthropic tool calls fixed (2026-11-23)
 
 - **Branch.** `fix/koog-anyof`, stacked on C16b (`feat/90-character-agent`, PR #105).
 - **Fixed.** Koog 1.3.0's Anthropic client refuses `AnyOf` tool parameters, so every live request with the full
