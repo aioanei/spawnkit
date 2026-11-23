@@ -238,4 +238,31 @@ class SpawnTest {
         assertNull(engine.spawn(built.world, editor.project, scene, request), "a partial copy must never be made")
         assertEquals(before, built.world.entityCount)
     }
+
+    @Test
+    fun spawningUsesEarlierMovesInTheSameRule() {
+        add("Shot", "shot", template = true)
+        add(
+            "Gun",
+            "gun",
+            x = 1.0,
+            y = 2.0,
+            rules =
+                arrayOf(
+                    Rule(
+                        Condition.GameStarts,
+                        actions =
+                            listOf(
+                                Action.Move(Direction.Right, 60.0),
+                                Action.Spawn("shot", SpawnPlace.Self),
+                                Action.Spawn("shot", SpawnPlace.Tagged("gun")),
+                            ),
+                    ),
+                ),
+        )
+
+        val built = play().tick()
+
+        assertEquals(listOf(2.0 to 2.0, 2.0 to 2.0), built.tagged("shot").map { built.x(it) to built.y(it) })
+    }
 }

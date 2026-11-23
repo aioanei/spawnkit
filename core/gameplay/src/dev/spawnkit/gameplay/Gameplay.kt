@@ -8,6 +8,7 @@ import dev.spawnkit.program.DecimalType
 import dev.spawnkit.program.DecimalValue
 import dev.spawnkit.program.EntityType
 import dev.spawnkit.program.EntityValue
+import dev.spawnkit.program.HostCallContext
 import dev.spawnkit.program.IntegerType
 import dev.spawnkit.program.IntegerValue
 import dev.spawnkit.program.ProgramHostBuilder
@@ -295,18 +296,20 @@ public class Gameplay(
     }
 
     private fun position(
-        world: World,
+        context: HostCallContext,
         entity: EntityHandle,
     ): Pair<Double, Double> {
         var x = 0.0
         var y = 0.0
         var current: EntityHandle? = entity
         while (current != null) {
-            world.get(current, graphics.transform)?.let {
-                x = it.x + it.scaleX * x
-                y = it.y + it.scaleY * y
-            }
-            current = world.parent(current)
+            val atX = (context.read(current, "x") as? DecimalValue)?.value ?: 0.0
+            val atY = (context.read(current, "y") as? DecimalValue)?.value ?: 0.0
+            val scaleX = (context.read(current, "scaleX") as? DecimalValue)?.value ?: 1.0
+            val scaleY = (context.read(current, "scaleY") as? DecimalValue)?.value ?: 1.0
+            x = atX + scaleX * x
+            y = atY + scaleY * y
+            current = context.world.parent(current)
         }
         return x to y
     }
@@ -414,10 +417,15 @@ public class Gameplay(
                 BoolValue(leftArea(it.world, it.self, (it.arguments[0] as DecimalValue).value, (it.arguments[1] as DecimalValue).value))
             }.function("decimalText", listOf(DecimalType), TextType, info("Decimal as text", "A decimal number written out")) {
                 TextValue((it.arguments[0] as DecimalValue).value.toString())
-            }.function("worldX", listOf(EntityType), DecimalType, info("World x", "Horizontal position with parent translation and scale")) {
-                DecimalValue(position(it.world, (it.arguments[0] as EntityValue).entity).first)
+            }.function(
+                "worldX",
+                listOf(EntityType),
+                DecimalType,
+                info("World x", "Horizontal position with parent translation and scale"),
+            ) {
+                DecimalValue(position(it, (it.arguments[0] as EntityValue).entity).first)
             }.function("worldY", listOf(EntityType), DecimalType, info("World y", "Vertical position with parent translation and scale")) {
-                DecimalValue(position(it.world, (it.arguments[0] as EntityValue).entity).second)
+                DecimalValue(position(it, (it.arguments[0] as EntityValue).entity).second)
             }.effect(RuleBlocks.GO_TO_SCENE, TextType)
             .effect(RuleBlocks.SPAWN, TextType)
 
