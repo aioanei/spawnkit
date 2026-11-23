@@ -13,7 +13,8 @@ text model already runs behind the server with the owner's key and a $20 monthly
 
 ## Decision
 
-1. **The server calls OpenAI image editing** (`POST /v1/images/edits`, `gpt-image-1`, low quality, transparent
+1. **The server calls OpenAI image editing** (`POST /v1/images/edits`, `gpt-image-1-mini` by default and set with
+   `SPAWNKIT_IMAGE_MODEL`, because `gpt-image-1` was retired; low quality, transparent
    background, 1024 × 1024) with `OPENAI_API_KEY` from its environment. The key never reaches clients, projects, logs
    or recordings. Without the key the route answers "not set up".
 2. **`POST /api/ai/character`** takes a signed-in account's photo (PNG, at most 1 MB), an explicit consent flag and

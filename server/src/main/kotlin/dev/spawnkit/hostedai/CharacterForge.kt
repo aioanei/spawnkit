@@ -68,12 +68,14 @@ internal object PixelArt {
     const val SCALE = 8
     const val MAX_SIDE = 512
 
-    /** A 16-colour palette chosen for this project: darks, skin tones and clear hair and clothing colours. */
+    /**
+     * A 16-colour palette chosen for this project: darks, four skin tones (a live run showed faces turning pink with
+     * fewer), and clear hair and clothing colours.
+     */
     private val PALETTE =
         intArrayOf(
             0x14161C,
             0x3A3F58,
-            0x6B4E71,
             0x2E7D32,
             0x8D5524,
             0x5D4037,
@@ -84,9 +86,10 @@ internal object PixelArt {
             0xFDD835,
             0x66BB6A,
             0x1E88E5,
-            0x7E57C2,
-            0xF06292,
             0xF5C7A0,
+            0xE0A97E,
+            0xC68642,
+            0x6B3E26,
         )
 
     /** [png] as pixel art: [GRID] × [GRID] cells of palette colours or full transparency, [SCALE] × larger. */
@@ -163,7 +166,7 @@ internal object PixelArt {
  */
 internal class OpenAiImageGateway(
     private val apiKey: String,
-    private val model: String = "gpt-image-1",
+    private val model: String = DEFAULT_IMAGE_MODEL,
     private val endpoint: String = "https://api.openai.com/v1/images/edits",
 ) : ImageGateway {
     override val provenance: String = "OpenAI $model"
@@ -247,3 +250,6 @@ internal class OpenAiImageGateway(
 }
 
 private const val CRLF = "\r\n"
+
+/** The image model Character Forge uses unless `SPAWNKIT_IMAGE_MODEL` names another; `gpt-image-1` was retired. */
+internal const val DEFAULT_IMAGE_MODEL = "gpt-image-1-mini"

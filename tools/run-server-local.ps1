@@ -17,4 +17,6 @@ foreach ($line in Get-Content $envFile) {
 }
 & (Join-Path $root 'gradlew.bat') ':server:installDist'
 if ($LASTEXITCODE -ne 0) { throw 'The server did not build.' }
-& (Join-Path $root 'server\build\install\server\bin\server.bat')
+# The generated server.bat has a classpath too long for Windows' command line, so start Java with a wildcard classpath.
+$lib = Join-Path $root 'server\build\install\server\lib\*'
+& java '-Dio.ktor.development=false' -cp $lib dev.spawnkit.ApplicationKt

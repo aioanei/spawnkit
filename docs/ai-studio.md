@@ -176,7 +176,7 @@ account (which asks first).
   is a sprite (pixelated for pixel art), a body, the `player` tag, Left and Right walking, and Jump.
 - **Server.** `POST /api/ai/character` requires sign-in and consent, and accepts a PNG photo of at most 1 MB and one to
   three styles.
-  - Each style is one OpenAI image edit (`gpt-image-1`, low quality, transparent background), reserved at $0.05
+  - Each style is one OpenAI image edit (`gpt-image-1-mini` by default, set with `SPAWNKIT_IMAGE_MODEL`; low quality, transparent background), reserved at $0.05
     against the same spend ledger as text AI. Failures and refusals cost nothing.
   - Pixel art is post-processed deterministically: a 32 × 32 box downscale, a fixed 16-colour palette, hard
     transparency and an 8 × upscale. Other styles are scaled to fit 512 px.
@@ -188,8 +188,15 @@ account (which asks first).
   - `CharacterForgeUiTest` on phone and desktop: consent gating, metadata stripped, images and Character added, and
     one undo.
   - `ImagesTest`: provenance and metadata stripping.
-- **Not yet (C16b).** The agent tool that asks before uploading, a live run with the server key, and Android emulator
-  evidence from photo to playable character.
+- **Live run (2026-11-23).**
+  - A local server with the owner's key (`tools/run-server-local.ps1`) made all three styles from an original
+    illustrated portrait in 33 seconds through `/api/ai/character`, each with the provenance "OpenAI gpt-image-1-mini,
+    2026-11-23". [Results](media/character-forge-live.png).
+  - `gpt-image-1` turned out to be retired, so the model is now set with `SPAWNKIT_IMAGE_MODEL`, by default
+    `gpt-image-1-mini`.
+  - The pixel palette gained skin tones after faces came out pink.
+- **Not yet (C16b).** The agent tool that asks before uploading, and Android emulator evidence from photo to playable
+  character.
 
 ## Evidence
 

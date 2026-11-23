@@ -49,7 +49,7 @@ internal fun Application.spawnkit(config: ServerConfig) {
         config.anthropicKey()?.let { key ->
             HostedAi(KoogGateway(key, config.maxOutputTokens), ledger, maxOutputTokens = config.maxOutputTokens)
         }
-    val forge = config.openAiKey()?.let { key -> CharacterForgeService(OpenAiImageGateway(key), ledger) }
+    val forge = config.openAiKey()?.let { key -> CharacterForgeService(OpenAiImageGateway(key, config.imageModel), ledger) }
     val aiStatus = if (hosted != null) "SpawnKit AI is available." else "SpawnKit AI is not set up on this server."
     routing {
         get("/health") {
