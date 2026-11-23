@@ -50,10 +50,12 @@ class RuleCatalogTest {
             Action.GoToScene("scene-2"),
             Action.SetRandomNumber(Target.Self, 1, 6),
             Action.AddNumber(Target.Tagged("coins"), Target.Tagged("income")),
+            Action.Spawn("enemy", SpawnPlace.RandomArea(-5, 5, 0, 0), Direction.Down, 3.0),
         ).onEach {
             when (it) {
                 is Action.Move, is Action.ChangeNumber, is Action.SetNumber, is Action.SetText, is Action.ShowNumber,
                 Action.RemoveSelf, is Action.GoToScene, is Action.SetRandomNumber, is Action.AddNumber,
+                is Action.Spawn,
                 -> Unit
             }
         }

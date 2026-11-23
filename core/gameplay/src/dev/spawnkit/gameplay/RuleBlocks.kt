@@ -69,6 +69,42 @@ public enum class Direction(
     Down("y", true, "down"),
 }
 
+/** Where "Spawn a copy" puts the copy. */
+public sealed interface SpawnPlace {
+    /** Where this object is. */
+    public data object Self : SpawnPlace
+
+    /** Where the first object tagged [tag] is. */
+    public data class Tagged(
+        /** Tag of the object. */
+        public val tag: String,
+    ) : SpawnPlace
+
+    /** A fixed point in world units. */
+    public data class Position(
+        /** X. */
+        public val x: Double,
+        /** Y (down is positive). */
+        public val y: Double,
+    ) : SpawnPlace
+
+    /** A random whole-number point in a box, from the seeded generator, so a game spawns the same way each time. */
+    public data class RandomArea(
+        /** Smallest x. */
+        public val minX: Long,
+        /** Largest x. */
+        public val maxX: Long,
+        /** Smallest y. */
+        public val minY: Long,
+        /** Largest y. */
+        public val maxY: Long,
+    ) : SpawnPlace {
+        init {
+            require(minX <= maxX && minY <= maxY) { "The smallest position must not be larger than the largest" }
+        }
+    }
+}
+
 /** A "When" or "And if" block: something that is true or false on each tick. */
 public sealed interface Condition {
     /** Every tick. */
@@ -199,6 +235,25 @@ public sealed interface Action {
 
     /** Removes this object (and its children) at the end of the tick. */
     public data object RemoveSelf : Action
+
+    /**
+     * Makes a copy of the object tagged [tag] (preferably a template) at [place] after the tick. The copy runs its own
+     * rules; with a [direction] it keeps moving that way at [speed] units per second.
+     */
+    public data class Spawn(
+        /** Tag of the object to copy. */
+        public val tag: String,
+        /** Where the copy appears. */
+        public val place: SpawnPlace = SpawnPlace.Self,
+        /** Direction the copy keeps moving in, or `null` to stay put. */
+        public val direction: Direction? = null,
+        /** Units per second, from 0 to 1000. */
+        public val speed: Double = 0.0,
+    ) : Action {
+        init {
+            require(speed.isFinite() && speed >= 0.0 && speed <= MAX_SPEED) { "Choose a speed from 0 to $MAX_SPEED" }
+        }
+    }
 
     /** Switches the game to scene [sceneId] at the end of the tick; the new scene starts fresh. */
     public data class GoToScene(
@@ -356,6 +411,18 @@ public object RuleBlocks {
                 "Remove this object"
             }
 
+            is Action.Spawn -> {
+                val at =
+                    when (val place = action.place) {
+                        SpawnPlace.Self -> "this object"
+                        is SpawnPlace.Tagged -> place.tag
+                        is SpawnPlace.Position -> "(${number(place.x)}, ${number(place.y)})"
+                        is SpawnPlace.RandomArea -> "a random spot"
+                    }
+                val moving = action.direction?.takeIf { action.speed > 0.0 }?.let { ", moving ${it.label} at ${number(action.speed)} per second" }
+                "Spawn a copy of ${action.tag} at $at${moving.orEmpty()}"
+            }
+
             is Action.GoToScene -> {
                 when {
                     scenes.isEmpty() -> "Go to scene ${action.sceneId}"
@@ -483,6 +550,12 @@ public object RuleBlocks {
                 Stmt.Destroy(Expr.Self(s), s)
             }
 
+            is Action.Spawn -> {
+                val (x, y) = spawnPosition(action.place, s)
+                val parts = listOf(text(SpawnRequest.header(action) + "\n", s), x, text("\n", s), y)
+                Stmt.RequestEffect(SPAWN, parts.reduce { left, right -> Expr.Binary(BinaryOp.Add, left, right, s) }, s)
+            }
+
             is Action.GoToScene -> {
                 Stmt.RequestEffect(GO_TO_SCENE, text(action.sceneId, s), s)
             }
@@ -547,6 +620,12 @@ public object RuleBlocks {
             when {
                 stmt is Stmt.Destroy -> {
                     Action.RemoveSelf
+                }
+
+                stmt is Stmt.RequestEffect && stmt.effect == SPAWN -> {
+                    var first = stmt.payload
+                    while (first is Expr.Binary) first = first.left
+                    SpawnRequest.action(((first as Expr.Literal).value as TextValue).value.removeSuffix("\n"))
                 }
 
                 stmt is Stmt.RequestEffect && stmt.effect == GO_TO_SCENE -> {
@@ -637,6 +716,34 @@ public object RuleBlocks {
 
     private fun tick(s: SourceRef) = call("tick", s)
 
+    /** The x and y of a spawn place, as text expressions joined into the effect payload. */
+    private fun spawnPosition(
+        place: SpawnPlace,
+        s: SourceRef,
+    ): Pair<Expr, Expr> {
+        fun decimal(expr: Expr) = call("decimalText", s, expr)
+
+        fun whole(min: Long, max: Long) = call("textOf", s, call("random", s, int(min, s), int(max, s)))
+        return when (place) {
+            SpawnPlace.Self -> {
+                decimal(Expr.GetProperty(Expr.Self(s), "x", s)) to decimal(Expr.GetProperty(Expr.Self(s), "y", s))
+            }
+
+            is SpawnPlace.Tagged -> {
+                val other = call("firstTagged", s, text(place.tag, s))
+                decimal(Expr.GetProperty(other, "x", s)) to decimal(Expr.GetProperty(other, "y", s))
+            }
+
+            is SpawnPlace.Position -> {
+                decimal(Expr.Literal(DecimalValue(place.x), s)) to decimal(Expr.Literal(DecimalValue(place.y), s))
+            }
+
+            is SpawnPlace.RandomArea -> {
+                whole(place.minX, place.maxX) to whole(place.minY, place.maxY)
+            }
+        }
+    }
+
     private fun call(
         name: String,
         s: SourceRef,
@@ -683,6 +790,9 @@ public object RuleBlocks {
 
     /** Effect a "Go to scene" block requests; its payload is the scene ID. Players act on it after the tick. */
     public const val GO_TO_SCENE: String = "goToScene"
+
+    /** Effect a "Spawn a copy" block requests; see [SpawnRequest]. Players act on it after the tick. */
+    public const val SPAWN: String = "spawn"
 }
 
 private const val TICKS_PER_SECOND = 60L

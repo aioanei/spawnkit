@@ -8,6 +8,7 @@ import dev.spawnkit.gameplay.Action
 import dev.spawnkit.gameplay.Condition
 import dev.spawnkit.gameplay.Rule
 import dev.spawnkit.gameplay.RuleBlocks
+import dev.spawnkit.gameplay.SpawnPlace
 import dev.spawnkit.gameplay.StandardEngine
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -95,6 +96,34 @@ class PlaySessionScenesTest {
         session.tapAndTick()
 
         assertEquals(12, session.scene.world.get(session.scene.entity(onLevel)!!, engine.gameplay.number)?.value)
+    }
+
+    @Test
+    fun templatesAppearOnlyWhenARuleSpawnsThem() {
+        val enemy =
+            (
+                editor.apply(
+                    EditOperation.AddObject(
+                        title,
+                        "Enemy",
+                        components =
+                            listOf(
+                                ComponentDoc("graphics:transform"),
+                                ComponentDoc("gameplay:tag", mapOf("tag" to "enemy")),
+                                ComponentDoc("gameplay:template"),
+                            ),
+                    ),
+                ) as OperationResult.Applied
+            ).createdIds.single()
+        val spawn = Rule(Condition.Tapped, actions = listOf(Action.Spawn("enemy", SpawnPlace.Position(5.0, 1.0))))
+        editor.apply(EditOperation.SetRules(title, button, RuleBlocks.compile(listOf(spawn))))
+        val session = engine.playSession(editor.project, title)
+        assertNull(session.scene.entity(enemy), "templates are left out of play")
+
+        session.tapAndTick()
+
+        val copy = engine.gameplay.tagged(session.scene.world, "enemy").single()
+        assertEquals(5.0, session.scene.world.get(copy, engine.graphics.transform)?.x)
     }
 
     @Test

@@ -89,6 +89,31 @@ public object RuleBlockCatalog {
             ),
         )
 
+    /** Where a copy appears: this object, an object with a tag, a fixed point or a random spot. */
+    public val placeType: ParameterType.OneOf =
+        ParameterType.OneOf(
+            "kind",
+            listOf(
+                Variant(SELF, AuthoringInfo("This object", "Where the object with the rule is.")),
+                Variant(TAGGED, AuthoringInfo("Object with a tag", "Where the first object with the tag is."), listOf(tagParameter("Tag of the object."))),
+                Variant(
+                    POSITION,
+                    AuthoringInfo("A point", "A fixed point in the scene."),
+                    listOf(coordinate("x", "X", "Across; larger is further right."), coordinate("y", "Y", "Down; larger is lower.")),
+                ),
+                Variant(
+                    RANDOM,
+                    AuthoringInfo("A random spot", "A random point in a box; the same game always picks the same spots."),
+                    listOf(
+                        wholeCoordinate("min_x", "Smallest x", -10L),
+                        wholeCoordinate("max_x", "Largest x", 10L),
+                        wholeCoordinate("min_y", "Smallest y", -5L),
+                        wholeCoordinate("max_y", "Largest y", -5L),
+                    ),
+                ),
+            ),
+        )
+
     /** Every condition block, in palette order. */
     public val conditions: List<BlockSpec<Condition>> =
         listOf(
@@ -300,6 +325,38 @@ public object RuleBlockCatalog {
                 { Action.RemoveSelf },
                 { emptyMap() },
             ),
+            actionSpec<Action.Spawn>(
+                "Spawn",
+                AuthoringInfo(
+                    "Spawn a copy",
+                    "Makes a copy of the object with the tag, best one marked Template, and the copy runs its own rules. Use it for enemies, falling things and shots.",
+                    OBJECTS,
+                ),
+                listOf(
+                    tagParameter("Tag of the object to copy."),
+                    Parameter("place", "Where", "Where the copy appears.", placeType, default = Picked(SELF), required = false),
+                    Parameter(
+                        "direction",
+                        "Keeps moving",
+                        "Direction the copy keeps moving in, or None.",
+                        ParameterType.Value(ValueKind.Choice(listOf(ChoiceOption(NONE, "None")) + Direction.entries.map { ChoiceOption(it.name, it.label) })),
+                        default = NONE,
+                    ),
+                    Parameter(
+                        "speed",
+                        "Speed",
+                        "Units per second, from 0 to ${MAX_SPEED.toLong()}.",
+                        ParameterType.Value(ValueKind.Decimal(0.0, MAX_SPEED)),
+                        default = 0.0,
+                    ),
+                ),
+                listOf("Every 2 seconds, spawn an enemy at a random spot moving down", "When Jump is pressed, spawn a shot at the ship moving up"),
+                {
+                    val direction = it.text("direction").takeIf { d -> d != NONE }?.let(Direction::valueOf)
+                    Action.Spawn(it.text("tag"), it.place(), direction, it.getValue("speed") as Double)
+                },
+                { mapOf("tag" to it.tag, "place" to picked(it.place), "direction" to (it.direction?.name ?: NONE), "speed" to it.speed) },
+            ),
             actionSpec<Action.GoToScene>(
                 "GoToScene",
                 AuthoringInfo(
@@ -391,6 +448,7 @@ public object RuleBlockCatalog {
             is Action.SetText -> "SetText"
             is Action.ShowNumber -> "ShowNumber"
             Action.RemoveSelf -> "RemoveSelf"
+            is Action.Spawn -> "Spawn"
             is Action.GoToScene -> "GoToScene"
         }
 
@@ -420,6 +478,38 @@ public object RuleBlockCatalog {
         noinline make: (Map<String, Any?>) -> T,
         noinline read: (T) -> Map<String, Any?>,
     ): BlockSpec<Action> = BlockSpec(id, BlockPart.Action, authoring, parameters, examples, make) { read(it as T) }
+
+    /** The arguments of [place] as the catalog's `place` parameter. */
+    public fun picked(place: SpawnPlace): Picked =
+        when (place) {
+            SpawnPlace.Self -> Picked(SELF)
+            is SpawnPlace.Tagged -> Picked(TAGGED, mapOf("tag" to place.tag))
+            is SpawnPlace.Position -> Picked(POSITION, mapOf("x" to place.x, "y" to place.y))
+            is SpawnPlace.RandomArea -> Picked(RANDOM, mapOf("min_x" to place.minX, "max_x" to place.maxX, "min_y" to place.minY, "max_y" to place.maxY))
+        }
+
+    private fun Map<String, Any?>.place(): SpawnPlace {
+        val picked = getValue("place") as Picked
+        val args = picked.arguments
+        return when (picked.variant) {
+            TAGGED -> SpawnPlace.Tagged(args.getValue("tag") as String)
+            POSITION -> SpawnPlace.Position(args.getValue("x") as Double, args.getValue("y") as Double)
+            RANDOM -> SpawnPlace.RandomArea(args.getValue("min_x") as Long, args.getValue("max_x") as Long, args.getValue("min_y") as Long, args.getValue("max_y") as Long)
+            else -> SpawnPlace.Self
+        }
+    }
+
+    private fun coordinate(
+        id: String,
+        name: String,
+        help: String,
+    ) = Parameter(id, name, help, ParameterType.Value(ValueKind.Decimal(-MAX_COORDINATE, MAX_COORDINATE)), default = 0.0)
+
+    private fun wholeCoordinate(
+        id: String,
+        name: String,
+        default: Long,
+    ) = Parameter(id, name, "$name of the box, in world units.", ParameterType.Value(ValueKind.WholeNumber(-MAX_COORDINATE.toLong(), MAX_COORDINATE.toLong())), default = default)
 
     private fun tagParameter(help: String) =
         Parameter("tag", "Tag", help, ParameterType.Value(ValueKind.Text(MAX_TAG), Suggestions.TAGS), default = "", required = true)
@@ -469,6 +559,10 @@ public object RuleBlockCatalog {
     private const val COMPARISON = "comparison"
     private const val SELF = "self"
     private const val TAGGED = "tagged"
+    private const val POSITION = "position"
+    private const val RANDOM = "random"
+    private const val NONE = "None"
+    private const val MAX_COORDINATE = 100_000.0
     private const val TIME = "Time"
     private const val OBJECTS = "Objects"
     private const val INPUT = "Input"
