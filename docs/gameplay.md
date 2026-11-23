@@ -150,6 +150,28 @@ through the system photo picker, and plays the home screen with it. The photo pi
 called Picture. Screenshots: [picker](media/android-logo-picker.png), [editing](media/android-logo-edit.png),
 [home screen with the logo](media/android-logo-play.png).
 
+## Test ads with real counts (C12a)
+
+The first half of [#77](https://github.com/aioanei/spawnkit/issues/77). [Plan](plans/2026-11-23-c12a-test-ads.md).
+
+- **Settings.** `Project.ads` (workspace schema 3; older files open with ads off): a banner on the start scene and an
+  interstitial between scenes every N scene changes. The Release Manager's **Test ads** card changes them with the
+  `set_ads` operation, so agents can too.
+- **Players.** `AdLayer` (`player/playerKit`) shows a labelled **TEST AD — SpawnKit** panel from `TestAdHost`; there is
+  no ad SDK and no third-party call. `AdSchedule` never shows an interstitial on the first scene change, so never
+  before the first play, and an interstitial pauses the game until it is closed. `AdHost` returns an explicit
+  `AdResult`, so a real network (K6) can plug in later.
+- **Counting.** Only the Arcade's web player has an `AdReporter`. It batches views and clicks to
+  `POST /api/games/{slug}/ad-events` with a random play-session ID and numbered events, and no personal data. The
+  server counts each session and number once, limits reports per address, and keeps totals per game and UTC day
+  (database schema 2). Builder previews and offline web exports have no reporter, so they are never counted.
+- **Statistics.** My games → **Ad statistics** (owner only, `GET /api/games/{slug}/ad-stats`) shows views, clicks
+  and click-through rate per day, "Revenue: $0.00 — test ads earn nothing", and an optional What if line labelled "an
+  estimate, not earnings".
+
+Tests: `AdSettingsTest` 4 (common), `AdsTest` 4 (player), the server's `AdStatsTest` 3, `TestAdsUiTest` on phone and
+desktop, and the `set_ads` parity case.
+
 ## Game-wide values, randomness, economy and spawning (C14a)
 
 Blocks for complete games ([#88](https://github.com/aioanei/spawnkit/issues/88)), all general and all in the block

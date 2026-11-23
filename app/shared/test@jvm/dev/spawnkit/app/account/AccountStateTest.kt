@@ -4,6 +4,7 @@ import dev.spawnkit.ai.AccountException
 import dev.spawnkit.ai.AccountProfile
 import dev.spawnkit.ai.AccountService
 import dev.spawnkit.ai.AccountSession
+import dev.spawnkit.ai.AdStatsReport
 import dev.spawnkit.ai.ArcadeGame
 import dev.spawnkit.ai.ServerStatus
 import dev.spawnkit.app.assistant.MemorySecretStore
@@ -278,6 +279,13 @@ internal class FakeAccountService : AccountService {
     ) {
         published.removeAll { it.slug == slug }
     }
+
+    var stats = AdStatsReport(0, 0, emptyList())
+
+    override suspend fun adStats(
+        token: String,
+        slug: String,
+    ): AdStatsReport = stats
 
     companion object {
         const val TOKEN = "secret-session-token"

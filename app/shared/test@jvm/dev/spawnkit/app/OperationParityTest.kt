@@ -120,6 +120,15 @@ class OperationParityTest {
                     },
                     tool = { mapOf("name" to "Coin Rush") },
                 ),
+            "set_ads" to
+                Case(
+                    ui = {
+                        tap("project-menu")
+                        tap("project-release")
+                        tap("ads-interstitial")
+                    },
+                    tool = { mapOf("banner" to false, "interstitial" to true, "every" to 3L) },
+                ),
             "add_scene" to Case(ui = { tap("scene-add") }, tool = { mapOf("name" to "Scene ${project.scenes.size + 1}") }),
             "rename_scene" to
                 Case(

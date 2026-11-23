@@ -98,7 +98,14 @@ private fun ViewportContent(
     if (session != null) {
         PlaySurface(session, state.engine.graphics, state.camera, pixelsPerUnit, touchControls, focus, images)
         // Previews show the game's test ads but never report them, so the creator's own plays are not counted.
-        AdLayer(session, state.project.ads, state.project.scenes.firstOrNull()?.id, reporter = null)
+        AdLayer(
+            session,
+            state.project.ads,
+            state.project.scenes
+                .firstOrNull()
+                ?.id,
+            reporter = null,
+        )
         return
     }
     // Rebuilt for every project revision, scene change and drag step: preview worlds are cheap and never shared.

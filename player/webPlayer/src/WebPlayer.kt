@@ -12,8 +12,11 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.ComposeViewport
 import dev.spawnkit.editing.GamePackage
 import dev.spawnkit.editing.GamePackageCodec
+import dev.spawnkit.player.AdEvent
+import dev.spawnkit.player.AdReporter
 import dev.spawnkit.player.GamePlayer
 import dev.spawnkit.player.PlayerMessage
+import kotlinx.coroutines.delay
 import kotlin.js.ExperimentalWasmJsInterop
 
 /** The package the player loads, next to its `index.html` (written by web export and served by the Arcade). */
@@ -40,6 +43,15 @@ private sealed interface Load {
 @Composable
 private fun WebPlayer() {
     var load by remember { mutableStateOf<Load>(Load.Loading) }
+    val reporter = remember { arcadeSlug()?.let(::ArcadeAdReporter) }
+    LaunchedEffect(reporter) {
+        val current = reporter ?: return@LaunchedEffect
+        onPageHidden { current.flush() }
+        while (true) {
+            delay(5_000)
+            current.flush()
+        }
+    }
     LaunchedEffect(Unit) {
         fetchText(
             GAME_FILE,
@@ -59,9 +71,57 @@ private fun WebPlayer() {
     when (val current = load) {
         Load.Loading -> PlayerMessage("Loading game…")
         is Load.Failed -> PlayerMessage(current.title, listOf(current.detail))
-        is Load.Ready -> GamePlayer(current.game, touchControls = hasTouchScreen())
+        is Load.Ready -> GamePlayer(current.game, touchControls = hasTouchScreen(), adReporter = reporter)
     }
 }
+
+/**
+ * Reports test ad views and clicks of an Arcade game (C12) to `/api/games/{slug}/ad-events`, in batches, with a random
+ * play-session ID and numbered events: no personal data. Pages outside `/play/{slug}/`, such as offline web exports,
+ * get no reporter, so their ads are never counted.
+ */
+private class ArcadeAdReporter(
+    private val slug: String,
+) : AdReporter {
+    private val session = randomSession()
+    private val pending = mutableListOf<String>()
+    private var next = 1
+
+    override fun report(event: AdEvent) {
+        pending += """{"n":${next++},"placement":"${event.placement.id}","kind":"${event.kind.id}"}"""
+        if (pending.size >= BATCH) flush()
+    }
+
+    fun flush() {
+        if (pending.isEmpty()) return
+        val body = """{"session":"$session","events":[${pending.joinToString(",")}]}"""
+        pending.clear()
+        postJson("/api/games/$slug/ad-events", body)
+    }
+
+    private companion object {
+        const val BATCH = 20
+    }
+}
+
+private fun postJson(
+    url: String,
+    body: String,
+): Unit =
+    js(
+        "fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body, keepalive: true })" +
+            ".catch(() => {})",
+    )
+
+private fun randomSession(): String =
+    js(
+        "(globalThis.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('s' + Math.random().toString(36).slice(2) + Date.now().toString(36))",
+    )
+
+/** The Arcade game ID from a `/play/{slug}/` address, or `null` elsewhere. */
+private fun arcadeSlug(): String? = js("{ const m = location.pathname.match(/^\\/play\\/([A-Za-z0-9-]+)\\//); return m ? m[1] : null; }")
+
+private fun onPageHidden(callback: () -> Unit): Unit = js("{ window.addEventListener('pagehide', () => callback()); }")
 
 private fun fetchText(
     url: String,

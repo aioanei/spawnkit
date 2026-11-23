@@ -126,7 +126,7 @@ fun AdLayer(
                 LaunchedEffect(session.sceneChanges) { reporter?.report(AdEvent(AdPlacement.Banner, AdEventKind.View)) }
                 AdPanel(
                     banner.label,
-                    "Test ads earn nothing. Tapping is counted as a click.",
+                    "A test ad. It earns nothing.",
                     Modifier
                         .align(Alignment.TopCenter)
                         .fillMaxWidth()
@@ -139,13 +139,17 @@ fun AdLayer(
         }
         interstitial?.let { shown ->
             Column(
-                Modifier.fillMaxSize().background(Color(0xE6101418)).padding(24.dp).testTag("ad-interstitial"),
+                Modifier
+                    .fillMaxSize()
+                    .background(Color(0xE6101418))
+                    .padding(24.dp)
+                    .testTag("ad-interstitial"),
                 verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 AdPanel(
                     shown.label,
-                    "A full-screen test ad between scenes. It earns nothing; tapping it is counted as a click.",
+                    "A full-screen test ad between scenes. It earns nothing.",
                     Modifier
                         .fillMaxWidth()
                         .heightIn(min = 160.dp)

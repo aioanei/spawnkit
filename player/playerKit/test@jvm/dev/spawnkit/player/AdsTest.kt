@@ -47,7 +47,13 @@ class AdsTest {
         ) = SceneDoc(
             id,
             id,
-            listOf(ObjectDoc("o-$id", "Switch", rules = RuleBlocks.compile(listOf(Rule(Condition.GameStarts, actions = listOf(Action.GoToScene(next))))))),
+            listOf(
+                ObjectDoc(
+                    "o-$id",
+                    "Switch",
+                    rules = RuleBlocks.compile(listOf(Rule(Condition.GameStarts, actions = listOf(Action.GoToScene(next))))),
+                ),
+            ),
         )
         return GamePackage.of(Project("Ads", listOf(scene("title", "level"), scene("level", "title")), nextId = 10, ads = ads))
     }
@@ -75,7 +81,13 @@ class AdsTest {
         runComposeUiTest {
             val events = mutableListOf<AdEvent>()
             mainClock.autoAdvance = false
-            setContent { GamePlayer(bouncing(AdSettings(interstitial = true, every = 2)), touchControls = false, adReporter = { events += it }) }
+            setContent {
+                GamePlayer(
+                    bouncing(AdSettings(interstitial = true, every = 2)),
+                    touchControls = false,
+                    adReporter = { events += it },
+                )
+            }
             mainClock.advanceTimeBy(500)
 
             onNodeWithTag("ad-interstitial").assertIsDisplayed()
