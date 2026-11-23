@@ -94,7 +94,7 @@ class PresetGamesTest {
     @Test
     fun catalogMatchesTheEmbeddedFiles() {
         assertEquals(
-            listOf("coin-dash", "tap-targets", "maze-run", "aura-farmer", "npc-dodge", "toaster-tycoon", "star-defender"),
+            listOf("coin-dash", "tap-targets", "maze-run", "aura-farmer", "npc-dodge", "toaster-tycoon", "sky-hopper", "star-defender"),
             GamePresets.all.map { it.id },
         )
         assertEquals(EmbeddedPresets.all.keys, GamePresets.all.map { it.id }.toSet())

@@ -79,6 +79,13 @@ public object GamePresets {
                 complete = true,
             ),
             GamePreset(
+                "sky-hopper",
+                "Sky Hopper",
+                "Hop across three levels wider than the screen; buy a Super jump in the shop.",
+                listOf("Holding a key", "Pressing a key", "Jump", "Touching", "Leaves the play area", "Test purchase", "Go to scene"),
+                complete = true,
+            ),
+            GamePreset(
                 "star-defender",
                 "Star Defender",
                 "Shoot the invaders across three waves; buy extra lives in the shop.",

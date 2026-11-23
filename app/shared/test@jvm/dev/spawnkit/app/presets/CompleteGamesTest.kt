@@ -166,6 +166,90 @@ class CompleteGamesTest {
     }
 
     @Test
+    fun aSkyHopperHopsThreeLevels() {
+        val bot = Bot(template("sky-hopper"))
+        bot.tap("Play button")
+        assertEquals("Level 1", bot.sceneName)
+        val seen = mutableListOf(bot.sceneName)
+        val gaps = (0 until PresetRecipes.SKY_SEGMENTS - 1).map { it * PresetRecipes.SKY_STEP + 3.0 }
+        var press = false
+        var coins = 0L
+        var previous = emptyList<Pair<Double, Double>>()
+        while (bot.sceneName !in setOf("Sky champion", "Out of lives") && bot.ticks < 30_000) {
+            if (bot.sceneName != seen.last()) seen += bot.sceneName
+            coins = maxOf(coins, bot.number("coins"))
+            val world = bot.session.scene.world
+            val hopper = engine.gameplay.tagged(world, "player").singleOrNull()
+            if (hopper == null) {
+                bot.hold(emptySet())
+                continue
+            }
+            val (x, y) = bot.tagged("player").single()
+            val grounded = world.get(hopper, engine.gameplay.body)?.onGround == true
+            val enemies = bot.tagged("enemy")
+            val gap = gaps.firstOrNull { x in it - 0.9..it - 0.2 }
+            // Wait at a gap while an enemy walks where the hopper would land.
+            val landingBusy = gap != null && enemies.any { it.first in gap + 0.5..gap + 4.0 }
+            // Jump over an enemy only while it walks towards the hopper, so both speeds carry the hopper clear;
+            // while it walks away, wait for it to turn.
+            val ahead = enemies.filter { it.first - x in 0.0..3.2 && kotlin.math.abs(it.second - y) < 1.5 }
+            val approaching = ahead.any { e -> previous.any { kotlin.math.abs(it.second - e.second) < 0.01 && it.first > e.first + 1e-9 } }
+            val jumpEnemy = approaching && ahead.any { it.first - x in 1.1..1.5 }
+            val waitEnemy = ahead.isNotEmpty() && !approaching
+            previous = enemies
+            val held = mutableSetOf<String>()
+            if (!landingBusy && !waitEnemy) held += StandardActions.RIGHT
+            press = !press
+            if (grounded && press && ((gap != null && !landingBusy) || jumpEnemy)) held += StandardActions.JUMP
+            bot.hold(held)
+        }
+        assertEquals("Sky champion", bot.sceneName, "after ${bot.ticks} moments, reached ${seen.last()}")
+        assertEquals(listOf("Level 1", "Level 2", "Level 3"), seen)
+        assertTrue(coins >= 6, "coins were kept across levels: $coins")
+    }
+
+    @Test
+    fun aSkyHopperWhoWalksOffTheEdgeLosesEveryLife() {
+        val bot = Bot(template("sky-hopper"))
+        bot.tap("Play button")
+        while (bot.sceneName != "Out of lives" && bot.ticks < 10_000) bot.hold(setOf(StandardActions.RIGHT))
+        assertEquals("Out of lives", bot.sceneName)
+    }
+
+    @Test
+    fun aSuperJumpBoughtInTheShopJumpsHigher() {
+        fun peak(boost: Boolean): Double {
+            val bot = Bot(template("sky-hopper"))
+            if (boost) {
+                bot.tap("Shop button")
+                bot.tap("Super jump")
+                assertEquals(
+                    "Super jump",
+                    bot.session
+                        .completePurchase(buy = true)
+                        ?.action
+                        ?.product,
+                )
+                bot.tick()
+                bot.tap("Back button")
+            }
+            bot.tap("Play button")
+            repeat(60) { bot.hold(emptySet()) }
+            val start = bot.tagged("player").single().second
+            bot.hold(setOf(StandardActions.JUMP))
+            var top = start
+            repeat(60) {
+                bot.hold(emptySet())
+                top = minOf(top, bot.tagged("player").single().second)
+            }
+            return start - top
+        }
+        val normal = peak(boost = false)
+        val boosted = peak(boost = true)
+        assertTrue(boosted > normal + 1.0, "Super jump: $boosted vs $normal")
+    }
+
+    @Test
     fun toastBoughtInTheShopIsKeptForPlay() {
         val bot = Bot(template("toaster-tycoon"))
         bot.tap("Shop button")

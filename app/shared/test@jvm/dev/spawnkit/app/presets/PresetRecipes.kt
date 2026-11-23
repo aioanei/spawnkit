@@ -30,6 +30,7 @@ internal object PresetRecipes {
             "aura-farmer" to ::auraFarmer,
             "npc-dodge" to ::npcDodge,
             "toaster-tycoon" to ::toasterTycoon,
+            "sky-hopper" to ::skyHopper,
             "star-defender" to ::starDefender,
         )
 
@@ -547,6 +548,204 @@ internal object PresetRecipes {
             state.editor.saveSnapshot()
         }
 
+    /**
+     * A complete platformer (C17): three levels wider than the screen, with a camera that follows the hopper. Solid
+     * ground with gaps, coins, patrolling enemies and a moving platform; touching an enemy or falling costs a life and
+     * restarts the level, and the flag leads on. Coins, lives and the Super jump are kept across levels; the shop sells
+     * Super jump and an extra life as test purchases. Full title screen, test ads, and win and lose scenes.
+     */
+    fun skyHopper(): Project =
+        Recipe("Sky Hopper").run {
+            renameScene("Level 1")
+            val levels = mutableListOf(sceneId)
+            levels += addScene("Level 2")
+            levels += addScene("Level 3")
+            completeTitle(
+                0xFF0277BD,
+                "Hop the gaps. Grab the coins.",
+                listOf(
+                    "Left and Right walk; Jump hops",
+                    "when you stand on something.",
+                    "Gaps and enemies cost a life",
+                    "and restart the level.",
+                    "The flag opens the next level.",
+                    "The camera follows the hopper.",
+                    "Super jump in the shop jumps",
+                    "higher in every level.",
+                ),
+                listOf("Try this: make the moving", "platform faster."),
+            )
+            val title =
+                state.project.scenes
+                    .first()
+                    .id
+            val win = endScene("Sky champion", "SKY CHAMPION!", "Three levels hopped.", "Hop again", title, 0xFF00838F)
+            val lose = endScene("Out of lives", "Out of lives", "The sky wins this time.", "Try again", title, 0xFF4E342E)
+            levels.forEachIndexed { index, level ->
+                open(level)
+                val next = levels.getOrNull(index + 1) ?: win
+                box("Background", 12.0, 0.0, 40.0, 12.0, 0xFF81D4FA, layer = -1)
+                val camera = place("Camera", "Camera", 0.0, 0.0)
+                give(camera, "gameplay:follow")
+                set(camera, "gameplay:follow", "down", false)
+                for (id in skyHud()) ok(state.moveInto(id, camera))
+                label("Level label", 0.0, -3.6, "Level ${index + 1}", 0.45).also { ok(state.moveInto(it, camera)) }
+
+                for (segment in 0 until SKY_SEGMENTS) {
+                    val ground = place("Platform", "Ground ${segment + 1}", segment * SKY_STEP, SKY_GROUND)
+                    set(ground, "graphics:shape", "color", 0xFF558B2F)
+                    if (segment < SKY_SEGMENTS - 1) {
+                        val coin = place("Coin", "Coin ${segment + 1}", segment * SKY_STEP + 1.5, SKY_GROUND - 1.5)
+                        rule(
+                            coin,
+                            Rule(
+                                Condition.Touching("player"),
+                                actions = listOf(Action.ChangeNumber(Target.Tagged("coins"), 1), Action.RemoveSelf),
+                            ),
+                        )
+                    }
+                }
+                val flag = box("Flag", (SKY_SEGMENTS - 1) * SKY_STEP + 2.0, SKY_GROUND - 1.3, 0.4, 2.0, 0xFFFFEB3B, tag = "flag")
+                rule(flag, Rule(Condition.Touching("player"), actions = listOf(Action.GoToScene(next))))
+
+                // Enemies patrol between two markers on the second and later ground pieces; their number is their direction.
+                for (enemy in 1..index) {
+                    val x = enemy * SKY_STEP
+                    val walker = box("Enemy $enemy", x, SKY_GROUND - 0.7, 0.8, 0.8, 0xFF6A1B9A, tag = "enemy")
+                    give(walker, "gameplay:number")
+                    rule(
+                        walker,
+                        Rule(
+                            Condition.NumberIs(Target.Self, Comparison.Equal, 0),
+                            actions =
+                                listOf(
+                                    Action.Move(
+                                        Direction.Right,
+                                        1.0 + index * 0.5,
+                                    ),
+                                ),
+                        ),
+                    )
+                    rule(
+                        walker,
+                        Rule(
+                            Condition.NumberIs(Target.Self, Comparison.Equal, 1),
+                            actions =
+                                listOf(
+                                    Action.Move(
+                                        Direction.Left,
+                                        1.0 + index * 0.5,
+                                    ),
+                                ),
+                        ),
+                    )
+                    rule(walker, Rule(Condition.Touching("turn-left"), actions = listOf(Action.SetNumber(Target.Self, 1))))
+                    rule(walker, Rule(Condition.Touching("turn-right"), actions = listOf(Action.SetNumber(Target.Self, 0))))
+                    val right = box("Enemy $enemy right edge", x + 2.4, SKY_GROUND - 0.7, 0.2, 0.8, 0xFF81D4FA, tag = "turn-left")
+                    set(right, "graphics:shape", "visible", false)
+                    val left = box("Enemy $enemy left edge", x - 2.4, SKY_GROUND - 0.7, 0.2, 0.8, 0xFF81D4FA, tag = "turn-right")
+                    set(left, "graphics:shape", "visible", false)
+                }
+                if (index >= 1) {
+                    // A moving platform above the level, with coins to reach from it; bodies standing on it ride along.
+                    // High enough that a normal jump never bumps it; a Super jump can reach it.
+                    val lift = place("Platform", "Moving platform", 2.0 * SKY_STEP, SKY_GROUND - 4.5)
+                    set(lift, "graphics:shape", "width", 2.4)
+                    set(lift, "graphics:shape", "color", 0xFF8D6E63)
+                    give(lift, "gameplay:tag")
+                    set(lift, "gameplay:tag", "tag", "lift")
+                    give(lift, "gameplay:number")
+                    rule(
+                        lift,
+                        Rule(Condition.NumberIs(Target.Self, Comparison.Equal, 0), actions = listOf(Action.Move(Direction.Right, 1.5))),
+                    )
+                    rule(
+                        lift,
+                        Rule(Condition.NumberIs(Target.Self, Comparison.Equal, 1), actions = listOf(Action.Move(Direction.Left, 1.5))),
+                    )
+                    rule(lift, Rule(Condition.Touching("lift-turn-left"), actions = listOf(Action.SetNumber(Target.Self, 1))))
+                    rule(lift, Rule(Condition.Touching("lift-turn-right"), actions = listOf(Action.SetNumber(Target.Self, 0))))
+                    for ((name, tag, dx) in listOf(
+                        Triple("Lift right edge", "lift-turn-left", 2.0),
+                        Triple("Lift left edge", "lift-turn-right", -2.0),
+                    )) {
+                        val edge = box(name, 2.0 * SKY_STEP + dx, SKY_GROUND - 4.5, 0.2, 0.4, 0xFF81D4FA, tag = tag)
+                        set(edge, "graphics:shape", "visible", false)
+                    }
+                }
+
+                val hopper = place("Player", "Hopper", 0.0, SKY_GROUND - 1.0)
+                give(hopper, "gameplay:body")
+                rule(hopper, Rule(Condition.KeyHeld(StandardActions.LEFT), actions = listOf(Action.Move(Direction.Left, SKY_WALK))))
+                rule(hopper, Rule(Condition.KeyHeld(StandardActions.RIGHT), actions = listOf(Action.Move(Direction.Right, SKY_WALK))))
+                rule(
+                    hopper,
+                    Rule(
+                        Condition.KeyPressed(StandardActions.JUMP),
+                        listOf(Condition.NumberIs(Target.Tagged("boost"), Comparison.Equal, 0)),
+                        listOf(Action.Jump(15.0)),
+                    ),
+                )
+                rule(
+                    hopper,
+                    Rule(
+                        Condition.KeyPressed(StandardActions.JUMP),
+                        listOf(Condition.NumberIs(Target.Tagged("boost"), Comparison.AtLeast, 1)),
+                        listOf(Action.Jump(19.0)),
+                    ),
+                )
+                for (hit in listOf<Condition>(Condition.Touching("enemy"), Condition.LeftArea())) {
+                    rule(hopper, Rule(hit, actions = listOf(Action.ChangeNumber(Target.Tagged("lives"), -1), Action.GoToScene(level))))
+                }
+                rule(named("Lives"), Rule(Condition.NumberIs(Target.Self, Comparison.AtMost, 0), actions = listOf(Action.GoToScene(lose))))
+            }
+
+            open(
+                state.project.scenes
+                    .single { it.name == "Shop" }
+                    .id,
+            )
+            skyHud()
+            val boost = box("Super jump", 0.0, 0.6, 4.4, 1.0, 0xFFFFA000, tag = "super-jump")
+            label("Super jump label", 0.0, 0.6, "Super jump: $1.99", 0.42)
+            rule(boost, Rule(Condition.Tapped, actions = listOf(Action.TestPurchase("Super jump", 199, Target.Tagged("boost"), 1))))
+            val life = box("Extra life", 0.0, 2.0, 4.4, 1.0, 0xFFFFA000, tag = "extra-life")
+            label("Extra life label", 0.0, 2.0, "Extra life: $0.49", 0.42)
+            rule(life, Rule(Condition.Tapped, actions = listOf(Action.TestPurchase("Extra life", 49, Target.Tagged("lives"), 1))))
+            set(named("Shop text"), "graphics:text", "text", "Test purchases: no money is charged.")
+            set(named("Shop hint"), "graphics:text", "text", "Super jump lasts every level.")
+
+            for (ending in listOf(win, lose)) {
+                open(ending)
+                skyHud(visible = false)
+                rule(
+                    named("Coins"),
+                    Rule(
+                        Condition.GameStarts,
+                        actions = listOf(Action.SetNumber(Target.Self, 0), Action.SetNumber(Target.Tagged("lives"), SKY_LIVES)),
+                    ),
+                )
+            }
+            open(title)
+            ok(state.applyCatalog("set_ads", mapOf("banner" to true, "interstitial" to true, "every" to 3L)))
+            state.editor.saveSnapshot()
+        }
+
+    /** Ground pieces in each Sky Hopper level. */
+    const val SKY_SEGMENTS = 4
+
+    /** Distance between the centres of Sky Hopper ground pieces, which are 6 units wide. */
+    const val SKY_STEP = 7.5
+
+    /** Height of Sky Hopper ground pieces. */
+    const val SKY_GROUND = 3.5
+
+    /** How fast the hopper walks. */
+    const val SKY_WALK = 4.0
+
+    /** Lives a Sky Hopper run starts with. */
+    const val SKY_LIVES = 3L
+
     /** Hits that clear a Star Defender wave. */
     const val WAVE_KILLS = 8L
 
@@ -785,6 +984,14 @@ private class Recipe(
         rule(toast, Rule(Condition.EverySeconds(1), actions = listOf(Action.AddNumber(Target.Self, Target.Tagged("income")))))
         rule(time, Rule(Condition.EverySeconds(1), actions = listOf(Action.ChangeNumber(Target.Self, -1))))
     }
+
+    /** Sky Hopper's Coins, Lives and Super jump, kept across levels; returns their IDs. */
+    fun skyHud(visible: Boolean = true): List<String> =
+        listOf(
+            kept("Coins", "coins", -2.4, -3.0, "Coins: ", 0, 0.4, visible),
+            kept("Lives", "lives", 0.6, -3.0, "Lives: ", PresetRecipes.SKY_LIVES, 0.4, visible),
+            kept("Boost", "boost", 2.9, -3.0, "Super jump: ", 0, 0.3, false),
+        )
 
     /** Star Defender's Score and Lives, kept across waves; shown unless [visible] is false. */
     fun starHud(visible: Boolean = true) {
