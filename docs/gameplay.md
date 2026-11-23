@@ -166,6 +166,10 @@ and the Body, Solid and Follow properties; `PhysicsUiTest` builds a platform, a 
 following camera by taps on phone and desktop, then plays it: the player lands, jumps with the on-screen button or Space,
 and lands again.
 
+On the Android API 36 emulator, `tools/android-physics-smoke.py` builds the same game with real taps and checks that the
+player stands on the platform and jumps. Screenshots: [rules](media/android-physics-rules.png),
+[playing](media/android-physics-play.png), [jumping](media/android-physics-jump.png).
+
 ## Catalog and rule operations (C7a)
 
 [`RuleBlockCatalog`](operation-catalog.md#rule-block-catalog-coregameplay-ruleblockcatalog) describes every block:
