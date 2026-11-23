@@ -212,6 +212,15 @@ public object RuleBlockCatalog {
                 { Condition.LeftArea(it.getValue("width") as Double, it.getValue("height") as Double) },
                 { mapOf("width" to it.width, "height" to it.height) },
             ),
+            condition(
+                "OnGround",
+                AuthoringInfo(
+                    "On the ground",
+                    "True while this object's Body stands on a Solid object, such as the floor or a platform.",
+                    MOVEMENT,
+                ),
+                listOf("When pressing Jump and on the ground, jump", "While on the ground, show Ready"),
+            ) { Condition.OnGround },
         )
 
     private fun areaParameter(
@@ -250,6 +259,53 @@ public object RuleBlockCatalog {
                 ),
                 listOf("Move left at 5 per second while holding Left"),
                 { Action.Move(Direction.valueOf(it.text("direction")), it.getValue("speed") as Double) },
+                { mapOf("direction" to it.direction.name, "speed" to it.speed) },
+            ),
+            actionSpec<Action.Jump>(
+                "Jump",
+                AuthoringInfo(
+                    "Jump",
+                    "If this object's Body is on the ground, it jumps up at the speed; gravity brings it back down. Higher speeds jump higher.",
+                    MOVEMENT,
+                ),
+                listOf(
+                    Parameter(
+                        "speed",
+                        "Speed",
+                        "Speed up when leaving the ground, in units per second. 15 jumps about 2 units with normal gravity.",
+                        ParameterType.Value(ValueKind.Decimal(0.0, MAX_SPEED, unit = "units per second")),
+                        default = 15.0,
+                    ),
+                ),
+                listOf("When Jump is pressed, jump at 15 per second"),
+                { Action.Jump(it.getValue("speed") as Double) },
+                { mapOf("speed" to it.speed) },
+            ),
+            actionSpec<Action.SetSpeed>(
+                "SetSpeed",
+                AuthoringInfo(
+                    "Set speed",
+                    "Gives this object's Body a speed in a direction, which it keeps until something stops it. Use it for launch pads, knock-back and dashes.",
+                    MOVEMENT,
+                ),
+                listOf(
+                    Parameter(
+                        "direction",
+                        "Direction",
+                        "Which way; only the speed along this direction changes.",
+                        ParameterType.Value(ValueKind.Choice(Direction.entries.map { ChoiceOption(it.name, it.label) })),
+                        default = Direction.Up.name,
+                    ),
+                    Parameter(
+                        "speed",
+                        "Speed",
+                        "World units per second, from 0 to 1000.",
+                        ParameterType.Value(ValueKind.Decimal(0.0, MAX_SPEED, unit = "units per second")),
+                        default = 20.0,
+                    ),
+                ),
+                listOf("When touching a spring, set speed up to 25", "When touching an enemy, set speed left to 8"),
+                { Action.SetSpeed(Direction.valueOf(it.text("direction")), it.getValue("speed") as Double) },
                 { mapOf("direction" to it.direction.name, "speed" to it.speed) },
             ),
             actionSpec<Action.ChangeNumber>(
@@ -472,6 +528,7 @@ public object RuleBlockCatalog {
             is Condition.NumberIs -> "NumberIs"
             is Condition.CountIs -> "CountIs"
             is Condition.LeftArea -> "LeftArea"
+            Condition.OnGround -> "OnGround"
         }
 
     private fun idOf(action: Action): String =
@@ -485,6 +542,8 @@ public object RuleBlockCatalog {
             is Action.ShowNumber -> "ShowNumber"
             Action.RemoveSelf -> "RemoveSelf"
             is Action.Spawn -> "Spawn"
+            is Action.Jump -> "Jump"
+            is Action.SetSpeed -> "SetSpeed"
             is Action.GoToScene -> "GoToScene"
         }
 

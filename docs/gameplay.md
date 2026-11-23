@@ -127,6 +127,49 @@ On the Android API 36 emulator, `tools/android-spawn-smoke.py` creates the templ
 with real taps, then checks that the copy moves down. Screenshots: [rules](media/android-spawn-rules.png),
 [playing](media/android-spawn-play.png), [after moving](media/android-spawn-moving.png).
 
+## Platform physics and camera follow (C14b)
+
+The rest of [#88](https://github.com/aioanei/spawnkit/issues/88), for platformers and levels wider than the screen.
+[Plan](plans/2026-11-23-c14b-physics-camera.md).
+
+- **Body** (`gameplay:body`): speed across and down, gravity (50 by default; 0 floats, for games seen from above),
+  bounce (0 to 1) and fastest fall (20), in world units per second. Rules can read and set them as `body_vx`, `body_vy`
+  and so on.
+- **Solid** (`gameplay:solid`): bodies stand on it and cannot pass through it. The builder's Platform piece is solid.
+- **One physics system** (`gameplay:physics`) runs after rules and steady movement. For each body in scene order:
+  1. *Ride:* a body that stood on a solid moves with that solid's movement since the last moment, however the solid
+     moved: steady movement or Move blocks with the patrol pattern (a number for the direction, edges that flip it).
+  2. *Settle:* a body overlapping a solid, for example walked into a wall by a Move block or met by a rising platform,
+     is pushed out the shorter way; exactly in the middle, it goes on top.
+  3. *Gravity,* never beyond the fastest fall.
+  4. *Across, then down,* in steps no longer than the body (at most a quarter unit), so fast bodies cannot pass
+     through thin walls. A solid stops the body at its edge, and the speed reverses times the bounce; small rebounds
+     stop, so bouncing bodies come to rest. Landing while moving down means **on the ground**.
+
+  Edges that only meet do not count, so a body on the ground walks freely. Only `+ - * /`, comparisons, `abs`, `min`,
+  `max` and `floor` are used, and the body's on-the-ground flag and each solid's last position are checkpointed, so a
+  run repeats exactly on every target and from a checkpoint.
+- **Blocks:** **On the ground** (condition); **Jump** at a speed, only from the ground (15 jumps a little over 2 units
+  with normal gravity); **Set speed** in a direction, for springs, knock-back and dashes. Walking stays the Move block.
+- **Follow** (`gameplay:follow`): keeps its object at the first object with a tag (player by default), across, up and
+  down, or both. On a camera, the view follows the player; Leaves the play area then uses the moving camera. It runs
+  after physics, so the camera never lags a moment behind.
+
+Limits: bodies collide with solids, not with each other (a body can also be solid, like a crate to stand on); rotation
+does not turn boxes; "on the ground" means blocked while falling, so it assumes gravity pulls down, and a body with no
+gravity rides platforms only once it has been pushed onto one. A body on a platform at the very start rides from the
+second moment, once its footing is known. Leaves the play area removes objects already outside the camera's area at
+the start, so in wide levels use it for shots, not for enemies placed further along.
+
+Common tests: `PhysicsTest` 14, `PhysicsBlocksTest` 4 and `FollowTest` 5; `OperationParityTest` adds the three blocks
+and the Body, Solid and Follow properties; `PhysicsUiTest` builds a platform, a player with a body and a Jump rule, and a
+following camera by taps on phone and desktop, then plays it: the player lands, jumps with the on-screen button or Space,
+and lands again.
+
+On the Android API 36 emulator, `tools/android-physics-smoke.py` builds the same game with real taps and checks that the
+player stands on the platform and jumps. Screenshots: [rules](media/android-physics-rules.png),
+[playing](media/android-physics-play.png), [jumping](media/android-physics-jump.png).
+
 ## Catalog and rule operations (C7a)
 
 [`RuleBlockCatalog`](operation-catalog.md#rule-block-catalog-coregameplay-ruleblockcatalog) describes every block:

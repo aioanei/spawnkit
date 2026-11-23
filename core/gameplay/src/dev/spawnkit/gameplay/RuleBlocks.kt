@@ -11,6 +11,7 @@ import dev.spawnkit.program.SourceRef
 import dev.spawnkit.program.Stmt
 import dev.spawnkit.program.TextValue
 import dev.spawnkit.program.Trigger
+import kotlin.math.abs
 
 /** Who a block acts on: this object, or the first object with a tag. */
 public sealed interface Target {
@@ -172,6 +173,9 @@ public sealed interface Condition {
         }
     }
 
+    /** This object's body stood on a solid object after the last moment (see [Body]). */
+    public data object OnGround : Condition
+
     /** The number of objects tagged [tag] compares to [value]. */
     public data class CountIs(
         /** Tag to count. */
@@ -267,6 +271,31 @@ public sealed interface Action {
         public val direction: Direction? = null,
         /** Units per second, from 0 to 1000. */
         public val speed: Double = 0.0,
+    ) : Action {
+        init {
+            require(speed.isFinite() && speed >= 0.0 && speed <= MAX_SPEED) { "Choose a speed from 0 to $MAX_SPEED" }
+        }
+    }
+
+    /** If this object's body is on the ground, sets its speed up to [speed] units per second. */
+    public data class Jump(
+        /** Units per second, from 0 to 1000. */
+        public val speed: Double,
+    ) : Action {
+        init {
+            require(speed.isFinite() && speed >= 0.0 && speed <= MAX_SPEED) { "Choose a speed from 0 to $MAX_SPEED" }
+        }
+    }
+
+    /**
+     * Sets this object's body speed in [direction] to [speed] units per second, for launch pads, knock-back and dashes.
+     * The speed on the other axis is unchanged.
+     */
+    public data class SetSpeed(
+        /** Direction. */
+        public val direction: Direction,
+        /** Units per second, from 0 to 1000. */
+        public val speed: Double,
     ) : Action {
         init {
             require(speed.isFinite() && speed >= 0.0 && speed <= MAX_SPEED) { "Choose a speed from 0 to $MAX_SPEED" }
@@ -387,6 +416,7 @@ public object RuleBlocks {
             is Condition.NumberIs -> "${possessive(condition.target)} number ${condition.comparison.symbol} ${condition.value}"
             is Condition.CountIs -> "Count of ${condition.tag} ${condition.comparison.symbol} ${condition.value}"
             is Condition.LeftArea -> "Left the play area (${number(condition.width)} × ${number(condition.height)})"
+            Condition.OnGround -> "On the ground"
         }
 
     /**
@@ -445,6 +475,14 @@ public object RuleBlocks {
                         )} per second"
                     }
                 "Spawn a copy of ${action.tag} at $at${moving.orEmpty()}"
+            }
+
+            is Action.Jump -> {
+                "Jump at ${number(action.speed)} per second"
+            }
+
+            is Action.SetSpeed -> {
+                "Set speed ${action.direction.label} to ${number(action.speed)} per second"
             }
 
             is Action.GoToScene -> {
@@ -515,6 +553,10 @@ public object RuleBlocks {
             is Condition.LeftArea -> {
                 call("leftArea", s, Expr.Literal(DecimalValue(condition.width), s), Expr.Literal(DecimalValue(condition.height), s))
             }
+
+            Condition.OnGround -> {
+                call(ON_GROUND, s)
+            }
         }
 
     private fun action(
@@ -584,6 +626,17 @@ public object RuleBlocks {
                 Stmt.RequestEffect(SPAWN, parts.reduce { left, right -> Expr.Binary(BinaryOp.Add, left, right, s) }, s)
             }
 
+            is Action.Jump -> {
+                val up = Stmt.SetProperty(Expr.Self(s), BODY_VY, Expr.Literal(DecimalValue(-action.speed), s), s)
+                Stmt.If(call(ON_GROUND, s), listOf(up), emptyList(), s)
+            }
+
+            is Action.SetSpeed -> {
+                val property = if (action.direction.property == "x") BODY_VX else BODY_VY
+                val speed = if (action.direction.positive) action.speed else -action.speed
+                Stmt.SetProperty(Expr.Self(s), property, Expr.Literal(DecimalValue(speed), s), s)
+            }
+
             is Action.GoToScene -> {
                 Stmt.RequestEffect(GO_TO_SCENE, text(action.sceneId, s), s)
             }
@@ -611,6 +664,10 @@ public object RuleBlocks {
 
                 expr.isCall("tapped") -> {
                     Condition.Tapped
+                }
+
+                expr.isCall(ON_GROUND) -> {
+                    Condition.OnGround
                 }
 
                 expr.isCall("touching") -> {
@@ -673,6 +730,20 @@ public object RuleBlocks {
             when {
                 stmt is Stmt.Destroy -> {
                     Action.RemoveSelf
+                }
+
+                stmt is Stmt.If -> {
+                    val up = stmt.then.single() as Stmt.SetProperty
+                    if (!stmt.condition.isCall(ON_GROUND) || up.property != BODY_VY) return@runCatching null
+                    Action.Jump(-((up.value as Expr.Literal).value as DecimalValue).value)
+                }
+
+                stmt is Stmt.SetProperty && (stmt.property == BODY_VX || stmt.property == BODY_VY) -> {
+                    val speed = ((stmt.value as Expr.Literal).value as DecimalValue).value
+                    // Left or up at speed 0 compiles to -0.0, which only the sign of 1 / speed tells from 0.0.
+                    val positive = speed > 0.0 || (speed == 0.0 && 1.0 / speed > 0.0)
+                    val axis = if (stmt.property == BODY_VX) "x" else "y"
+                    Action.SetSpeed(Direction.entries.first { it.property == axis && it.positive == positive }, abs(speed))
                 }
 
                 stmt is Stmt.RequestEffect && stmt.effect == SPAWN -> {
@@ -843,6 +914,9 @@ public object RuleBlocks {
     private val BLOCK_ID = Regex("rule(\\d+)\\.(if|do)(\\d+)")
     private const val NUMBER = "number"
     private const val TEXT = "text_text"
+    private const val BODY_VX = "body_vx"
+    private const val BODY_VY = "body_vy"
+    private const val ON_GROUND = "onGround"
 
     /** Effect a "Go to scene" block requests; its payload is the scene ID. Players act on it after the tick. */
     public const val GO_TO_SCENE: String = "goToScene"

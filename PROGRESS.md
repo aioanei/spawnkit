@@ -1,6 +1,27 @@
 # SpawnKit progress
 
-## Current checkpoint — C14a game values and spawning (2026-11-23)
+## Current checkpoint — C14b platform physics and camera follow (2026-11-23)
+
+- **Branch.** `feat/88-physics-camera` from `main` after PR #96. [Plan](docs/plans/2026-11-23-c14b-physics-camera.md),
+  the rest of [#88](https://github.com/aioanei/spawnkit/issues/88).
+- **Added.** `Body` and `Solid` components and one deterministic physics system: riding moving solids, pushing bodies out
+  of solids they were moved into, gravity with a fastest fall, then stepped movement across and down with bounce. Blocks
+  On the ground, Jump (only from the ground) and Set speed. A `Follow` component keeps a camera on a tagged object. The
+  builder's Platform piece is solid. Details and limits: [gameplay](docs/gameplay.md#platform-physics-and-camera-follow-c14b).
+- **Evidence.** Gradle `spotlessApply`, then `spotlessCheck allJvmAndWebTests localNativeTests`, pass. Kotlin Toolchain
+  `check ktlint`, `test -p jvm -p android` and `test -p mingwX64` pass. JVM reports: gameplay 66 (`PhysicsTest` 14,
+  `PhysicsBlocksTest` 4, `FollowTest` 5), builder 80 (`PhysicsUiTest` 2 and physics parity cases), AI 22, player 8 and
+  server 58, all without failures.
+- **Android.** On the API 36 emulator, `tools/android-physics-smoke.py` built a platform, a player with a body and a Jump
+  rule, and a following camera with real taps; the player stood on the platform (2 px gap) and jumped (268 px).
+  [Rules](docs/media/android-physics-rules.png), [playing](docs/media/android-physics-play.png),
+  [jumping](docs/media/android-physics-jump.png).
+- **Known limits.** Bodies do not collide with each other; "on the ground" assumes downward gravity; a rider lags its
+  platform by one moment at the very start; Leaves the play area removes objects that start outside the camera's area.
+- **Next.** C14 (#88) is complete once this merges. Then C15 home screen kit (#89), C12, C17, C16, C13, C11c and C8.
+  No hosted model was called during this work.
+
+## Previous checkpoint — C14a game values and spawning (2026-11-23)
 
 - **Branch.** `feat/88-game-blocks`, with `main` merged after C11b. PR #95 was merged with the owner's explicit
   consent. [Plan](docs/plans/2026-11-23-c14a-game-values-spawning.md), part of [#88](https://github.com/aioanei/spawnkit/issues/88).

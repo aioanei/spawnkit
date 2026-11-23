@@ -366,6 +366,44 @@ class OperationParityTest {
                     },
                     { target("Coin") + mapOf("rule" to 1L, "block" to Picked("LeftArea", mapOf("width" to 40.0, "height" to 24.0))) },
                 ),
+            "OnGround" to
+                Case(
+                    { coinRules(tapped) },
+                    {
+                        tap("panel:Rules")
+                        tap("rule:0:add-if")
+                        tap("kind:OnGround")
+                        tap("block-done")
+                    },
+                    { target("Coin") + mapOf("rule" to 1L, "block" to Picked("OnGround")) },
+                ),
+            "Jump" to
+                Case(
+                    { coinRules(touching) },
+                    {
+                        tap("panel:Rules")
+                        tap("rule:0:add-do")
+                        tap("kind:Jump")
+                        tap("inc:speed")
+                        tap("block-done")
+                    },
+                    { target("Coin") + mapOf("rule" to 1L, "block" to Picked("Jump", mapOf("speed" to 16.0))) },
+                ),
+            "SetSpeed" to
+                Case(
+                    { coinRules(touching) },
+                    {
+                        tap("panel:Rules")
+                        tap("rule:0:add-do")
+                        tap("kind:SetSpeed")
+                        tap("direction:Right")
+                        tap("block-done")
+                    },
+                    {
+                        target("Coin") +
+                            mapOf("rule" to 1L, "block" to Picked("SetSpeed", mapOf("direction" to "Right", "speed" to 20.0)))
+                    },
+                ),
         )
 
     @Test
@@ -403,6 +441,55 @@ class OperationParityTest {
                 },
                 { tap("inc:${it.id("Player")}/gameplay:motion/vx") },
                 { target("Player") + mapOf("component" to "gameplay:motion", "property" to "vx", "value" to 0.5) },
+            ),
+        )
+    }
+
+    @Test
+    fun thePhysicsComponentsGiveTheSameResultByHandAndByAgentTool() {
+        checkParity(
+            "add_component",
+            "Body",
+            Case(
+                { select("Player") },
+                { tap("add-component:gameplay:body") },
+                { target("Player") + ("component" to "gameplay:body") },
+            ),
+        )
+        checkParity(
+            "set_property",
+            "Bounce",
+            Case(
+                {
+                    select("Player")
+                    apply(EditOperation.AddComponent(sceneId, id("Player"), "gameplay:body"))
+                },
+                { tap("inc:${it.id("Player")}/gameplay:body/bounce") },
+                { target("Player") + mapOf("component" to "gameplay:body", "property" to "bounce", "value" to 0.5) },
+            ),
+        )
+        checkParity(
+            "set_property",
+            "Solid",
+            Case(
+                {
+                    select("Coin")
+                    apply(EditOperation.AddComponent(sceneId, id("Coin"), "gameplay:solid"))
+                },
+                { tap("field:${it.id("Coin")}/gameplay:solid/solid") },
+                { target("Coin") + mapOf("component" to "gameplay:solid", "property" to "solid", "value" to false) },
+            ),
+        )
+        checkParity(
+            "set_property",
+            "Follow up and down",
+            Case(
+                {
+                    select("Score")
+                    apply(EditOperation.AddComponent(sceneId, id("Score"), "gameplay:follow"))
+                },
+                { tap("field:${it.id("Score")}/gameplay:follow/down") },
+                { target("Score") + mapOf("component" to "gameplay:follow", "property" to "down", "value" to false) },
             ),
         )
     }
