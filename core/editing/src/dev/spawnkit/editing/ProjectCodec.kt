@@ -19,9 +19,10 @@ import kotlinx.serialization.json.longOrNull
 public object ProjectCodec {
     /**
      * Current workspace-file schema, separate from the legacy platformer document schema. Schema 2 added `images`
-     * (ADR-0012) and schema 3 `ads` (C12); older files are migrated when they are opened.
+     * (ADR-0012), schema 3 `ads` (C12) and schema 4 image `provenance` (ADR-0013); older files are migrated when they are
+     * opened.
      */
-    public const val SCHEMA_VERSION: Int = 3
+    public const val SCHEMA_VERSION: Int = 4
 
     /** Maximum UTF-16 characters in a project file, also used by platform readers before decoding. */
     public const val MAX_FILE_CHARS: Int = 10 * 1024 * 1024
@@ -83,6 +84,7 @@ public object ProjectCodec {
                                 "name" to JsonPrimitive(image.name),
                                 "hash" to JsonPrimitive(image.hash),
                                 "data" to JsonPrimitive(image.data),
+                                "provenance" to (image.provenance?.let(::JsonPrimitive) ?: JsonNull),
                             )
                         },
                     ),
@@ -93,7 +95,7 @@ public object ProjectCodec {
 
     /**
      * Brings an older workspace file up to [SCHEMA_VERSION] as JSON, before it is read: schema 1 gains an empty
-     * `images` list, and schema 2 gains `ads`, all off. Newer or unknown versions are returned unchanged and refused by
+     * `images` list, schema 2 gains `ads`, all off, and schema 3 images gain an empty `provenance`. Newer or unknown versions are returned unchanged and refused by
      * the reader.
      */
     internal fun migrate(root: JsonElement): JsonElement {
@@ -106,6 +108,17 @@ public object ProjectCodec {
         if (version == 2L) {
             val ads = jsonObject("banner" to JsonPrimitive(false), "interstitial" to JsonPrimitive(false), "every" to JsonPrimitive(3))
             fields = JsonObject(fields + mapOf("schemaVersion" to JsonPrimitive(3), "ads" to ads))
+            version = 3L
+        }
+        if (version == 3L) {
+            val images =
+                (fields["images"] as? JsonArray)?.map { image ->
+                    (image as? JsonObject)?.let {
+                        JsonObject(it + ("provenance" to JsonNull))
+                    }
+                        ?: image
+                }
+            fields = JsonObject(fields + mapOf("schemaVersion" to JsonPrimitive(4), "images" to JsonArray(images ?: emptyList())))
         }
         return fields
     }
@@ -165,7 +178,7 @@ public object ProjectCodec {
     }
 
     private fun JsonFields.readImage(): ImageAsset {
-        val image = ImageAsset(string("id"), string("name"), string("hash"), string("data"))
+        val image = ImageAsset(string("id"), string("name"), string("hash"), string("data"), nullableString("provenance"))
         val info =
             try {
                 ProjectImages.check(image.data)

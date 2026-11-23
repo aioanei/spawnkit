@@ -123,6 +123,7 @@ public sealed interface EditOperation {
         public val name: String,
         public val data: String,
         override val label: String = "Import image $name",
+        public val provenance: String? = null,
     ) : EditOperation
 
     /** Renames an image. */
@@ -236,7 +237,12 @@ internal class OperationApplier(
                     }
                 project.images.firstOrNull { it.hash == info.hash }?.let { reject("This picture is already in the game as ${it.name}") }
                 if (project.images.size >= ProjectImages.MAX_IMAGES) reject("A game can hold at most ${ProjectImages.MAX_IMAGES} images")
-                val image = ImageAsset("img-${project.nextId}", operation.name.trim(), info.hash, operation.data)
+                if ((operation.provenance?.length ?: 0) >
+                    MAX_PROVENANCE
+                ) {
+                    reject("Describe where the image came from in at most $MAX_PROVENANCE characters")
+                }
+                val image = ImageAsset("img-${project.nextId}", operation.name.trim(), info.hash, operation.data, operation.provenance)
                 if (ProjectImages.totalBytes(project.images + image) > ProjectImages.MAX_TOTAL_BYTES) {
                     reject("A game's images can take at most ${ProjectImages.MAX_TOTAL_BYTES / (1024 * 1024)} MB; remove one first")
                 }
@@ -493,6 +499,7 @@ internal class OperationApplier(
 private fun reject(message: String): Nothing = throw Rejection(message)
 
 private const val MAX_NAME = 80
+private const val MAX_PROVENANCE = 200
 
 private const val MAX_RULES = 200
 

@@ -160,6 +160,44 @@ account (which asks first).
   server no longer accepts signs the builder out with "Your session ended. Sign in again."
 - `AccountClient` (`ai`) is the client for the C11a routes; `AccountState` (`app/shared`) holds the builder's account.
 
+## Character Forge (C16a)
+
+[ADR-0013](adr/0013-character-forge-image-model.md), [plan](plans/2026-11-23-c16a-character-forge.md),
+[#90](https://github.com/aioanei/spawnkit/issues/90). A photo becomes game characters.
+
+- **Builder.** When the signed-in server offers it, the Add panel shows **Character from photo…**:
+  1. choose a photo;
+  2. tick "This is me, or this person agreed" (Make characters stays disabled until then);
+  3. choose Pixel art, Cartoon and Chibi;
+  4. make the characters.
+
+  `AccountState.forge` strips the photo's metadata chunks (`ProjectImages.stripMetadata`) before it leaves the device.
+  **Use** on one result adds every image, with its provenance, and a **Character** in one undo step. The Character
+  is a sprite (pixelated for pixel art), a body, the `player` tag, Left and Right walking, and Jump.
+- **Server.** `POST /api/ai/character` requires sign-in and consent, and accepts a PNG photo of at most 1 MB and one to
+  three styles.
+  - Each style is one OpenAI image edit (`gpt-image-1-mini` by default, set with `SPAWNKIT_IMAGE_MODEL`; low quality, transparent background), reserved at $0.05
+    against the same spend ledger as text AI. Failures and refusals cost nothing.
+  - Pixel art is post-processed deterministically: a 32 × 32 box downscale, a fixed 16-colour palette, hard
+    transparency and an 8 × upscale. Other styles are scaled to fit 512 px.
+  - The photo is never stored or logged; only a failure's type is logged.
+- **Tests.**
+  - `CharacterForgeTest` 7, with a fake image gateway: all styles with provenance and spend, consent and sign-in,
+    refusals and failures cost nothing, the shared daily limit, "not set up", deterministic pixel art, and the
+    builder's `AccountClient` reading the route.
+  - `CharacterForgeUiTest` on phone and desktop: consent gating, metadata stripped, images and Character added, and
+    one undo.
+  - `ImagesTest`: provenance and metadata stripping.
+- **Live run (2026-11-23).**
+  - A local server with the owner's key (`tools/run-server-local.ps1`) made all three styles from an original
+    illustrated portrait in 33 seconds through `/api/ai/character`, each with the provenance "OpenAI gpt-image-1-mini,
+    2026-11-23". [Results](media/character-forge-live.png).
+  - `gpt-image-1` turned out to be retired, so the model is now set with `SPAWNKIT_IMAGE_MODEL`, by default
+    `gpt-image-1-mini`.
+  - The pixel palette gained skin tones after faces came out pink.
+- **Not yet (C16b).** The agent tool that asks before uploading, and Android emulator evidence from photo to playable
+  character.
+
 ## Evidence
 
 - `StagedChangesTest` (`core/editing`, 3 tests): the workspace is untouched until accept; accept is one undo step;

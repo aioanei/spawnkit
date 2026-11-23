@@ -12,10 +12,12 @@ import dev.spawnkit.ai.AccountSession
 import dev.spawnkit.ai.AdStatsReport
 import dev.spawnkit.ai.AgentModel
 import dev.spawnkit.ai.ArcadeGame
+import dev.spawnkit.ai.CharacterResult
 import dev.spawnkit.ai.HostedModel
 import dev.spawnkit.ai.ServerStatus
 import dev.spawnkit.app.assistant.HostedChoice
 import dev.spawnkit.app.assistant.SecretStore
+import dev.spawnkit.editing.ProjectImages
 import io.ktor.client.HttpClient
 import io.ktor.http.Url
 import kotlinx.coroutines.CancellationException
@@ -192,6 +194,20 @@ class AccountState(
     /** Unpublishes the owned game [slug]. */
     suspend fun unpublish(slug: String) {
         owned { api, token -> api.unpublish(token, slug) }
+    }
+
+    /**
+     * Makes characters from [png] in [styles] through the server's Character Forge (ADR-0013). The photo is stripped
+     * of metadata here, before it leaves the device. Throws [AccountException] with a plain message.
+     */
+    suspend fun forge(
+        png: ByteArray,
+        styles: List<String>,
+        consent: Boolean,
+    ): CharacterResult {
+        val token = token() ?: throw AccountException(SIGN_IN_FIRST, 401)
+        val photo = ProjectImages.encode(ProjectImages.stripMetadata(png))
+        return signedInApi().character(token, photo, styles, consent)
     }
 
     /** Test ad statistics of the owned game [slug] from Arcade plays (C12). Throws [AccountException] with a plain message. */

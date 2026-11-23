@@ -85,6 +85,21 @@ class TestPurchasesTest {
     }
 
     @Test
+    fun anAdAndAPurchaseEachKeepPlayPausedUntilBothAreDone() {
+        val session = StandardEngine().playSession(shop, "shop")
+        session.tick()
+        session.adShowing = true
+        assertTrue(session.paused)
+        session.adShowing = false
+        assertTrue(session.paused, "the purchase question still holds the game")
+        session.adShowing = true
+        session.completePurchase(buy = false)
+        assertTrue(session.paused, "the ad still holds the game")
+        session.adShowing = false
+        assertTrue(!session.paused)
+    }
+
+    @Test
     fun theDialogIsLabelledAndReportsOnlyPurchases() =
         runComposeUiTest {
             val reported = mutableListOf<Pair<String, Long>>()

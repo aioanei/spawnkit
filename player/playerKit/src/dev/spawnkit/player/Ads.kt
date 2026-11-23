@@ -117,7 +117,7 @@ fun AdLayer(
         if (!schedule.interstitialAfter(session.sceneChanges)) return@LaunchedEffect
         val result = host.request(AdPlacement.Interstitial) as? AdResult.Shown ?: return@LaunchedEffect
         interstitial = result
-        session.paused = true
+        session.adShowing = true
         reporter?.report(AdEvent(AdPlacement.Interstitial, AdEventKind.View))
     }
     Box(modifier.fillMaxSize()) {
@@ -159,7 +159,7 @@ fun AdLayer(
                 Button(
                     {
                         interstitial = null
-                        session.paused = false
+                        session.adShowing = false
                     },
                     Modifier.heightIn(min = 48.dp).testTag("ad-close"),
                 ) { Text("Close ad") }

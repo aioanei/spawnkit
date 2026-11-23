@@ -43,12 +43,12 @@ class AdSettingsTest {
     fun adSettingsSurviveTheFileAndOlderFilesOpenWithAdsOff() {
         editor.apply(EditOperation.SetAds(AdSettings(banner = true, every = 5)))
         val text = ProjectCodec.encode(editor.project)
-        assertTrue(text.contains("\"schemaVersion\":3"))
+        assertTrue(text.contains("\"schemaVersion\":4"))
         assertEquals(editor.project, ProjectCodec.decode(text))
 
         val schemaTwo =
             text
-                .replace("\"schemaVersion\":3", "\"schemaVersion\":2")
+                .replace("\"schemaVersion\":4", "\"schemaVersion\":2")
                 .replace(Regex(""","ads":\{[^}]*\}"""), "")
         assertEquals(AdSettings(), ProjectCodec.decode(schemaTwo).ads)
         val schemaOne = schemaTwo.replace("\"schemaVersion\":2", "\"schemaVersion\":1").replace(",\"images\":[]", "")

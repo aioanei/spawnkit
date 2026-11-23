@@ -15,6 +15,11 @@ public data class ImageAsset(
     public val hash: String,
     /** The PNG file in Base64. */
     public val data: String,
+    /**
+     * Where a generated image came from, such as "OpenAI gpt-image-1, 2026-11-23" (ADR-0013); `null` for pictures the
+     * creator imported.
+     */
+    public val provenance: String? = null,
 )
 
 /** Size of a checked PNG. */
@@ -74,6 +79,27 @@ public object ProjectImages {
         }
     }
 
+    /**
+     * [png] with only the chunks needed to draw it (IHDR, PLTE, tRNS, IDAT and IEND): text, dates, camera data and
+     * other metadata are removed, as before a photo leaves the device (ADR-0013). Throws [IllegalArgumentException] for
+     * anything that is not a well-formed PNG.
+     */
+    public fun stripMetadata(png: ByteArray): ByteArray {
+        require(png.size >= 8 && PNG_SIGNATURE.indices.all { png[it] == PNG_SIGNATURE[it] }) { "Only PNG images can be used" }
+        val kept = ArrayList<Byte>(png.size)
+        for (i in 0 until 8) kept += png[i]
+        var at = 8
+        while (at + 12 <= png.size) {
+            val length = png.int(at)
+            require(length >= 0 && at + 12 + length <= png.size) { "This PNG image is damaged" }
+            val type = png.decodeToString(at + 4, at + 8)
+            if (type in DRAWING_CHUNKS) for (i in at until at + 12 + length) kept += png[i]
+            at += 12 + length
+            if (type == "IEND") break
+        }
+        return kept.toByteArray()
+    }
+
     /** [bytes] in Base64, as projects store them. */
     public fun encode(bytes: ByteArray): String = Base64.encode(bytes)
 
@@ -85,6 +111,7 @@ public object ProjectImages {
             ((this[at + 2].toInt() and 0xFF) shl 8) or (this[at + 3].toInt() and 0xFF)
 
     private val PNG_SIGNATURE = byteArrayOf(-119, 80, 78, 71, 13, 10, 26, 10)
+    private val DRAWING_CHUNKS = setOf("IHDR", "PLTE", "tRNS", "IDAT", "IEND")
 }
 
 /** SHA-256 (FIPS 180-4) in common code, for image content hashes. */

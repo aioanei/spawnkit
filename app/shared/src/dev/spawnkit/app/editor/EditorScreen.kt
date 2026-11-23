@@ -37,6 +37,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -103,11 +104,13 @@ fun EditorScreen(
     LaunchedEffect(accounts) { accounts.start() }
     val assistant = remember(state, secrets) { AssistantState(state, secrets, scope, liveModel, accounts::hostedChoice) }
     val openAccount = { accountOpen = true }
-    BoxWithConstraints(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).safeDrawingPadding()) {
-        if (maxWidth < CompactWidth) {
-            CompactLayout(state, projectSession, assistant, openAccount) { releasing = true }
-        } else {
-            ExpandedLayout(state, projectSession, assistant, openAccount) { releasing = true }
+    CompositionLocalProvider(LocalAccounts provides accounts) {
+        BoxWithConstraints(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).safeDrawingPadding()) {
+            if (maxWidth < CompactWidth) {
+                CompactLayout(state, projectSession, assistant, openAccount) { releasing = true }
+            } else {
+                ExpandedLayout(state, projectSession, assistant, openAccount) { releasing = true }
+            }
         }
     }
     if (projectSession != null) ProjectDialogs(projectSession)
@@ -360,6 +363,8 @@ private fun Palette(state: EditorState) {
     val picker = rememberImagePicker()
     val editing = state.play == null
     var renaming by remember { mutableStateOf<ImageAsset?>(null) }
+    val accounts = LocalAccounts.current
+    var forging by remember { mutableStateOf(false) }
     Column(Modifier.verticalScroll(rememberScrollState()).padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             for (preset in DefaultPresets) {
@@ -380,6 +385,14 @@ private fun Palette(state: EditorState) {
                     Modifier.testTag("add:Image"),
                     enabled = editing,
                 ) { Text("Image…") }
+                // Character Forge needs a signed-in account on a server that offers it (ADR-0013).
+                if (accounts?.signedIn == true && accounts.status?.characterAvailable == true) {
+                    OutlinedButton(
+                        { forging = true },
+                        Modifier.testTag("add:Character"),
+                        enabled = editing,
+                    ) { Text("Character from photo…") }
+                }
             }
         }
         if (picker != null || state.project.images.isNotEmpty()) {
@@ -416,6 +429,7 @@ private fun Palette(state: EditorState) {
         }
     }
     renaming?.let { image -> RenameImage(state, image) { renaming = null } }
+    if (forging && accounts != null && picker != null) CharacterForgeDialog(state, accounts, picker) { forging = false }
 }
 
 @Composable

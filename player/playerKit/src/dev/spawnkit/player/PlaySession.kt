@@ -40,7 +40,6 @@ class PlaySession(
     fun offer(request: PurchaseRequest) {
         if (pendingPurchase != null) return
         pendingPurchase = request
-        paused = true
     }
 
     /** Ends the waiting purchase: grants it in the current world when [buy], then play continues. */
@@ -48,7 +47,6 @@ class PlaySession(
         val request = pendingPurchase ?: return null
         if (buy) grant(scene.world, request)
         pendingPurchase = null
-        paused = false
         return request.takeIf { buy }
     }
 
@@ -71,8 +69,14 @@ class PlaySession(
     var sceneChanges by mutableIntStateOf(0)
         private set
 
-    /** While true the play loop does not advance the game, for example during a full-screen ad. */
-    var paused by mutableStateOf(false)
+    /** Whether a full-screen ad is showing (C12); play is paused meanwhile. */
+    var adShowing by mutableStateOf(false)
+
+    /**
+     * Whether the play loop holds the game still: while a full-screen ad shows or a test purchase waits. Each reason
+     * clears on its own, so closing the ad never resumes the game under a purchase question, or the other way round.
+     */
+    val paused: Boolean get() = adShowing || pendingPurchase != null
 
     private val held = mutableMapOf<String, MutableSet<String>>()
     private val pointers = LinkedHashMap<Int, Pointer>()

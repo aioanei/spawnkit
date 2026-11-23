@@ -3,6 +3,19 @@ plugins {
     alias(libs.plugins.ktor)
 }
 
+// Match the Kotlin Toolchain's release=11 whatever JDK runs Gradle (for example an IDE's JDK 25), so the server's
+// classes load in the Java 21 test JVM.
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+    }
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
 group = "dev.spawnkit"
 version = "1.0.0"
 application {
