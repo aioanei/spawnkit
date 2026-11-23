@@ -113,14 +113,19 @@ catalog, so the block dialog and the agent tools include them:
   at ⟨speed⟩" asks for a copy; after the tick, players build it from the authored object, with its own rules, just as
   they handle "Go to scene". Copies that move get **Steady movement** (`gameplay:motion`), which the engine applies each
   tick after rules. A world stops spawning at 2,000 objects, including every child in a copy; a copy that does not fit
-  is skipped as a whole.
+  is skipped as a whole. Spawning at this object or a tagged object includes its parents' translation and scale, and
+  sees moves made earlier in the same rule.
 - **Leaves the play area** is true when an object is wholly outside a box (40 × 24 units by default) around the first
   active camera, divided by its zoom. The box is the same on every screen, so play stays deterministic.
 
-Evidence: `KeptNumbersTest` 4, `NumberBlocksTest` 4, `SpawnTest` 7 and `PlayAreaTest` 3 on every core target;
+Common tests: `KeptNumbersTest` 4, `NumberBlocksTest` 4, `SpawnTest` 9 and `PlayAreaTest` 3;
 `PlaySessionScenesTest` +2; `OperationParityTest` adds each new block and changes kept numbers, templates and steady
 movement by hand and by the agent tool with the same result. `SpawningUiTest` builds a template, its cleanup rule
 and a moving-copy rule with taps on phone and desktop, then plays them.
+
+On the Android API 36 emulator, `tools/android-spawn-smoke.py` creates the template, its cleanup rule and a spawner
+with real taps, then checks that the copy moves down. Screenshots: [rules](media/android-spawn-rules.png),
+[playing](media/android-spawn-play.png), [after moving](media/android-spawn-moving.png).
 
 ## Catalog and rule operations (C7a)
 

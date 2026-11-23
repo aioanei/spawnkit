@@ -295,6 +295,7 @@ public class Gameplay(
             own.top > centerY + halfHeight
     }
 
+    // Include writes staged earlier in the same rule; reading world components here would see the old position.
     private fun position(
         context: HostCallContext,
         entity: EntityHandle,
