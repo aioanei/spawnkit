@@ -15,6 +15,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /** The home screen kit (C15): Button and Text pieces, grouping and title screen layouts. */
 class HomeScreenKitTest {
@@ -125,7 +126,7 @@ class HomeScreenKitTest {
 
         session.tapAt(0.0, 1.3)
         assertEquals(state.sceneNamed("Levels"), session.sceneId, "Levels opens the level list")
-        session.tapAt(0.0, -1.6)
+        session.tapAt(0.0, -0.5)
         assertEquals(state.sceneNamed("Level 2"), session.sceneId, "the second level button opens Level 2")
 
         val again = state.engine.playSession(state.project, state.sceneNamed("Levels"))
@@ -143,6 +144,25 @@ class HomeScreenKitTest {
 
         state.undo()
         assertEquals(listOf("Main scene", "Level 2"), state.project.scenes.map { it.name }, "one undo removes every new scene")
+    }
+
+    @Test
+    fun levelButtonsFitAPhoneHeldUpright() {
+        for (levels in listOf(1, 6, 9)) {
+            val state = EditorState()
+            repeat(levels - 1) { state.apply(EditOperation.AddScene("Level ${it + 2}")) }
+            state.addTitleScreen(TitleLayout.WithLevels)
+            state.selectScene(state.sceneNamed("Levels"))
+            val buttons = state.scene.objects.filter { it.parent == null && it.name.endsWith(" button") && it.name != "Back button" }
+
+            assertEquals(levels, buttons.size)
+            for (button in buttons) {
+                val x = button.component("graphics:transform")!!.values["x"] as Double
+                val width = button.component("graphics:shape")!!.values["width"] as Double
+                // About 8.6 units of the scene are visible across a phone held upright.
+                assertTrue(x - width / 2 >= -4.3 && x + width / 2 <= 4.3, "$levels levels: ${button.name} at $x is cut off")
+            }
+        }
     }
 
     @Test

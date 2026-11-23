@@ -20,7 +20,7 @@ C5 adds [project files and recovery](project-persistence.md): `ProjectCodec`, `P
 All changes go through typed `EditOperation`s, validated against the installed descriptors:
 
 - objects: `AddObject` (with components and values, optional position), `RemoveObject` (subtree), `RenameObject`,
-  `ReparentObject` (cycle check) and `DuplicateObject` (subtree with fresh IDs, placed after the original);
+  `ReparentObject` (cycle check; the `move_into` catalog entry in `core/gameplay` keeps the object in place) and `DuplicateObject` (subtree with fresh IDs, placed after the original);
 - components: `AddComponent` (defaults) and `RemoveComponent`;
 - properties: `SetProperty`;
 - rules: `SetRules` (C4b), which replaces an object's rules as one undoable step;

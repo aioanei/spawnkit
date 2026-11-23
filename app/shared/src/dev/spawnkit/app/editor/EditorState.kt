@@ -129,9 +129,10 @@ private class BatchBuilder(
         label: String,
         target: String,
         width: Double = 4.4,
+        size: Double = 0.6,
     ): String {
         val id = obj(sceneId, "$name button", placed(x, y) + shape("rectangle", width, 1.1, 0xFF43A047, 1))
-        obj(sceneId, "$name label", placed(0.0, 0.0) + text(label, 0.6), parent = id)
+        obj(sceneId, "$name label", placed(0.0, 0.0) + text(label, size), parent = id)
         rules(sceneId, id, listOf(goTo(target)))
         return id
     }
@@ -468,10 +469,22 @@ class EditorState(
                 when (name) {
                     "Levels" -> {
                         batch.backdrop(id, "Levels", 0xFF004D40)
+                        // Narrow enough for a phone held upright: one column for up to 4 levels, then 2, then 3.
+                        val count = current.scenes.size
+                        val columns =
+                            if (count <= 4) {
+                                1
+                            } else if (count <= 8) {
+                                2
+                            } else {
+                                3
+                            }
+                        val width = listOf(4.4, 3.6, 2.6)[columns - 1]
+                        val step = listOf(0.0, 4.0, 2.8)[columns - 1]
                         current.scenes.forEachIndexed { i, level ->
-                            val x = -5.0 + 5.0 * (i % 3)
-                            val y = -1.6 + 1.5 * (i / 3)
-                            batch.button(id, level.name, x, y, level.name, level.id, width = 4.6)
+                            val x = step * (i % columns) - step * (columns - 1) / 2
+                            val y = -1.8 + 1.3 * (i / columns)
+                            batch.button(id, level.name, x, y, level.name, level.id, width = width, size = if (columns == 3) 0.45 else 0.6)
                         }
                     }
 

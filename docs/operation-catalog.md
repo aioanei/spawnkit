@@ -28,7 +28,7 @@ are refused, which catches agent mistakes early.
 
 An `OperationSpec` holds an ID, `AuthoringInfo` (name, help, category), parameters, examples and a builder that turns
 checked arguments into an `EditOperation`. The editor validates the operation again when it is applied.
-`StandardEngine.operations` combines both catalogs:
+`StandardEngine.operations` combines the catalogs:
 
 | Category | Entries | Package |
 |---|---|---|
@@ -36,10 +36,12 @@ checked arguments into an `EditOperation`. The editor validates the operation ag
 | Scenes (C9) | `add_scene`, `rename_scene`, `remove_scene`, `move_scene` (position 1 is the start scene) | `EditingOperations` |
 | Objects | `add_object`, `remove_object`, `rename_object`, `duplicate_object` | `EditingOperations` |
 | Components | `add_component`, `remove_component`, `set_property` | `EditingOperations` |
+| Grouping (C15) | `move_into` (into a group, or back to the top level, keeping the object where it is on screen) | `ObjectOperations` (`core/gameplay`) |
 | Rules | `add_rule`, `add_block`, `change_block`, `remove_block`, `move_rule`, `duplicate_rule`, `remove_rule` | `RuleOperations` (`core/gameplay`) |
 
-`ReparentObject` exists as an editor operation but has no builder control yet. It joins the catalog together with its
-control, never for agents alone. The scene operations joined in C9 with the builder's scene list. `OperationCatalogTest` classifies every
+Operations join the catalog together with their builder controls, never for agents alone: the scene operations in C9
+with the scene list, and `move_into` in C15 with "Move into…" in the inspector and dragging in the scene list. It
+applies `ReparentObject` and sets the object's position and scale relative to the new group, as one undo step. `OperationCatalogTest` classifies every
 `EditOperation` subtype with an exhaustive `when`, so a new operation does not compile until it is placed.
 
 `core/gameplay` now depends on `core/editing`, as any extension package that adds editor capabilities will. Rule
@@ -105,4 +107,3 @@ Koog layer (C7b) adapts these definitions; it does not hand-write a tool per ope
   adapter is in [AI Studio core](ai-studio.md) (C7b).
 - Enabling and disabling rules, which needs a stored flag in the project format.
 - Agent-authored advanced rules (portable programs), and explanations from play traces.
-- A catalog entry and control for reparenting.
