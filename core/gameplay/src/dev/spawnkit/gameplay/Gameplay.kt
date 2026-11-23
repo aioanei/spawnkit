@@ -262,6 +262,37 @@ public class Gameplay(
         return null
     }
 
+    /**
+     * Whether [entity] is wholly outside a [width] × [height] box centred on the first active camera (or the origin),
+     * divided by the camera's zoom. Objects without bounds never leave.
+     */
+    public fun leftArea(
+        world: World,
+        entity: EntityHandle,
+        width: Double,
+        height: Double,
+    ): Boolean {
+        val own = bounds(world, entity) ?: return false
+        var centerX = 0.0
+        var centerY = 0.0
+        var zoom = 1.0
+        val camera = world.entities(graphics.camera).firstOrNull { world.get(it, graphics.camera)?.active == true }
+        if (camera != null) {
+            var current: EntityHandle? = camera
+            while (current != null) {
+                world.get(current, graphics.transform)?.let {
+                    centerX = it.x + it.scaleX * centerX
+                    centerY = it.y + it.scaleY * centerY
+                }
+                current = world.parent(current)
+            }
+            zoom = world.get(camera, graphics.camera)?.zoom?.takeIf { it > 0.0 } ?: 1.0
+        }
+        val halfWidth = width / 2 / zoom
+        val halfHeight = height / 2 / zoom
+        return own.right < centerX - halfWidth || own.left > centerX + halfWidth || own.bottom < centerY - halfHeight || own.top > centerY + halfHeight
+    }
+
     /** Whether [entity] has tag [name] (ignoring case and surrounding spaces). */
     public fun hasTag(
         world: World,
@@ -355,6 +386,14 @@ public class Gameplay(
                 IntegerValue(min + it.world.resource(random).nextInt((max - min + 1).toInt()))
             }.function("tick", emptyList(), IntegerType, info("Tick", "Ticks since play started; 60 per second")) {
                 IntegerValue(it.tick)
+            }.function(
+                "leftArea",
+                listOf(DecimalType, DecimalType),
+                BoolType,
+                info("Left the play area", "This object is wholly outside a box of this size around the camera"),
+                cost = 5,
+            ) {
+                BoolValue(leftArea(it.world, it.self, (it.arguments[0] as DecimalValue).value, (it.arguments[1] as DecimalValue).value))
             }.function("decimalText", listOf(DecimalType), TextType, info("Decimal as text", "A decimal number written out")) {
                 TextValue((it.arguments[0] as DecimalValue).value.toString())
             }.effect(RuleBlocks.GO_TO_SCENE, TextType)

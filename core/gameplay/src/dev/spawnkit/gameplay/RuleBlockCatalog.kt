@@ -196,7 +196,25 @@ public object RuleBlockCatalog {
                 { Condition.CountIs(it.text("tag"), it.comparison(), it.whole("value")) },
                 { mapOf("tag" to it.tag, COMPARISON to it.comparison.name, "value" to it.value) },
             ),
+            conditionSpec<Condition.LeftArea>(
+                "LeftArea",
+                AuthoringInfo(
+                    "Leaves the play area",
+                    "True when this object is wholly outside a box around the camera. Use it to remove shots and enemies that fly away.",
+                    OBJECTS,
+                ),
+                listOf(areaParameter("width", "Width", 40.0), areaParameter("height", "Height", 24.0)),
+                listOf("When a shot leaves the play area, remove it"),
+                { Condition.LeftArea(it.getValue("width") as Double, it.getValue("height") as Double) },
+                { mapOf("width" to it.width, "height" to it.height) },
+            ),
         )
+
+    private fun areaParameter(
+        id: String,
+        name: String,
+        default: Double,
+    ) = Parameter(id, name, "$name of the play area in world units.", ParameterType.Value(ValueKind.Decimal(1.0, MAX_COORDINATE)), default = default)
 
     /** Every action block, in palette order. */
     public val actions: List<BlockSpec<Action>> =
@@ -436,6 +454,7 @@ public object RuleBlockCatalog {
             is Condition.KeyPressed -> "KeyPressed"
             is Condition.NumberIs -> "NumberIs"
             is Condition.CountIs -> "CountIs"
+            is Condition.LeftArea -> "LeftArea"
         }
 
     private fun idOf(action: Action): String =

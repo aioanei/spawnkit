@@ -154,6 +154,24 @@ public sealed interface Condition {
         public val value: Long,
     ) : Condition
 
+    /**
+     * This object is wholly outside the play area: a [width] × [height] box centred on the first active camera (or on
+     * the scene's origin without one), shrunk by its zoom. The box is the same on every screen, so play stays the same
+     * everywhere.
+     */
+    public data class LeftArea(
+        /** Width of the play area in world units. */
+        public val width: Double = 40.0,
+        /** Height of the play area in world units. */
+        public val height: Double = 24.0,
+    ) : Condition {
+        init {
+            require(width.isFinite() && height.isFinite() && width > 0.0 && height > 0.0 && width <= MAX_AREA && height <= MAX_AREA) {
+                "Choose a play area from 1 to ${MAX_AREA.toLong()} units"
+            }
+        }
+    }
+
     /** The number of objects tagged [tag] compares to [value]. */
     public data class CountIs(
         /** Tag to count. */
@@ -368,6 +386,7 @@ public object RuleBlocks {
             is Condition.KeyPressed -> "Pressed ${actionName(condition.action)}"
             is Condition.NumberIs -> "${possessive(condition.target)} number ${condition.comparison.symbol} ${condition.value}"
             is Condition.CountIs -> "Count of ${condition.tag} ${condition.comparison.symbol} ${condition.value}"
+            is Condition.LeftArea -> "Left the play area (${number(condition.width)} × ${number(condition.height)})"
         }
 
     /**
@@ -487,6 +506,10 @@ public object RuleBlocks {
             is Condition.CountIs -> {
                 Expr.Binary(condition.comparison.op, call("countTagged", s, text(condition.tag, s)), int(condition.value, s), s)
             }
+
+            is Condition.LeftArea -> {
+                call("leftArea", s, Expr.Literal(DecimalValue(condition.width), s), Expr.Literal(DecimalValue(condition.height), s))
+            }
         }
 
     private fun action(
@@ -582,6 +605,10 @@ public object RuleBlocks {
                 expr.isCall("touching") -> Condition.Touching(expr.textArgument())
                 expr.isCall("isDown") -> Condition.KeyHeld(expr.textArgument())
                 expr.isCall("wasPressed") -> Condition.KeyPressed(expr.textArgument())
+                expr.isCall("leftArea") -> {
+                    val (width, height) = (expr as Expr.CallHost).arguments.map { ((it as Expr.Literal).value as DecimalValue).value }
+                    Condition.LeftArea(width, height)
+                }
                 expr is Expr.Binary -> recogniseComparison(expr)
                 else -> null
             }
@@ -798,3 +825,4 @@ public object RuleBlocks {
 private const val TICKS_PER_SECOND = 60L
 private const val MAX_SECONDS = 86_400L
 private const val MAX_SPEED = 1_000.0
+private const val MAX_AREA = 100_000.0

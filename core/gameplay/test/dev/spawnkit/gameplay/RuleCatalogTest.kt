@@ -31,10 +31,12 @@ class RuleCatalogTest {
             Condition.KeyPressed(StandardActions.JUMP),
             Condition.NumberIs(Target.Tagged("score"), Comparison.AtLeast, 10),
             Condition.CountIs("coin", Comparison.Equal, 0),
+            Condition.LeftArea(30.0, 20.0),
         ).onEach {
             when (it) {
                 Condition.Always, Condition.GameStarts, is Condition.EverySeconds, is Condition.Touching, Condition.Tapped,
                 is Condition.KeyHeld, is Condition.KeyPressed, is Condition.NumberIs, is Condition.CountIs,
+                is Condition.LeftArea,
                 -> Unit
             }
         }
