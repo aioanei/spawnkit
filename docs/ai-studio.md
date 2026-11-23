@@ -71,6 +71,15 @@ example: `Rule 1 of Coin (When touching players) never ran: "Touching players" w
   never part of the model info, requests, replies or recordings.
 - `RecordingModel` wraps a live model and records its replies. `RecordedSession` (format `spawnkit-agent-recording`,
   version 1) stores the model, provider, date, a note, the creator's script and the replies. It contains no keys.
+- **Choices in tool schemas.** Koog 1.3.0's Anthropic client refuses `AnyOf` parameters
+  ([upstream report](upstream/koog-anthropic-anyof.md)), so `KoogModel` sends choices in a flat form and maps the
+  model's input back before the session sees it:
+  - a choice of objects, such as a rule block or a target, becomes one object whose discriminator (`block`, `kind`)
+    is an enum of every choice, with what each is for and which settings it uses;
+  - a choice of plain values (`set_property`'s value) becomes `{number | whole_number | text | yes_no}`.
+
+  `KoogAnthropicWireTest` runs the real Anthropic client against a local stand-in for the API, with no key or network.
+  A one-off live check on 2026-11-23 built a rule and set a width with the full toolbox, for about $0.20.
 - `ReplayModel` replays a recording without keys or network, labelled
   `Replay: <model>, recorded <date> (no model is called)`, and shows no cost. A recording that calls a tool which no
   longer exists stops with an explanation. Every replayed tool call still runs against the real editor and engine.
@@ -252,10 +261,9 @@ demo.
 - **Fixed on the way.** The builder's HTTP client used the engines' default timeouts (about 10 seconds on Android), so
   every Character Forge request failed with "Unable to reach the SpawnKit server", in the C16a dialog too. It now waits
   up to four minutes for server work.
-- **Found, not fixed here.** Koog 1.3.0's Anthropic client refuses tool parameters of type `AnyOf` before sending
-  ("AnyOf type is not supported"). `KoogModel` gives `set_property`, `add_rule`, `add_block` and `change_block` such
-  parameters, so live Anthropic requests with the full toolbox fail: SpawnKit AI and the creator's own key. Fake-executor
-  tests did not catch it. It needs its own fix before C13.
+- **Found, then fixed.** Koog 1.3.0's Anthropic client refuses tool parameters of type `AnyOf` before sending ("AnyOf
+  type is not supported"), so every live Anthropic request with the full toolbox failed. See
+  [Models, recording and replay](#models-recording-and-replay).
 
 ## Evidence
 
