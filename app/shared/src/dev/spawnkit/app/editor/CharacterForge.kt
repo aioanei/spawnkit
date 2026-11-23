@@ -38,7 +38,9 @@ import kotlinx.coroutines.launch
 internal val LocalAccounts = compositionLocalOf<AccountState?> { null }
 
 /** Character Forge styles, in the order they are offered. */
-internal val ForgeStyles = listOf("pixel" to "Pixel art", "cartoon" to "Cartoon", "chibi" to "Chibi")
+internal val ForgeStyles =
+    dev.spawnkit.ai.CharacterRecipe.STYLES
+        .toList()
 
 /**
  * "Character from photo" (C16a, ADR-0013): choose a photo, confirm consent, choose styles and make the characters
