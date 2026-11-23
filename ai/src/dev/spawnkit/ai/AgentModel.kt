@@ -46,15 +46,37 @@ public sealed interface AgentMessage {
     ) : AgentMessage
 }
 
-/** Tokens used by model calls. */
+/**
+ * Tokens used by model calls. With prompt caching, [inputTokens] counts only the uncached input: [cacheWriteTokens]
+ * were written to the provider's cache (priced above input) and [cacheReadTokens] were read from it (far below).
+ */
 public data class Usage(
-    /** Input tokens. */
+    /** Input tokens, not counting cached ones. */
     public val inputTokens: Long = 0,
     /** Output tokens. */
     public val outputTokens: Long = 0,
+    /** Input tokens written to the prompt cache. */
+    public val cacheWriteTokens: Long = 0,
+    /** Input tokens read from the prompt cache. */
+    public val cacheReadTokens: Long = 0,
 ) {
     /** Sum of two usages. */
-    public operator fun plus(other: Usage): Usage = Usage(inputTokens + other.inputTokens, outputTokens + other.outputTokens)
+    public operator fun plus(other: Usage): Usage =
+        Usage(
+            inputTokens + other.inputTokens,
+            outputTokens + other.outputTokens,
+            cacheWriteTokens + other.cacheWriteTokens,
+            cacheReadTokens + other.cacheReadTokens,
+        )
+
+    /** Prompt-cache prices relative to the input price (Anthropic: writes 1.25 ×, reads 0.1 ×). */
+    public companion object {
+        /** Price of a cache write, as a multiple of the input price. */
+        public const val CACHE_WRITE_FACTOR: Double = 1.25
+
+        /** Price of a cache read, as a multiple of the input price. */
+        public const val CACHE_READ_FACTOR: Double = 0.1
+    }
 }
 
 /** What one model call asks for. */
@@ -116,7 +138,12 @@ public data class Cost(
                 if (!model.live || input == null || output == null) {
                     null
                 } else {
-                    (usage.inputTokens * input + usage.outputTokens * output) / 1_000_000.0
+                    (
+                        usage.inputTokens * input +
+                            usage.outputTokens * output +
+                            usage.cacheWriteTokens * input * Usage.CACHE_WRITE_FACTOR +
+                            usage.cacheReadTokens * input * Usage.CACHE_READ_FACTOR
+                    ) / 1_000_000.0
                 }
             return Cost(usage, dollars)
         }

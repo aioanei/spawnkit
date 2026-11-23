@@ -33,8 +33,12 @@ internal data class ModelPrices(
     val inputMicrosPerToken: Long = 3,
     val outputMicrosPerToken: Long = 15,
 ) {
-    /** What [usage] cost. */
-    fun cost(usage: Usage): Long = usage.inputTokens * inputMicrosPerToken + usage.outputTokens * outputMicrosPerToken
+    /** What [usage] cost; prompt-cache writes cost 1.25 × the input price and reads 0.1 ×, rounded up. */
+    fun cost(usage: Usage): Long =
+        usage.inputTokens * inputMicrosPerToken +
+            usage.outputTokens * outputMicrosPerToken +
+            (usage.cacheWriteTokens * inputMicrosPerToken * 5 + 3) / 4 +
+            (usage.cacheReadTokens * inputMicrosPerToken + 9) / 10
 }
 
 /** Spending set aside for one model call before it runs. */

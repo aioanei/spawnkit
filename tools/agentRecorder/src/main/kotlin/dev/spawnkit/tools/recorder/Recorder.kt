@@ -1,6 +1,7 @@
 package dev.spawnkit.tools.recorder
 
 import dev.spawnkit.ai.AgentModel
+import dev.spawnkit.ai.AgentSession
 import dev.spawnkit.ai.Cost
 import dev.spawnkit.ai.ModelInfo
 import dev.spawnkit.ai.ModelReply
@@ -56,8 +57,11 @@ val DEMO_SCENARIOS: List<Scenario> =
         ),
     )
 
-/** Model calls allowed per prompt; lower than the builder's default to bound the cost of a recording. */
-const val MAX_STEPS: Int = 20
+/**
+ * Model calls allowed per prompt: the builder's default, so a whole game can be recorded (C13). The dollar budget of
+ * [CappedModel] bounds what a run costs.
+ */
+const val MAX_STEPS: Int = AgentSession.DEFAULT_MAX_STEPS
 
 /**
  * Records each scenario with [model] into [out]: `<name>.json` (the replayable session) and `<name>.spawnkit` (the game
@@ -98,7 +102,8 @@ fun recordAll(
 }
 
 private fun describe(cost: Cost): String =
-    "${cost.usage.inputTokens} input + ${cost.usage.outputTokens} output tokens" +
+    "${cost.usage.inputTokens} input + ${cost.usage.outputTokens} output tokens, " +
+        "${cost.usage.cacheWriteTokens} written to and ${cost.usage.cacheReadTokens} read from the prompt cache" +
         (cost.dollars?.let { ", about ${dollars(it)}" } ?: ", no charge")
 
 /**
