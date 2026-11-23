@@ -53,6 +53,16 @@ public sealed interface ToolOutcome {
         public val options: List<String>,
     ) : ToolOutcome
 
+    /**
+     * The agent wants to send the creator's photo to the image model ([AgentToolbox.MAKE_CHARACTER]). Nothing is sent
+     * yet: the session waits until the creator confirms or declines.
+     */
+    public data class Confirm(
+        override val text: String,
+        /** What would be made. */
+        public val request: CharacterRequest,
+    ) : ToolOutcome
+
     /** The agent finished and summarized its proposal. */
     public data class Finished(
         override val text: String,
@@ -65,12 +75,15 @@ public sealed interface ToolOutcome {
  * The tools an agent can use on one staged proposal (ADR-0009). Editing tools are derived from the engine's operation
  * catalog, so they are exactly the builder's capabilities, and they only ever change [staged]. Reading tools inspect
  * the staged game, validate it in the real engine and trace rules by headless play. Agents never receive credentials:
- * no tool takes or returns keys, and outward-facing actions such as publishing are not tools.
+ * no tool takes or returns keys, and outward-facing actions such as publishing are not tools. The one tool that sends
+ * something off the device, [MAKE_CHARACTER], only asks: the session uploads after the creator confirms, through
+ * [characters] (`null` where Character Forge is not available).
  */
 public class AgentToolbox(
     private val engine: StandardEngine,
     private val staged: StagedChanges,
     private val sceneId: String,
+    private val characters: CharacterMaker? = null,
 ) {
     /** Every tool, editing tools first. They depend only on [engine], so a server can derive the same list. */
     public val tools: List<ToolDefinition> = definitions(engine)
@@ -87,6 +100,7 @@ public class AgentToolbox(
             TRACE -> trace(input)
             ASK -> ask(input)
             FINISH -> finish(input)
+            MAKE_CHARACTER -> character(input)
             else -> edit(name, input)
         }
 
@@ -265,6 +279,75 @@ public class AgentToolbox(
         return ToolOutcome.Finished("Done.", summary)
     }
 
+    private fun character(input: JsonObject): ToolOutcome {
+        val maker = characters ?: return ToolOutcome.Refused(problem(NO_FORGE))
+        maker.unavailable()?.let { return ToolOutcome.Refused(problem(it)) }
+        val styles = (input["styles"] as? JsonArray).orEmpty().map { (it as? JsonPrimitive)?.content.orEmpty() }.distinct()
+        if (styles.isEmpty() || styles.size > CharacterRecipe.STYLES.size) {
+            return ToolOutcome.Refused(problem("Choose one to three styles: ${CharacterRecipe.STYLES.keys.joinToString()}"))
+        }
+        styles.firstOrNull { it !in CharacterRecipe.STYLES }?.let {
+            return ToolOutcome.Refused(problem("There is no style '$it'. Choose from ${CharacterRecipe.STYLES.keys.joinToString()}"))
+        }
+        val use = (input["use"] as? JsonPrimitive)?.content ?: styles.first()
+        if (use !in styles) return ToolOutcome.Refused(problem("The character can only use one of the styles being made"))
+        val x = (input["x"] as? JsonPrimitive)?.doubleOrNull ?: 0.0
+        val y = (input["y"] as? JsonPrimitive)?.doubleOrNull ?: 0.0
+        return ToolOutcome.Confirm("Waiting for the creator to confirm sending the photo.", CharacterRequest(styles, use, x, y))
+    }
+
+    /**
+     * Stages what Character Forge [made] for [request]: every image and a Character, as the one batch the builder's
+     * "Character from photo" also makes ([CharacterRecipe]). When the requested style was refused, the Character
+     * shows the first image that was made.
+     */
+    public fun stageCharacter(
+        request: CharacterRequest,
+        made: CharacterResult,
+    ): ToolOutcome {
+        val refused = JsonObject(made.refused.mapValues { (_, reason) -> JsonPrimitive(reason) })
+        if (made.images.isEmpty()) {
+            val reasons =
+                made.refused.entries.joinToString("; ") { (style, reason) -> "${CharacterRecipe.describe(listOf(style))}: $reason" }
+            return ToolOutcome.Refused(problem("No character could be made. ${reasons.ifEmpty { "The image model returned nothing." }}"))
+        }
+        val use = request.use.takeIf { style -> made.images.any { it.style == style } } ?: made.images.first().style
+        val planned = checkNotNull(CharacterRecipe.batch(made.images, use, sceneId, request.x, request.y, staged.nextId))
+        return when (val result = staged.apply(planned.operation)) {
+            is OperationResult.Rejected -> {
+                ToolOutcome.Refused(problem(result.message))
+            }
+
+            is OperationResult.Applied -> {
+                val images =
+                    made.images.zip(planned.imageIds) { image, id ->
+                        JsonObject(
+                            mapOf(
+                                "id" to JsonPrimitive(id),
+                                "style" to JsonPrimitive(image.style),
+                                "name" to JsonPrimitive(CharacterRecipe.imageName(image)),
+                            ),
+                        )
+                    }
+                val text =
+                    JsonObject(
+                        mapOf(
+                            "ok" to JsonPrimitive(true),
+                            "step" to JsonPrimitive(CharacterRecipe.LABEL),
+                            "character" to JsonPrimitive(planned.characterId),
+                            "shows" to JsonPrimitive(use),
+                            "images" to JsonArray(images),
+                            "refused" to refused,
+                        ),
+                    )
+                ToolOutcome.Staged(text.toString(), CharacterRecipe.LABEL)
+            }
+        }
+    }
+
+    /** A tool result saying, in plain words, that [message] went wrong; nothing changed. */
+    public fun refusal(message: String): ToolOutcome.Refused = ToolOutcome.Refused(problem(message))
+
     private fun problem(message: String): String =
         JsonObject(mapOf("ok" to JsonPrimitive(false), "problem" to JsonPrimitive(message))).toString()
 
@@ -309,6 +392,9 @@ public class AgentToolbox(
 
         /** Finish with a summary. */
         public const val FINISH: String = "finish"
+
+        /** Make characters from the creator's attached photo, after the creator confirms (C16b, ADR-0013). */
+        public const val MAKE_CHARACTER: String = "make_character"
 
         /** The tools for [engine]: its operation catalog as editing tools, then the reading tools (ADR-0009). */
         public fun definitions(engine: StandardEngine): List<ToolDefinition> =
@@ -386,6 +472,42 @@ public class AgentToolbox(
                     ),
                 ),
                 ToolDefinition(
+                    MAKE_CHARACTER,
+                    "Make game characters from the photo the creator attached in this chat, with an image model, in one to " +
+                        "three styles: pixel (pixel art), cartoon or chibi. You never see the photo. The creator is asked to " +
+                        "confirm first, because the photo leaves the device and each style uses part of their allowance; they " +
+                        "may decline. When made, the images and a Character object (a sprite of the style in use, a body, the " +
+                        "player tag, walking and jumping rules) are staged and their IDs returned. Use it only when the " +
+                        "creator asks for a character from their photo.",
+                    schema(
+                        "styles" to
+                            JsonObject(
+                                mapOf(
+                                    "type" to JsonPrimitive("array"),
+                                    "items" to
+                                        JsonObject(
+                                            mapOf(
+                                                "type" to JsonPrimitive("string"),
+                                                "enum" to JsonArray(CharacterRecipe.STYLES.keys.map(::JsonPrimitive)),
+                                            ),
+                                        ),
+                                    "description" to JsonPrimitive("Styles to make, one image each."),
+                                ),
+                            ),
+                        "use" to
+                            JsonObject(
+                                mapOf(
+                                    "type" to JsonPrimitive("string"),
+                                    "enum" to JsonArray(CharacterRecipe.STYLES.keys.map(::JsonPrimitive)),
+                                    "description" to JsonPrimitive("Which of the styles the Character shows. Default: the first."),
+                                ),
+                            ),
+                        "x" to number("Where the Character stands, across. Default 0."),
+                        "y" to number("Where the Character stands, down. Default 0."),
+                        required = listOf("styles"),
+                    ),
+                ),
+                ToolDefinition(
                     FINISH,
                     "Finish and summarize the proposed changes in the creator's words. Nothing changes in the game until the " +
                         "creator accepts.",
@@ -411,5 +533,7 @@ public class AgentToolbox(
 
         private const val MAX_TRACE_SECONDS = 120.0
         private const val REMOVE_SCENE = "remove_scene"
+        private const val NO_FORGE =
+            "Making characters from photos needs the creator to sign in to a SpawnKit server that offers it (Project, then Account)."
     }
 }
