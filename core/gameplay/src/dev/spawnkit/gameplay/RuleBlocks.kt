@@ -782,12 +782,12 @@ public object RuleBlocks {
         ) = call("textOf", s, call("random", s, int(min, s), int(max, s)))
         return when (place) {
             SpawnPlace.Self -> {
-                decimal(Expr.GetProperty(Expr.Self(s), "x", s)) to decimal(Expr.GetProperty(Expr.Self(s), "y", s))
+                decimal(call("worldX", s, Expr.Self(s))) to decimal(call("worldY", s, Expr.Self(s)))
             }
 
             is SpawnPlace.Tagged -> {
                 val other = call("firstTagged", s, text(place.tag, s))
-                decimal(Expr.GetProperty(other, "x", s)) to decimal(Expr.GetProperty(other, "y", s))
+                decimal(call("worldX", s, other)) to decimal(call("worldY", s, other))
             }
 
             is SpawnPlace.Position -> {

@@ -294,6 +294,23 @@ public class Gameplay(
             own.top > centerY + halfHeight
     }
 
+    private fun position(
+        world: World,
+        entity: EntityHandle,
+    ): Pair<Double, Double> {
+        var x = 0.0
+        var y = 0.0
+        var current: EntityHandle? = entity
+        while (current != null) {
+            world.get(current, graphics.transform)?.let {
+                x = it.x + it.scaleX * x
+                y = it.y + it.scaleY * y
+            }
+            current = world.parent(current)
+        }
+        return x to y
+    }
+
     /** Whether [entity] has tag [name] (ignoring case and surrounding spaces). */
     public fun hasTag(
         world: World,
@@ -397,6 +414,10 @@ public class Gameplay(
                 BoolValue(leftArea(it.world, it.self, (it.arguments[0] as DecimalValue).value, (it.arguments[1] as DecimalValue).value))
             }.function("decimalText", listOf(DecimalType), TextType, info("Decimal as text", "A decimal number written out")) {
                 TextValue((it.arguments[0] as DecimalValue).value.toString())
+            }.function("worldX", listOf(EntityType), DecimalType, info("World x", "Horizontal position with parent translation and scale")) {
+                DecimalValue(position(it.world, (it.arguments[0] as EntityValue).entity).first)
+            }.function("worldY", listOf(EntityType), DecimalType, info("World y", "Vertical position with parent translation and scale")) {
+                DecimalValue(position(it.world, (it.arguments[0] as EntityValue).entity).second)
             }.effect(RuleBlocks.GO_TO_SCENE, TextType)
             .effect(RuleBlocks.SPAWN, TextType)
 

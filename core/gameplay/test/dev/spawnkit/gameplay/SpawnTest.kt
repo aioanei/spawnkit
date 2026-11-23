@@ -176,6 +176,33 @@ class SpawnTest {
     }
 
     @Test
+    fun copiesAppearAtTheWorldPositionOfAChildSpawnerOrTaggedChild() {
+        add("Shot", "shot", template = true)
+        val group = add("Group", "group", x = 10.0, y = 20.0)
+        editor.apply(EditOperation.SetProperty(scene, group, "graphics:transform", "scaleX", 2.0))
+        editor.apply(EditOperation.SetProperty(scene, group, "graphics:transform", "scaleY", 3.0))
+        val gun =
+            add(
+                "Gun",
+                "gun",
+                x = 1.0,
+                y = 2.0,
+                rules =
+                    arrayOf(
+                        Rule(
+                            Condition.GameStarts,
+                            actions = listOf(Action.Spawn("shot", SpawnPlace.Self), Action.Spawn("shot", SpawnPlace.Tagged("gun"))),
+                        ),
+                    ),
+            )
+        editor.apply(EditOperation.ReparentObject(scene, gun, group))
+
+        val built = play().tick()
+
+        assertEquals(listOf(12.0 to 26.0, 12.0 to 26.0), built.tagged("shot").map { built.x(it) to built.y(it) })
+    }
+
+    @Test
     fun aCopyKeepsItsChildrenAndTheirRulesAndFitsTheObjectLimitAsAWhole() {
         val parent = add("Enemy", "enemy", template = true)
         val child =
