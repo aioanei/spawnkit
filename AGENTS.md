@@ -36,7 +36,7 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
   ground, Jump, Set speed, riding moving platforms) and camera follow, each with catalog parity and phone/desktop
   builder tests ([gameplay](docs/gameplay.md#platform-physics-and-camera-follow-c14b)).
 - **Now:** C15 home screen kit, then C12 test ads and purchases, C17 complete templates, C16 Character Forge, C13
-  AI-first building, C11c and C8 (owner decisions 2026-11-22 and 23, [design](docs/design/2026-11-22-title-screens-presets-accounts-ads.md),
+  AI-first building, C11c, C19 visual redesign ([#98](https://github.com/aioanei/spawnkit/issues/98)) and C8 (owner decisions 2026-11-22 and 23, [design](docs/design/2026-11-22-title-screens-presets-accounts-ads.md),
   [ADR-0010](docs/adr/0010-accounts-on-ktor.md), [ADR-0011](docs/adr/0011-hosted-ai-model-proxy.md)), in the
   [contest delivery track](docs/plans/2026-11-20-engine-foundation-revision.md#contest-delivery-track). Track K
   continues alongside. Check the latest checkpoint in `PROGRESS.md` before continuing.

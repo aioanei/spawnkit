@@ -2,6 +2,7 @@ package dev.spawnkit.app.editor
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -36,13 +37,19 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -355,6 +362,11 @@ private fun Palette(state: EditorState) {
     }
 }
 
+/**
+ * The scene's objects as an indented list. Tap a row to select it. Hold a row and drag it onto another to move it
+ * into that group, or below the last row to move it back to the top level; the `move_into` operation keeps it where
+ * it is on screen (C15).
+ */
 @Composable
 private fun Hierarchy(
     state: EditorState,
@@ -370,18 +382,76 @@ private fun Hierarchy(
         )
         return
     }
+    val currentRows by rememberUpdatedState(rows)
+    // Each row's top and bottom in root coordinates, so a drag can tell which row it is over.
+    val bounds = remember(state.sceneId) { mutableStateMapOf<String, Pair<Float, Float>>() }
+    var dragging by remember { mutableStateOf<String?>(null) }
+    var pointerY by remember { mutableFloatStateOf(0f) }
+
+    fun over(): ObjectDoc? =
+        dragging?.let { moving ->
+            currentRows
+                .firstOrNull { (obj, _) ->
+                    obj.id != moving &&
+                        bounds[obj.id]?.let { (top, bottom) -> pointerY in top..bottom } == true
+                }?.first
+        }
+
+    fun drop() {
+        val moving = dragging ?: return
+        val target = over()
+        dragging = null
+        val lowest = currentRows.mapNotNull { bounds[it.first.id]?.second }.maxOrNull() ?: return
+        val obj = state.scene.find(moving) ?: return
+        when {
+            target != null && target.id != obj.parent -> state.moveInto(moving, target.id)
+            target == null && pointerY > lowest && obj.parent != null -> state.moveInto(moving, null)
+        }
+    }
+    val target = over()
     LazyColumn(modifier.testTag("hierarchy")) {
         items(rows, key = { it.first.id }) { (obj, depth) ->
             val selected = obj.id == state.selection
+            val color =
+                when {
+                    obj.id == target?.id -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.35f)
+                    obj.id == dragging -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.25f)
+                    selected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
+                    else -> MaterialTheme.colorScheme.surface
+                }
             Text(
                 obj.name,
                 Modifier
                     .fillMaxWidth()
-                    .background(if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.25f) else MaterialTheme.colorScheme.surface)
+                    .onGloballyPositioned {
+                        val top = it.positionInRoot().y
+                        bounds[obj.id] = top to top + it.size.height
+                    }.pointerInput(obj.id) {
+                        detectDragGesturesAfterLongPress(
+                            onDragStart = { at ->
+                                dragging = obj.id
+                                pointerY = (bounds[obj.id]?.first ?: 0f) + at.y
+                            },
+                            onDrag = { change, amount ->
+                                change.consume()
+                                pointerY += amount.y
+                            },
+                            onDragEnd = { drop() },
+                            onDragCancel = { dragging = null },
+                        )
+                    }.background(color)
                     .clickable { state.selection = obj.id }
                     .padding(start = (12 + depth * 16).dp, top = 12.dp, bottom = 12.dp, end = 12.dp)
                     .testTag("object:${obj.name}"),
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            )
+        }
+        item {
+            Text(
+                "Hold and drag an object onto another to group them.",
+                Modifier.padding(12.dp),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

@@ -136,6 +136,15 @@ class OperationParityTest {
                 ),
             "remove_object" to Case({ select("Coin") }, { tap("delete") }, { target("Coin") }),
             "duplicate_object" to Case({ select("Coin") }, { tap("duplicate") }, { target("Coin") }),
+            "move_into" to
+                Case(
+                    { select("Coin") },
+                    {
+                        tap("move-into")
+                        tap("move-into:Player")
+                    },
+                    { target("Coin") + ("parent" to id("Player")) },
+                ),
             "rename_object" to
                 Case(
                     { select("Coin") },

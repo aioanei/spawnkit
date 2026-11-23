@@ -207,15 +207,16 @@ not replace them: each item delivers part of the named R-step, and unfinished pa
 | C17 | Template library (R5), [#91](https://github.com/aioanei/spawnkit/issues/91) | Three complete templates from builder-call recipes, each with a kit home screen, levels, game-wide values, a shop with test purchases, ad spots, win and lose scenes and How it works: Sky Hopper (platformer), Star Defender (shooter) and Toaster Tycoon. The picker groups Complete games and Starters. Scripted bots finish each template. |
 | C16 | Character Forge from photos (R7), [#90](https://github.com/aioanei/spawnkit/issues/90) | A photo, with consent, becomes Pixel art, Cartoon and Chibi characters through the server's image route (OpenAI image editing, shared $20 cap, ADR-0013); pixel art is post-processed deterministically. The chosen image becomes a Character object. The same capability is an agent tool that asks before uploading. Fake-gateway tests; emulator evidence from photo to playable character. |
 | C13 | AI-first building of complete games (R7, R4), [#85](https://github.com/aioanei/spawnkit/issues/85), [ADR-0011](../adr/0011-hosted-ai-model-proxy.md) | New game starts with "Describe your game…". The AI plans and builds a complete game with the builder's tools: a home screen, levels, game-wide values, a shop with test purchases, ad spots, and win and lose scenes. The chat is the main panel. AI changes apply right away as one undo step with Revert. Manual tools are unchanged. Bring-your-own-key leaves the normal UI. A live recording of a whole game built from one prompt; UI tests in both layouts; Android emulator evidence. |
+| C19 | Visual redesign, same functionality (R4), [#98](https://github.com/aioanei/spawnkit/issues/98) | The builder (both layouts), player chrome, web player, Arcade pages and generated defaults (palette pieces, title layouts, preset title screens) get a deliberate visual direction instead of generic Material screens. A short design note with mockups is approved by the owner first. One set of theme tokens replaces hard-coded colors and sizes. Every capability, catalog-generated form, parity path and test assertion stays the same; accessibility requirements hold. Before and after screenshots in both layouts and on the Android emulator. |
 | C8 | Demos and submission (R6, R9) | At least two mechanically different games built in the builder on the same engine. README with run instructions for all targets, screencast script, essay. |
 | C18 | 2.5D looks, stretch (R3), [#92](https://github.com/aioanei/spawnkit/issues/92) | Only if time remains, never inside C8's days. Parallax depth on transforms, an isometric camera view with y-ordered drawing, and named layers, on the existing 2D renderer. Render-list tests and screenshots; gameplay unchanged. |
 
 C9–C13 were added by the owner on 2026-11-22; C10b and C13 later that day. On 2026-11-23 the owner expanded C14 and
-added C15–C17, with C18 as a stretch item. Design:
+added C15–C17, with C18 as a stretch item, and C19, a visual redesign kept for after the features. Design:
 [title screens, presets, accounts, test ads and AI-first](../design/2026-11-22-title-screens-presets-accounts-ads.md).
 
 Order of work: C1 → C2 → C3 → C4 → C5 → C6 → C7 → C9 → C10 → C10b → C11a → C11b → C14 → C15 → C12 → C17 → C16 → C13 →
-C11c → C8, then C18 only if time remains, with documentation kept current per PR.
+C11c → C19 → C8, then C18 only if time remains, with documentation kept current per PR.
 Each C-item takes only the subset of its R-step needed by the slice, and its stated dependencies must be done first:
 
 - C2 needs C1.
@@ -234,6 +235,7 @@ Each C-item takes only the subset of its R-step needed by the slice, and its sta
 - C16 needs C11 (hosted AI) and C15 (images in projects).
 - C13 needs C7, C11, C12 and C14–C17, so the AI can build complete games with all of them.
 - C18 needs C1 only; it never takes C8's days.
+- C19 needs C12, C13 and C15–C17, so it redesigns the final screens; it comes before C8 so the demos show it.
 - C8 needs all of the above.
 
 For C9–C17, C8 keeps 5–7 Dec. The owner decided that nothing is trimmed (2026-11-22, again 2026-11-23). The order

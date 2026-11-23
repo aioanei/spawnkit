@@ -59,6 +59,8 @@ class TitleScreenTest {
 
             onNodeWithTag("title-add").performClick()
             waitForIdle()
+            onNodeWithTag("title-layout:PlayOnly").performClick()
+            waitForIdle()
             // The play loop never idles: drive the clock by hand while playing, as the other play tests do.
             mainClock.autoAdvance = false
             onNodeWithTag("play").performClick()

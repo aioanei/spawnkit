@@ -32,12 +32,27 @@ import dev.spawnkit.program.PrepareResult
 import dev.spawnkit.program.Program
 import dev.spawnkit.program.prepareProgram
 
-/** A ready-made object the creator can drop into the scene. */
+/**
+ * A ready-made object the creator can drop into the scene. It may bring [children] (name and components, placed
+ * relative to it) and [rules] for the scene it is added to; everything is added as one undo step.
+ */
 data class ObjectPreset(
     val name: String,
     val description: String,
+    val children: List<Pair<String, List<ComponentDoc>>> = emptyList(),
+    val rules: (project: Project, sceneId: String) -> List<Rule> = { _, _ -> emptyList() },
     val components: (x: Double, y: Double) -> List<ComponentDoc>,
 )
+
+/** Layouts "+ Title screen" offers (C15). */
+enum class TitleLayout(
+    val label: String,
+    val description: String,
+) {
+    PlayOnly("Play", "A Play button that starts the game."),
+    WithLevels("Play + Levels", "Also a Levels scene with a button for every scene of the game."),
+    Full("Play + Levels + Shop + How it works", "Also a Shop scene and a How it works scene, each with a Back button."),
+}
 
 /** First-party presets built only from general engine components. */
 val DefaultPresets: List<ObjectPreset> =
@@ -61,7 +76,77 @@ val DefaultPresets: List<ObjectPreset> =
         ObjectPreset("Camera", "Chooses what players see") { x, y ->
             placed(x, y) + ComponentDoc("graphics:camera")
         },
+        ObjectPreset(
+            "Button",
+            "Tap it to go to another scene",
+            children = listOf("Button label" to placed(0.0, 0.0) + text("Play", 0.7)),
+            rules = { project, sceneId -> listOfNotNull(nextScene(project, sceneId)?.let { goTo(it) }) },
+        ) { x, y -> placed(x, y) + shape("rectangle", 4.0, 1.2, 0xFF43A047, 1) },
+        ObjectPreset("Text", "Words on the screen") { x, y -> placed(x, y) + text("Text", 1.0) },
     )
+
+/** The scene a new Button goes to: the next one, else the first other scene, else none. */
+private fun nextScene(
+    project: Project,
+    sceneId: String,
+): String? {
+    val scenes = project.scenes
+    val index = scenes.indexOfFirst { it.id == sceneId }
+    return scenes.getOrNull(index + 1)?.id ?: scenes.firstOrNull { it.id != sceneId }?.id
+}
+
+private fun goTo(sceneId: String) = Rule(Condition.Tapped, actions = listOf(Action.GoToScene(sceneId)))
+
+/** Builds one [EditOperation.Batch], predicting the IDs the editor will give new scenes and objects. */
+private class BatchBuilder(
+    private var next: Long,
+) {
+    val operations = mutableListOf<EditOperation>()
+
+    fun scene(name: String): String = "scene-${next++}".also { operations += EditOperation.AddScene(name) }
+
+    fun obj(
+        sceneId: String,
+        name: String,
+        components: List<ComponentDoc>,
+        parent: String? = null,
+    ): String = "obj-${next++}".also { operations += EditOperation.AddObject(sceneId, name, parent, components) }
+
+    fun rules(
+        sceneId: String,
+        objectId: String,
+        rules: List<Rule>,
+    ) {
+        operations += EditOperation.SetRules(sceneId, objectId, RuleBlocks.compile(rules))
+    }
+
+    /** A green button with a [label] inside it that goes to scene [target] when tapped. */
+    fun button(
+        sceneId: String,
+        name: String,
+        x: Double,
+        y: Double,
+        label: String,
+        target: String,
+        width: Double = 4.4,
+        size: Double = 0.6,
+    ): String {
+        val id = obj(sceneId, "$name button", placed(x, y) + shape("rectangle", width, 1.1, 0xFF43A047, 1))
+        obj(sceneId, "$name label", placed(0.0, 0.0) + text(label, size), parent = id)
+        rules(sceneId, id, listOf(goTo(target)))
+        return id
+    }
+
+    /** A background and a heading, for a new scene. */
+    fun backdrop(
+        sceneId: String,
+        heading: String,
+        color: Long,
+    ) {
+        obj(sceneId, "Background", placed(0.0, 0.0) + shape("rectangle", 16.0, 9.0, color, -1))
+        obj(sceneId, "Heading", placed(0.0, -3.2) + text(heading, 1.0))
+    }
+}
 
 private fun tag(name: String) = listOf(ComponentDoc("gameplay:tag", mapOf("tag" to name)))
 
@@ -164,8 +249,30 @@ class EditorState(
     ) {
         val taken = scene.objects.count { it.name == preset.name || it.name.startsWith(preset.name + " ") }
         val name = if (taken == 0) preset.name else "${preset.name} ${taken + 1}"
-        val result = apply(EditOperation.AddObject(sceneId, name, components = preset.components(round(x), round(y))))
-        if (result is OperationResult.Applied) selection = result.createdIds.single()
+        val components = preset.components(round(x), round(y))
+        val rules = preset.rules(project, sceneId)
+        if (preset.children.isEmpty() && rules.isEmpty()) {
+            val result = apply(EditOperation.AddObject(sceneId, name, components = components))
+            if (result is OperationResult.Applied) selection = result.createdIds.single()
+            return
+        }
+        val batch = BatchBuilder(editor.saveSnapshot().nextId)
+        val id = batch.obj(sceneId, name, components)
+        for ((child, parts) in preset.children) batch.obj(sceneId, child, parts, parent = id)
+        if (rules.isNotEmpty()) batch.rules(sceneId, id, rules)
+        if (apply(EditOperation.Batch(batch.operations, "Add $name")) is OperationResult.Applied) selection = id
+    }
+
+    /**
+     * Moves object [objectId] into [parent] (`null` for the top level), keeping it where it is on screen: the
+     * `move_into` catalog operation, so the agent tool does exactly the same (C15).
+     */
+    fun moveInto(
+        objectId: String,
+        parent: String?,
+    ): OperationResult {
+        val arguments = listOfNotNull("scene" to sceneId, "object" to objectId, parent?.let { "parent" to it }).toMap()
+        return apply(engine.operations.build("move_into", arguments, editor.catalogContext()))
     }
 
     fun undo() {
@@ -334,31 +441,70 @@ class EditorState(
         }
 
     /**
-     * Adds a title screen as one undoable step and opens it (C9). It is an ordinary scene made with catalog operations:
-     * a background, the game's name and a tagged Play button whose rule goes to the current start scene. The new scene
-     * becomes the start scene. Creators change everything afterwards with the inspector and rules.
+     * Adds a title screen as one undoable step and opens it (C9, C15). It is an ordinary scene made with catalog
+     * operations: a background, the game's name and buttons whose rules go to other scenes. [layout] adds a Levels scene
+     * with a button for every scene of the game, and a Shop and a How it works scene, each with a Back button. The title
+     * screen becomes the start scene. Creators change everything afterwards with the inspector and rules.
      */
-    fun addTitleScreen() {
+    fun addTitleScreen(layout: TitleLayout = TitleLayout.PlayOnly) {
         val current = project
-        val next = current.nextId
-        val title = "scene-$next"
-        val button = "obj-${next + 3}"
-        val play = Rule(Condition.Tapped, actions = listOf(Action.GoToScene(current.scenes.first().id)))
-        val operations =
-            listOf(
-                EditOperation.AddScene("Title"),
-                EditOperation.AddObject(title, "Background", components = placed(0.0, 0.0) + shape("rectangle", 16.0, 9.0, 0xFF1A237E, -1)),
-                EditOperation.AddObject(title, "Title text", components = placed(0.0, -2.0) + text(current.name, 1.5)),
-                EditOperation.AddObject(
-                    title,
-                    "Play button",
-                    components = placed(0.0, 2.0) + shape("rectangle", 4.0, 1.5, 0xFF43A047, 1) + tag("play-button"),
-                ),
-                EditOperation.AddObject(title, "Play label", parent = button, components = placed(0.0, 0.0) + text("Play", 0.8)),
-                EditOperation.SetRules(title, button, RuleBlocks.compile(listOf(play))),
-                EditOperation.MoveScene(title, 0),
-            )
-        if (apply(EditOperation.Batch(operations, "Add title screen")) is OperationResult.Applied) selectScene(title)
+        val batch = BatchBuilder(editor.saveSnapshot().nextId)
+        val title = batch.scene("Title")
+        batch.obj(title, "Background", placed(0.0, 0.0) + shape("rectangle", 16.0, 9.0, 0xFF1A237E, -1))
+        batch.obj(title, "Title text", placed(0.0, -2.0) + text(current.name, 1.5))
+        val start = current.scenes.first().id
+        val play = batch.obj(title, "Play button", placed(0.0, 2.0) + shape("rectangle", 4.0, 1.5, 0xFF43A047, 1) + tag("play-button"))
+        batch.obj(title, "Play label", placed(0.0, 0.0) + text("Play", 0.8), parent = play)
+        batch.rules(title, play, listOf(goTo(start)))
+        if (layout != TitleLayout.PlayOnly) {
+            // The Play button moves up to make room for the others.
+            batch.operations += EditOperation.SetProperty(title, play, "graphics:transform", "y", -0.2)
+            batch.operations += EditOperation.SetProperty(title, play, "graphics:shape", "width", 4.4)
+            batch.operations += EditOperation.SetProperty(title, play, "graphics:shape", "height", 1.1)
+            val extras = mutableListOf("Levels")
+            if (layout == TitleLayout.Full) extras += listOf("Shop", "How it works")
+            val scenes = extras.map { it to batch.scene(it) }
+            scenes.forEachIndexed { i, (name, id) -> batch.button(title, name, 0.0, 1.3 + 1.3 * i, name, id) }
+            for ((name, id) in scenes) {
+                when (name) {
+                    "Levels" -> {
+                        batch.backdrop(id, "Levels", 0xFF004D40)
+                        // Narrow enough for a phone held upright: one column for up to 4 levels, then 2, then 3.
+                        val count = current.scenes.size
+                        val columns =
+                            if (count <= 4) {
+                                1
+                            } else if (count <= 8) {
+                                2
+                            } else {
+                                3
+                            }
+                        val width = listOf(4.4, 3.6, 2.6)[columns - 1]
+                        val step = listOf(0.0, 4.0, 2.8)[columns - 1]
+                        current.scenes.forEachIndexed { i, level ->
+                            val x = step * (i % columns) - step * (columns - 1) / 2
+                            val y = -1.8 + 1.3 * (i / columns)
+                            batch.button(id, level.name, x, y, level.name, level.id, width = width, size = if (columns == 3) 0.45 else 0.6)
+                        }
+                    }
+
+                    "Shop" -> {
+                        batch.backdrop(id, "Shop", 0xFF4A148C)
+                        batch.obj(id, "Shop text", placed(0.0, -1.0) + text("Put items for sale here.", 0.6))
+                        batch.obj(id, "Shop hint", placed(0.0, 0.0) + text("Each item: a price, a Buy rule.", 0.5))
+                    }
+
+                    else -> {
+                        batch.backdrop(id, "How it works", 0xFF263238)
+                        batch.obj(id, "How text", placed(0.0, -1.0) + text("Explain how to play here.", 0.6))
+                        batch.obj(id, "How hint", placed(0.0, 0.0) + text("Change these texts.", 0.5))
+                    }
+                }
+                batch.button(id, "Back", 0.0, 3.4, "Back", title)
+            }
+        }
+        batch.operations += EditOperation.MoveScene(title, 0)
+        if (apply(EditOperation.Batch(batch.operations, "Add title screen")) is OperationResult.Applied) selectScene(title)
     }
 
     /** Opens scene [id] for editing. */

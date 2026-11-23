@@ -37,6 +37,7 @@ internal fun SceneList(
     modifier: Modifier = Modifier,
 ) {
     var renaming by remember { mutableStateOf(false) }
+    var choosingLayout by remember { mutableStateOf(false) }
     val scenes = state.project.scenes
     val index = scenes.indexOfFirst { it.id == state.sceneId }
     val editing = state.play == null
@@ -69,10 +70,51 @@ internal fun SceneList(
             SceneAction("Delete", "scene-delete", editing && scenes.size > 1) {
                 state.applyCatalog("remove_scene", mapOf("scene" to state.sceneId))
             }
-            SceneAction("+ Title screen", "title-add", editing) { state.addTitleScreen() }
+            SceneAction("+ Title screen", "title-add", editing) { choosingLayout = true }
         }
     }
     if (renaming) RenameScene(state) { renaming = false }
+    if (choosingLayout) {
+        ChooseTitleLayout(
+            { layout ->
+                choosingLayout = false
+                state.addTitleScreen(layout)
+            },
+            { choosingLayout = false },
+        )
+    }
+}
+
+/** Which buttons the new title screen gets (C15); extra buttons come with their scenes. */
+@Composable
+private fun ChooseTitleLayout(
+    choose: (TitleLayout) -> Unit,
+    close: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = close,
+        title = { Text("Add a title screen") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                for (layout in TitleLayout.entries) {
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp)
+                            .clickable { choose(layout) }
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .padding(12.dp)
+                            .testTag("title-layout:${layout.name}"),
+                    ) {
+                        Text(layout.label, fontWeight = FontWeight.SemiBold)
+                        Text(layout.description, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(close, Modifier.testTag("title-layout-cancel")) { Text("Cancel") } },
+    )
 }
 
 @Composable

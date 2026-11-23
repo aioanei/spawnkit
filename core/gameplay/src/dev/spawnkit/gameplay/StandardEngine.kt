@@ -70,10 +70,11 @@ public class StandardEngine(
     public val runtime: Runtime = builder.build()
 
     /**
-     * Everything creators and agents can do to a project of this engine: the general editor operations plus rule edits.
+     * Everything creators and agents can do to a project of this engine: the general editor operations, grouping and rule
+     * edits.
      * The builder's controls and the agent tools both use these entries (ADR-0009).
      */
-    public val operations: OperationCatalog = EditingOperations.catalog + RuleOperations.catalog
+    public val operations: OperationCatalog = EditingOperations.catalog + ObjectOperations.catalog + RuleOperations.catalog
 
     /**
      * The scene a "Go to scene" block asked for during the last ticks of [world], or `null`; see [takeRequests]. Spawn

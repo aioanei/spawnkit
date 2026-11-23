@@ -1,6 +1,24 @@
 # SpawnKit progress
 
-## Current checkpoint — C14b platform physics and camera follow (2026-11-23)
+## Current checkpoint — C15a home screen kit (2026-11-23)
+
+- **Branch.** `feat/89-home-screen-kit` from `main` after PR #97 (C14b, merged with the owner's consent; #88 closed).
+  [Plan](docs/plans/2026-11-23-c15a-home-screen-kit.md), the first half of [#89](https://github.com/aioanei/spawnkit/issues/89).
+- **Added.** `move_into` (`ObjectOperations`, `core/gameplay`): grouping that keeps the object where it is on screen,
+  with "Move into…" in the inspector and long-press dragging in the scene list. Button (a shape, a label inside it and a
+  Go to scene rule) and Text palette pieces. "+ Title screen" layouts: Play; Play + Levels; Play + Levels + Shop + How
+  it works, with the scenes made in the same undo step. [Gameplay](docs/gameplay.md#home-screen-kit-c15a).
+- **Fixed.** Palette pieces and title screens predict new IDs from the editor's minting floor, so they still work
+  after an undo.
+- **Evidence.** Gradle `spotlessCheck allJvmAndWebTests localNativeTests` and the Kotlin Toolchain `check ktlint`,
+  `test -p jvm -p android` and `test -p mingwX64` pass. New tests: `MoveIntoTest` 4, `HomeScreenKitTest` 7,
+  `HomeScreenKitUiTest` 2 (phone and desktop) and the `move_into` parity case. Android API 36: `tools/android-home-smoke.py`
+  built and played the full home screen with real taps ([home screen](docs/media/android-home-play.png),
+  [levels](docs/media/android-home-levels.png)); `tools/android-title-smoke.py` still passes with the layout choice.
+- **Next.** C15b: images in projects (ADR-0012), the Image piece, the pixelated option and a home screen with an
+  imported logo. Then C12, C17, C16, C13, C11c and C8.
+
+## Previous checkpoint — C14b platform physics and camera follow (2026-11-23)
 
 - **Branch.** `feat/88-physics-camera` from `main` after PR #96. [Plan](docs/plans/2026-11-23-c14b-physics-camera.md),
   the rest of [#88](https://github.com/aioanei/spawnkit/issues/88).

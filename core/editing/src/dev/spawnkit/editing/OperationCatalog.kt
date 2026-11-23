@@ -138,8 +138,10 @@ public class OperationCatalog(
 }
 
 /**
- * Catalog entries for the general editor operations that the builder offers as controls. Operations without a builder
- * control yet ([EditOperation.ReparentObject]) are added here together with their controls, never for agents alone. Rule operations come from the package that defines rule blocks.
+ * Catalog entries for the general editor operations that the builder offers as controls. Operations are added together
+ * with their controls, never for agents alone. Grouping ([EditOperation.ReparentObject]) needs 2D placement, so its
+ * entry comes from the standard engine's `ObjectOperations`, and rule operations come from the package that defines
+ * rule blocks.
  */
 public object EditingOperations {
     /** The entries. */

@@ -88,12 +88,37 @@ to agents. A `Rule` is a When block, optional And-if blocks and Do blocks; it is
   - Rule edits cannot add a "Go to scene" for a missing scene.
   - A target removed later is a rule problem on the block ("that scene was removed").
   - During play, such a request is ignored with a message.
-- **Title screens.** The builder's "Add title screen" applies one `Batch` of catalog operations:
+- **Title screens.** The builder's "+ Title screen" applies one `Batch` of catalog operations:
   - a Title scene with a background, the game's name, and a Play button tagged `play-button`;
   - the button's rule "When tapped → Go to scene ⟨previous start scene⟩";
   - moving the Title scene to position 1, so it becomes the start scene.
 
-  Everything is then edited with the normal inspector and rules.
+  Everything is then edited with the normal inspector and rules. Since C15 it first asks for a layout (below).
+
+## Home screen kit (C15a)
+
+The first half of [#89](https://github.com/aioanei/spawnkit/issues/89), so a game gets a real home page made of
+several objects. [Plan](plans/2026-11-23-c15a-home-screen-kit.md).
+
+- **Palette pieces.** **Button**: a green shape with a Play label inside it and "When tapped → Go to scene ⟨the next
+  scene⟩" (the first other scene after the last; no rule while the game has one scene). **Text**: words on the screen.
+  A piece with parts is one undo step.
+- **Grouping.** `move_into` puts an object inside another, or back at the top level, and keeps it where it is on
+  screen. In the builder: "Move into…" under the object's name in the inspector, or hold a row of the scene list and
+  drag it onto another row (or below the list for the top level).
+- **Title screen layouts.** "+ Title screen" offers Play; Play + Levels; Play + Levels + Shop + How it works. Each
+  extra button goes to a scene made in the same step: **Levels** has a button for every scene the game had, in one
+  centred column for up to four levels, then two and three narrower columns, so it fits a phone held upright; **Shop** and **How it works** have a heading, texts to replace and a Back button. A Shop's items and purchases
+  come with C12.
+
+Tests: `MoveIntoTest` 4 (common); `HomeScreenKitTest` 7 checks that level buttons fit a phone and plays the full layout from the title to the levels, a level,
+the shop and How it works and back; `HomeScreenKitUiTest` builds a button and text, groups them with Move into… and by
+dragging, and adds the full layout, on phone and desktop; `OperationParityTest` adds `move_into`.
+
+On the Android API 36 emulator, `tools/android-home-smoke.py` adds the full layout and a Text with real taps, moves the
+Text into the Play button with Move into…, plays the home screen and opens Levels from its button. Screenshots:
+[editing](media/android-home-edit.png), [home screen](media/android-home-play.png),
+[levels](media/android-home-levels.png). Importing images, the Image piece and a logo come with C15b.
 - **Evidence.** Android emulator screenshots: [editing](media/android-title-edit.png),
   [playing the title](media/android-title-play.png), [after tapping Play](media/android-title-level.png).
 
