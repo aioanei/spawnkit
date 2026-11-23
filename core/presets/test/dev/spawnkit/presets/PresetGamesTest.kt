@@ -93,7 +93,10 @@ class PresetGamesTest {
 
     @Test
     fun catalogMatchesTheEmbeddedFiles() {
-        assertEquals(listOf("coin-dash", "tap-targets", "maze-run", "aura-farmer", "npc-dodge"), GamePresets.all.map { it.id })
+        assertEquals(
+            listOf("coin-dash", "tap-targets", "maze-run", "aura-farmer", "npc-dodge", "toaster-tycoon", "sky-hopper", "star-defender"),
+            GamePresets.all.map { it.id },
+        )
         assertEquals(EmbeddedPresets.all.keys, GamePresets.all.map { it.id }.toSet())
         GamePresets.all.forEach { assertEquals(it.name, it.project().name, "name of ${it.id}") }
         GamePresets.all.forEach { assertTrue(it.pitch.isNotBlank(), "pitch of ${it.id}") }

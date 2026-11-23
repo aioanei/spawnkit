@@ -25,6 +25,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -55,9 +57,16 @@ fun NewGamePicker(
     presets: List<GamePreset> = GamePresets.all,
 ) {
     if (!session.choosing) return
-    val choices =
+    val complete = presets.filter { it.complete }.map { NewGameChoice(it, it.name, it.pitch, "new-preset-${it.id}") }
+    val starters =
         listOf(NewGameChoice(null, "Blank", "An empty scene to build anything.", "new-blank")) +
-            presets.map { NewGameChoice(it, it.name, it.pitch, "new-preset-${it.id}") }
+            presets.filterNot { it.complete }.map { NewGameChoice(it, it.name, it.pitch, "new-preset-${it.id}") }
+    // Complete games come first: a home screen, levels, a shop with test purchases, test ads, and endings (C17).
+    val groups =
+        listOfNotNull(
+            complete.takeIf { it.isNotEmpty() }?.let { "Complete games" to it },
+            "Starters" to starters,
+        )
     val engine = remember { StandardEngine() }
     Dialog(session::closeChooser, DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(
@@ -76,12 +85,19 @@ fun NewGamePicker(
                         "Start from an empty scene, or from a ready-made game you can change in every way.",
                         style = MaterialTheme.typography.bodyMedium,
                     )
-                    choices.chunked(columns).forEach { row ->
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            row.forEach { choice ->
-                                ChoiceCard(choice, engine, wide = columns > 1, Modifier.weight(1f)) { session.startNew(choice.preset) }
+                    for ((heading, choices) in groups) {
+                        Text(
+                            heading,
+                            Modifier.semantics { heading() }.testTag("new-group:$heading"),
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        choices.chunked(columns).forEach { row ->
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                row.forEach { choice ->
+                                    ChoiceCard(choice, engine, wide = columns > 1, Modifier.weight(1f)) { session.startNew(choice.preset) }
+                                }
+                                repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
                             }
-                            repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
                         }
                     }
                     TextButton(session::closeChooser, Modifier.align(Alignment.End).testTag("new-cancel")) { Text("Cancel") }

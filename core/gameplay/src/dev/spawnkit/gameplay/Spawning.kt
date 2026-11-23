@@ -3,13 +3,18 @@ package dev.spawnkit.gameplay
 import dev.spawnkit.editing.ObjectDoc
 import dev.spawnkit.editing.Project
 import dev.spawnkit.runtime.EntityHandle
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.JsonUnquotedLiteral
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
+import kotlin.math.abs
+import kotlin.math.floor
 
 /**
  * A copy a "Spawn a copy" block asked for: the object tagged [tag], at ([x], [y]), moving at ([vx], [vy]) units per
@@ -46,8 +51,8 @@ public data class SpawnRequest(
 
                     is SpawnPlace.Position -> {
                         put("place", JsonPrimitive("position"))
-                        put("x", JsonPrimitive(place.x))
-                        put("y", JsonPrimitive(place.y))
+                        put("x", decimal(place.x))
+                        put("y", decimal(place.y))
                     }
 
                     is SpawnPlace.RandomArea -> {
@@ -59,7 +64,7 @@ public data class SpawnRequest(
                     }
                 }
                 action.direction?.let { put("direction", JsonPrimitive(it.name)) }
-                put("speed", JsonPrimitive(action.speed))
+                put("speed", decimal(action.speed))
             }.toString()
 
         /** The block whose [header] this is; throws for anything else. */
@@ -147,6 +152,19 @@ public data class PurchaseRequest(
         }
     }
 }
+
+/**
+ * [value] as JSON written the same way on every platform: whole numbers keep a ".0", as on the JVM. Kotlin/JS would
+ * write 14.0 as 14, so a block saved on one platform would no longer compile to the same text on another and would
+ * stop being recognised as a block.
+ */
+@OptIn(ExperimentalSerializationApi::class)
+private fun decimal(value: Double): JsonElement =
+    if (value == floor(value) && abs(value) < 1e15) {
+        JsonUnquotedLiteral("${if (value < 0.0 || 1.0 / value < 0.0) "-" else ""}${abs(value).toLong()}.0")
+    } else {
+        JsonPrimitive(value)
+    }
 
 /** What the rules of one tick asked players to do: switch scene, make copies and offer test purchases. */
 public data class EngineRequests(

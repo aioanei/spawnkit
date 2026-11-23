@@ -2,6 +2,7 @@ package dev.spawnkit.app.presets
 
 import dev.spawnkit.app.editor.DefaultPresets
 import dev.spawnkit.app.editor.EditorState
+import dev.spawnkit.app.editor.TitleLayout
 import dev.spawnkit.editing.OperationResult
 import dev.spawnkit.editing.Project
 import dev.spawnkit.gameplay.Action
@@ -10,6 +11,7 @@ import dev.spawnkit.gameplay.Condition
 import dev.spawnkit.gameplay.Direction
 import dev.spawnkit.gameplay.Rule
 import dev.spawnkit.gameplay.RuleOperations
+import dev.spawnkit.gameplay.SpawnPlace
 import dev.spawnkit.gameplay.StandardActions
 import dev.spawnkit.gameplay.Target
 
@@ -27,6 +29,9 @@ internal object PresetRecipes {
             "maze-run" to ::mazeRun,
             "aura-farmer" to ::auraFarmer,
             "npc-dodge" to ::npcDodge,
+            "toaster-tycoon" to ::toasterTycoon,
+            "sky-hopper" to ::skyHopper,
+            "star-defender" to ::starDefender,
         )
 
     private val keyMoves =
@@ -310,6 +315,452 @@ internal object PresetRecipes {
     /** Seconds to farm the aura. */
     const val AURA_SECONDS = 15L
 
+    /**
+     * A complete tycoon game (C17): tap the toaster for toast, buy Toaster Bots and Golden Toasters that raise income
+     * per second, unlock the Bakery at $BAKERY_PRICE toast for Mega Ovens, and reach $TOAST_GOAL toast before the shift
+     * ends. Toast, income and time are kept across scenes. A full title screen (Play, Levels, Shop, How it works), a
+     * shop with a test purchase, test ads, and win and lose scenes. Original characters, brain-rot style.
+     */
+    fun toasterTycoon(): Project =
+        Recipe("Toaster Tycoon").run {
+            renameScene("Kitchen")
+            val kitchen = sceneId
+            box("Background", 0.0, 0.0, 16.0, 9.0, 0xFF4E342E, layer = -1)
+            toastHud()
+            val toaster = box("Toaster", 0.0, -0.5, 3.0, 2.0, 0xFFFF7043, tag = "toaster")
+            label("Toaster label", 0.0, -0.5, "TAP TO TOAST", 0.5)
+            rule(toaster, Rule(Condition.Tapped, actions = listOf(Action.ChangeNumber(Target.Tagged("toast"), 1))))
+            upgrade("Toaster Bot", -2.1, 1.6, "Bot +1/s: 15", 15, 1)
+            upgrade("Golden Toaster", 2.1, 1.6, "Gold +5/s: 100", 100, 5)
+            val bakery = addScene("Bakery")
+            box("Background", 0.0, 0.0, 16.0, 9.0, 0xFF6D4C41, layer = -1)
+            toastHud()
+            upgrade("Mega Oven", 0.0, 0.2, "Oven +25/s: 400", 400, 25)
+            val back = box("Kitchen door", 0.0, 2.9, 4.2, 0.9, 0xFF546E7A, tag = "kitchen-door")
+            label("Kitchen door label", 0.0, 2.9, "Back to the Kitchen", 0.4)
+            rule(back, Rule(Condition.Tapped, actions = listOf(Action.GoToScene(kitchen))))
+            open(kitchen)
+            val door = box("Bakery door", 0.0, 2.9, 4.2, 0.9, 0xFF546E7A, tag = "bakery-door")
+            label("Bakery door label", 0.0, 2.9, "Bakery: needs $BAKERY_PRICE toast", 0.36)
+            rule(
+                door,
+                Rule(
+                    Condition.Tapped,
+                    listOf(Condition.NumberIs(Target.Tagged("toast"), Comparison.AtLeast, BAKERY_PRICE)),
+                    listOf(Action.GoToScene(bakery)),
+                ),
+            )
+
+            completeTitle(
+                0xFFBF360C,
+                "Toast, upgrade, build an empire.",
+                listOf(
+                    "Tap the toaster: +1 Toast.",
+                    "Upgrades cost toast and add",
+                    "income every second.",
+                    "Toast, Income and Time are",
+                    "kept across scenes.",
+                    "The Bakery opens at $BAKERY_PRICE.",
+                    "Reach $TOAST_GOAL toast to win.",
+                ),
+                listOf("Try this: make the Mega Oven", "cost 300 toast."),
+                listOf(bakery),
+            )
+            val shop =
+                state.project.scenes
+                    .single { it.name == "Shop" }
+                    .id
+            open(shop)
+            toastHud()
+            val crate = box("Toast crate", 0.0, 1.0, 4.4, 1.1, 0xFFFFA000, tag = "toast-crate")
+            label("Toast crate label", 0.0, 1.0, "1000 toast: $0.99", 0.45)
+            rule(crate, Rule(Condition.Tapped, actions = listOf(Action.TestPurchase("1000 toast", 99, Target.Tagged("toast"), 1000))))
+            set(named("Shop text"), "graphics:text", "text", "Test purchases: no money is charged.")
+            set(named("Shop hint"), "graphics:text", "text", "Tap the crate to try one.")
+
+            // Endings go back to the title, whose Play button starts a fresh run.
+            val title =
+                state.project.scenes
+                    .first()
+                    .id
+            val win = endScene("Toast Empire", "TOAST EMPIRE!", "$TOAST_GOAL toast. Peak breakfast.", "Toast again", title, 0xFFF57F17)
+            val lose = endScene("Shift over", "Shift over", "The toast went cold.", "Try again", title, 0xFF37474F)
+            for (area in listOf(kitchen, bakery)) {
+                open(area)
+                rule(
+                    named("Toast"),
+                    Rule(Condition.NumberIs(Target.Self, Comparison.AtLeast, TOAST_GOAL), actions = listOf(Action.GoToScene(win))),
+                )
+                rule(named("Time"), Rule(Condition.NumberIs(Target.Self, Comparison.AtMost, 0), actions = listOf(Action.GoToScene(lose))))
+            }
+            // An ending resets toast, income and time, so the next run starts fresh while toast bought in the shop
+            // before playing is kept.
+            for (ending in listOf(win, lose)) {
+                open(ending)
+                toastHud(visible = false)
+                rule(
+                    named("Toast"),
+                    Rule(
+                        Condition.GameStarts,
+                        actions =
+                            listOf(
+                                Action.SetNumber(Target.Self, 0),
+                                Action.SetNumber(Target.Tagged("income"), 0),
+                                Action.SetNumber(Target.Tagged("time"), TYCOON_SECONDS),
+                            ),
+                    ),
+                )
+            }
+            open(title)
+            ok(state.applyCatalog("set_ads", mapOf("banner" to true, "interstitial" to true, "every" to 3L)))
+            state.editor.saveSnapshot()
+        }
+
+    /**
+     * A complete shooter (C17): steer the ship with Left and Right and fire with Jump. Enemies are spawned from a
+     * template at random spots, faster each wave; shooting $WAVE_KILLS clears a wave, and three waves win. Score and
+     * lives are kept across waves. The shop sells extra lives for score or as a test purchase. Full title screen,
+     * test ads, and win and lose scenes. Original characters.
+     */
+    fun starDefender(): Project =
+        Recipe("Star Defender").run {
+            renameScene("Wave 1")
+            val waves = mutableListOf(sceneId)
+            waves += addScene("Wave 2")
+            waves += addScene("Wave 3")
+            completeTitle(
+                0xFF0D47A1,
+                "Shoot the invaders. Save the stars.",
+                listOf(
+                    "Left and Right move the ship.",
+                    "Jump fires a shot upwards.",
+                    "Enemies spawn at random spots",
+                    "every few moments.",
+                    "A hit adds 10 score.",
+                    "$WAVE_KILLS hits clear the wave.",
+                    "A crash costs a life.",
+                ),
+                listOf("Try this: spawn enemies every", "second in Wave 1."),
+            )
+            val title =
+                state.project.scenes
+                    .first()
+                    .id
+            val win = endScene("Galaxy saved", "GALAXY SAVED!", "Three waves cleared.", "Fly again", title, 0xFF1A237E)
+            val lose = endScene("Ship lost", "Ship lost", "The invaders got through.", "Try again", title, 0xFF4A148C)
+            waves.forEachIndexed { index, wave ->
+                open(wave)
+                val next = waves.getOrNull(index + 1) ?: win
+                box("Background", 0.0, 0.0, 16.0, 9.0, 0xFF0B1026, layer = -1)
+                label("Wave label", 0.0, -3.6, "Wave ${index + 1}", 0.5)
+                starHud()
+                val kills = place("Score", "Hits", 3.0, -3.0)
+                set(kills, "gameplay:tag", "tag", "hits")
+                set(kills, "graphics:text", "text", "Hits: 0")
+                set(kills, "graphics:text", "size", 0.35)
+                rule(kills, Rule(Condition.Always, actions = listOf(Action.ShowNumber(Target.Self, "Hits: "))))
+                rule(kills, Rule(Condition.NumberIs(Target.Self, Comparison.AtLeast, WAVE_KILLS), actions = listOf(Action.GoToScene(next))))
+                rule(named("Lives"), Rule(Condition.NumberIs(Target.Self, Comparison.AtMost, 0), actions = listOf(Action.GoToScene(lose))))
+
+                val ship = box("Ship", 0.0, 3.3, 0.9, 0.6, 0xFF4FC3F7, tag = "ship")
+                rule(ship, Rule(Condition.KeyHeld(StandardActions.LEFT), actions = listOf(Action.Move(Direction.Left, 6.0))))
+                rule(ship, Rule(Condition.KeyHeld(StandardActions.RIGHT), actions = listOf(Action.Move(Direction.Right, 6.0))))
+                rule(
+                    ship,
+                    Rule(
+                        Condition.KeyPressed(StandardActions.JUMP),
+                        actions = listOf(Action.Spawn("shot", SpawnPlace.Self, Direction.Up, 14.0)),
+                    ),
+                )
+
+                val shot = box("Shot", 0.0, 5.0, 0.18, 0.5, 0xFFFFF176, tag = "shot")
+                give(shot, "gameplay:template")
+                rule(shot, Rule(Condition.LeftArea(), actions = listOf(Action.RemoveSelf)))
+                rule(shot, Rule(Condition.Touching("enemy"), actions = listOf(Action.RemoveSelf)))
+
+                val enemy = box("Invader", 0.0, -6.0, 0.9, 0.7, 0xFFE53935, tag = "enemy")
+                give(enemy, "gameplay:template")
+                rule(
+                    enemy,
+                    Rule(
+                        Condition.Touching("shot"),
+                        actions =
+                            listOf(
+                                Action.ChangeNumber(Target.Tagged("score"), 10),
+                                Action.ChangeNumber(Target.Tagged("hits"), 1),
+                                Action.RemoveSelf,
+                            ),
+                    ),
+                )
+                rule(
+                    enemy,
+                    Rule(Condition.Touching("ship"), actions = listOf(Action.ChangeNumber(Target.Tagged("lives"), -1), Action.RemoveSelf)),
+                )
+                rule(enemy, Rule(Condition.LeftArea(), actions = listOf(Action.RemoveSelf)))
+
+                val spawner = place("Box", "Spawner", 0.0, -5.0)
+                takeAway(spawner, "graphics:shape")
+                val period = (3L - index).coerceAtLeast(1L)
+                rule(
+                    spawner,
+                    Rule(
+                        Condition.EverySeconds(period),
+                        actions = listOf(Action.Spawn("enemy", SpawnPlace.RandomArea(-3, 3, -5, -5), Direction.Down, 1.5 + index * 0.5)),
+                    ),
+                )
+            }
+
+            open(
+                state.project.scenes
+                    .single { it.name == "Shop" }
+                    .id,
+            )
+            starHud()
+            val lifePack = box("Life pack", 0.0, 0.6, 4.4, 1.0, 0xFFFFA000, tag = "life-pack")
+            label("Life pack label", 0.0, 0.6, "3 lives: $0.99", 0.42)
+            rule(lifePack, Rule(Condition.Tapped, actions = listOf(Action.TestPurchase("3 extra lives", 99, Target.Tagged("lives"), 3))))
+            val trade = box("Life for score", 0.0, 2.0, 4.4, 1.0, 0xFF2E7D32, tag = "life-for-score")
+            label("Life for score label", 0.0, 2.0, "1 life: 50 score", 0.42)
+            rule(
+                trade,
+                Rule(
+                    Condition.Tapped,
+                    listOf(Condition.NumberIs(Target.Tagged("score"), Comparison.AtLeast, 50)),
+                    listOf(Action.ChangeNumber(Target.Tagged("score"), -50), Action.ChangeNumber(Target.Tagged("lives"), 1)),
+                ),
+            )
+            set(named("Shop text"), "graphics:text", "text", "Test purchases: no money is charged.")
+            set(named("Shop hint"), "graphics:text", "text", "Or trade 50 score for a life.")
+
+            for (ending in listOf(win, lose)) {
+                open(ending)
+                starHud(visible = false)
+                rule(
+                    named("Score"),
+                    Rule(
+                        Condition.GameStarts,
+                        actions = listOf(Action.SetNumber(Target.Self, 0), Action.SetNumber(Target.Tagged("lives"), STAR_LIVES)),
+                    ),
+                )
+            }
+            open(title)
+            ok(state.applyCatalog("set_ads", mapOf("banner" to true, "interstitial" to true, "every" to 2L)))
+            state.editor.saveSnapshot()
+        }
+
+    /**
+     * A complete platformer (C17): three levels wider than the screen, with a camera that follows the hopper. Solid
+     * ground with gaps, coins, patrolling enemies and a moving platform; touching an enemy or falling costs a life and
+     * restarts the level, and the flag leads on. Coins, lives and the Super jump are kept across levels; the shop sells
+     * Super jump and an extra life as test purchases. Full title screen, test ads, and win and lose scenes.
+     */
+    fun skyHopper(): Project =
+        Recipe("Sky Hopper").run {
+            renameScene("Level 1")
+            val levels = mutableListOf(sceneId)
+            levels += addScene("Level 2")
+            levels += addScene("Level 3")
+            completeTitle(
+                0xFF0277BD,
+                "Hop the gaps. Grab the coins.",
+                listOf(
+                    "Left and Right walk; Jump hops",
+                    "when you stand on something.",
+                    "Gaps and enemies cost a life",
+                    "and restart the level.",
+                    "The flag opens the next level.",
+                    "The camera follows the hopper.",
+                    "Super jump in the shop jumps",
+                    "higher in every level.",
+                ),
+                listOf("Try this: make the moving", "platform faster."),
+            )
+            val title =
+                state.project.scenes
+                    .first()
+                    .id
+            val win = endScene("Sky champion", "SKY CHAMPION!", "Three levels hopped.", "Hop again", title, 0xFF00838F)
+            val lose = endScene("Out of lives", "Out of lives", "The sky wins this time.", "Try again", title, 0xFF4E342E)
+            levels.forEachIndexed { index, level ->
+                open(level)
+                val next = levels.getOrNull(index + 1) ?: win
+                box("Background", 12.0, 0.0, 40.0, 12.0, 0xFF81D4FA, layer = -1)
+                val camera = place("Camera", "Camera", 0.0, 0.0)
+                give(camera, "gameplay:follow")
+                set(camera, "gameplay:follow", "down", false)
+                for (id in skyHud()) ok(state.moveInto(id, camera))
+                label("Level label", 0.0, -3.6, "Level ${index + 1}", 0.45).also { ok(state.moveInto(it, camera)) }
+
+                for (segment in 0 until SKY_SEGMENTS) {
+                    val ground = place("Platform", "Ground ${segment + 1}", segment * SKY_STEP, SKY_GROUND)
+                    set(ground, "graphics:shape", "color", 0xFF558B2F)
+                    if (segment < SKY_SEGMENTS - 1) {
+                        val coin = place("Coin", "Coin ${segment + 1}", segment * SKY_STEP + 1.5, SKY_GROUND - 1.5)
+                        rule(
+                            coin,
+                            Rule(
+                                Condition.Touching("player"),
+                                actions = listOf(Action.ChangeNumber(Target.Tagged("coins"), 1), Action.RemoveSelf),
+                            ),
+                        )
+                    }
+                }
+                val flag = box("Flag", (SKY_SEGMENTS - 1) * SKY_STEP + 2.0, SKY_GROUND - 1.3, 0.4, 2.0, 0xFFFFEB3B, tag = "flag")
+                rule(flag, Rule(Condition.Touching("player"), actions = listOf(Action.GoToScene(next))))
+
+                // Enemies patrol between two markers on the second and later ground pieces; their number is their direction.
+                for (enemy in 1..index) {
+                    val x = enemy * SKY_STEP
+                    val walker = box("Enemy $enemy", x, SKY_GROUND - 0.7, 0.8, 0.8, 0xFF6A1B9A, tag = "enemy")
+                    give(walker, "gameplay:number")
+                    rule(
+                        walker,
+                        Rule(
+                            Condition.NumberIs(Target.Self, Comparison.Equal, 0),
+                            actions =
+                                listOf(
+                                    Action.Move(
+                                        Direction.Right,
+                                        1.0 + index * 0.5,
+                                    ),
+                                ),
+                        ),
+                    )
+                    rule(
+                        walker,
+                        Rule(
+                            Condition.NumberIs(Target.Self, Comparison.Equal, 1),
+                            actions =
+                                listOf(
+                                    Action.Move(
+                                        Direction.Left,
+                                        1.0 + index * 0.5,
+                                    ),
+                                ),
+                        ),
+                    )
+                    rule(walker, Rule(Condition.Touching("turn-left"), actions = listOf(Action.SetNumber(Target.Self, 1))))
+                    rule(walker, Rule(Condition.Touching("turn-right"), actions = listOf(Action.SetNumber(Target.Self, 0))))
+                    val right = box("Enemy $enemy right edge", x + 2.4, SKY_GROUND - 0.7, 0.2, 0.8, 0xFF81D4FA, tag = "turn-left")
+                    set(right, "graphics:shape", "visible", false)
+                    val left = box("Enemy $enemy left edge", x - 2.4, SKY_GROUND - 0.7, 0.2, 0.8, 0xFF81D4FA, tag = "turn-right")
+                    set(left, "graphics:shape", "visible", false)
+                }
+                if (index >= 1) {
+                    // A moving platform above the level, with coins to reach from it; bodies standing on it ride along.
+                    // High enough that a normal jump never bumps it; a Super jump can reach it.
+                    val lift = place("Platform", "Moving platform", 2.0 * SKY_STEP, SKY_GROUND - 4.5)
+                    set(lift, "graphics:shape", "width", 2.4)
+                    set(lift, "graphics:shape", "color", 0xFF8D6E63)
+                    give(lift, "gameplay:tag")
+                    set(lift, "gameplay:tag", "tag", "lift")
+                    give(lift, "gameplay:number")
+                    rule(
+                        lift,
+                        Rule(Condition.NumberIs(Target.Self, Comparison.Equal, 0), actions = listOf(Action.Move(Direction.Right, 1.5))),
+                    )
+                    rule(
+                        lift,
+                        Rule(Condition.NumberIs(Target.Self, Comparison.Equal, 1), actions = listOf(Action.Move(Direction.Left, 1.5))),
+                    )
+                    rule(lift, Rule(Condition.Touching("lift-turn-left"), actions = listOf(Action.SetNumber(Target.Self, 1))))
+                    rule(lift, Rule(Condition.Touching("lift-turn-right"), actions = listOf(Action.SetNumber(Target.Self, 0))))
+                    for ((name, tag, dx) in listOf(
+                        Triple("Lift right edge", "lift-turn-left", 2.0),
+                        Triple("Lift left edge", "lift-turn-right", -2.0),
+                    )) {
+                        val edge = box(name, 2.0 * SKY_STEP + dx, SKY_GROUND - 4.5, 0.2, 0.4, 0xFF81D4FA, tag = tag)
+                        set(edge, "graphics:shape", "visible", false)
+                    }
+                }
+
+                val hopper = place("Player", "Hopper", 0.0, SKY_GROUND - 1.0)
+                give(hopper, "gameplay:body")
+                rule(hopper, Rule(Condition.KeyHeld(StandardActions.LEFT), actions = listOf(Action.Move(Direction.Left, SKY_WALK))))
+                rule(hopper, Rule(Condition.KeyHeld(StandardActions.RIGHT), actions = listOf(Action.Move(Direction.Right, SKY_WALK))))
+                rule(
+                    hopper,
+                    Rule(
+                        Condition.KeyPressed(StandardActions.JUMP),
+                        listOf(Condition.NumberIs(Target.Tagged("boost"), Comparison.Equal, 0)),
+                        listOf(Action.Jump(15.0)),
+                    ),
+                )
+                rule(
+                    hopper,
+                    Rule(
+                        Condition.KeyPressed(StandardActions.JUMP),
+                        listOf(Condition.NumberIs(Target.Tagged("boost"), Comparison.AtLeast, 1)),
+                        listOf(Action.Jump(19.0)),
+                    ),
+                )
+                for (hit in listOf<Condition>(Condition.Touching("enemy"), Condition.LeftArea())) {
+                    rule(hopper, Rule(hit, actions = listOf(Action.ChangeNumber(Target.Tagged("lives"), -1), Action.GoToScene(level))))
+                }
+                rule(named("Lives"), Rule(Condition.NumberIs(Target.Self, Comparison.AtMost, 0), actions = listOf(Action.GoToScene(lose))))
+            }
+
+            open(
+                state.project.scenes
+                    .single { it.name == "Shop" }
+                    .id,
+            )
+            skyHud()
+            val boost = box("Super jump", 0.0, 0.6, 4.4, 1.0, 0xFFFFA000, tag = "super-jump")
+            label("Super jump label", 0.0, 0.6, "Super jump: $1.99", 0.42)
+            rule(boost, Rule(Condition.Tapped, actions = listOf(Action.TestPurchase("Super jump", 199, Target.Tagged("boost"), 1))))
+            val life = box("Extra life", 0.0, 2.0, 4.4, 1.0, 0xFFFFA000, tag = "extra-life")
+            label("Extra life label", 0.0, 2.0, "Extra life: $0.49", 0.42)
+            rule(life, Rule(Condition.Tapped, actions = listOf(Action.TestPurchase("Extra life", 49, Target.Tagged("lives"), 1))))
+            set(named("Shop text"), "graphics:text", "text", "Test purchases: no money is charged.")
+            set(named("Shop hint"), "graphics:text", "text", "Super jump lasts every level.")
+
+            for (ending in listOf(win, lose)) {
+                open(ending)
+                skyHud(visible = false)
+                rule(
+                    named("Coins"),
+                    Rule(
+                        Condition.GameStarts,
+                        actions = listOf(Action.SetNumber(Target.Self, 0), Action.SetNumber(Target.Tagged("lives"), SKY_LIVES)),
+                    ),
+                )
+            }
+            open(title)
+            ok(state.applyCatalog("set_ads", mapOf("banner" to true, "interstitial" to true, "every" to 3L)))
+            state.editor.saveSnapshot()
+        }
+
+    /** Ground pieces in each Sky Hopper level. */
+    const val SKY_SEGMENTS = 4
+
+    /** Distance between the centres of Sky Hopper ground pieces, which are 6 units wide. */
+    const val SKY_STEP = 7.5
+
+    /** Height of Sky Hopper ground pieces. */
+    const val SKY_GROUND = 3.5
+
+    /** How fast the hopper walks. */
+    const val SKY_WALK = 4.0
+
+    /** Lives a Sky Hopper run starts with. */
+    const val SKY_LIVES = 3L
+
+    /** Hits that clear a Star Defender wave. */
+    const val WAVE_KILLS = 8L
+
+    /** Lives a Star Defender run starts with. */
+    const val STAR_LIVES = 3L
+
+    /** Toast needed to win Toaster Tycoon. */
+    const val TOAST_GOAL = 5_000L
+
+    /** Toast that opens the Bakery. */
+    const val BAKERY_PRICE = 300L
+
+    /** Length of a Toaster Tycoon shift, in seconds. */
+    const val TYCOON_SECONDS = 180L
+
     /** Seconds to survive in NPC Dodge. */
     const val SURVIVE_SECONDS = 20L
 }
@@ -491,6 +942,139 @@ private class Recipe(
             ),
         )
         return id
+    }
+
+    /** The object named [name] in the open scene. */
+    fun named(name: String): String =
+        state.scene.objects
+            .single { it.name == name }
+            .id
+
+    /** Shows a kept number tagged [tag] as "[prefix]n" at ([x], [y]), starting at [start]. */
+    fun kept(
+        name: String,
+        tag: String,
+        x: Double,
+        y: Double,
+        prefix: String,
+        start: Long,
+        size: Double,
+        visible: Boolean,
+    ): String {
+        val id = place("Score", name, x, y)
+        set(id, "gameplay:tag", "tag", tag)
+        set(id, "gameplay:number", "keep", true)
+        if (start != 0L) set(id, "gameplay:number", "number", start)
+        set(id, "graphics:text", "text", "$prefix$start")
+        set(id, "graphics:text", "size", size)
+        if (!visible) set(id, "graphics:text", "visible", false)
+        rule(id, Rule(Condition.Always, actions = listOf(Action.ShowNumber(Target.Self, prefix))))
+        return id
+    }
+
+    /**
+     * Toaster Tycoon's Toast, Income and Time, kept across scenes. In play areas income is added and time counts
+     * down every second; elsewhere ([visible] false) they only carry the values.
+     */
+    fun toastHud(visible: Boolean = true) {
+        val toast = kept("Toast", "toast", 0.0, -3.6, "Toast: ", 0, 0.6, visible)
+        kept("Income", "income", 0.0, -2.95, "Income per second: ", 0, 0.38, visible)
+        val time = kept("Time", "time", 0.0, -2.45, "Time: ", PresetRecipes.TYCOON_SECONDS, 0.38, visible)
+        if (!visible) return
+        rule(toast, Rule(Condition.EverySeconds(1), actions = listOf(Action.AddNumber(Target.Self, Target.Tagged("income")))))
+        rule(time, Rule(Condition.EverySeconds(1), actions = listOf(Action.ChangeNumber(Target.Self, -1))))
+    }
+
+    /** Sky Hopper's Coins, Lives and Super jump, kept across levels; returns their IDs. */
+    fun skyHud(visible: Boolean = true): List<String> =
+        listOf(
+            kept("Coins", "coins", -2.4, -3.0, "Coins: ", 0, 0.4, visible),
+            kept("Lives", "lives", 0.6, -3.0, "Lives: ", PresetRecipes.SKY_LIVES, 0.4, visible),
+            kept("Boost", "boost", 2.9, -3.0, "Super jump: ", 0, 0.3, false),
+        )
+
+    /** Star Defender's Score and Lives, kept across waves; shown unless [visible] is false. */
+    fun starHud(visible: Boolean = true) {
+        kept("Score", "score", -2.6, -3.0, "Score: ", 0, 0.4, visible)
+        kept("Lives", "lives", 0.0, -3.0, "Lives: ", PresetRecipes.STAR_LIVES, 0.4, visible)
+    }
+
+    /** A button that, when there is enough toast, spends [price] toast and adds [income] to income per second. */
+    fun upgrade(
+        name: String,
+        x: Double,
+        y: Double,
+        text: String,
+        price: Long,
+        income: Long,
+    ): String {
+        val id = box(name, x, y, 3.8, 0.9, 0xFF2E7D32, tag = name.lowercase().replace(' ', '-'))
+        label("$name label", x, y, text, 0.36)
+        rule(
+            id,
+            Rule(
+                Condition.Tapped,
+                listOf(Condition.NumberIs(Target.Tagged("toast"), Comparison.AtLeast, price)),
+                listOf(Action.ChangeNumber(Target.Tagged("toast"), -price), Action.ChangeNumber(Target.Tagged("income"), income)),
+            ),
+        )
+        return id
+    }
+
+    /**
+     * The complete "+ Title screen" layout (Play, Levels, Shop, How it works) in the game's colors, with a line on how
+     * to play and the How it works scene explaining [explain] and suggesting [tryThis]. Scenes in [locked] are left
+     * out of Levels, so they must be unlocked in play.
+     */
+    fun completeTitle(
+        color: Long,
+        howToPlay: String,
+        explain: List<String>,
+        tryThis: List<String>,
+        locked: List<String> = emptyList(),
+    ) {
+        state.addTitleScreen(TitleLayout.Full)
+        check(state.scene.name == "Title") { state.message ?: "No title screen" }
+        set(named("Background"), "graphics:shape", "color", color)
+        set(named("Title text"), "graphics:text", "size", 1.1)
+        set(named("Title text"), "graphics:transform", "y", -2.6)
+        label("How to play", 0.0, -1.5, howToPlay, 0.36)
+        val howButton = named("How it works button")
+        give(howButton, "gameplay:tag")
+        set(howButton, "gameplay:tag", "tag", "how-button")
+
+        val levels =
+            state.project.scenes
+                .single { it.name == "Levels" }
+                .id
+        open(levels)
+        for (scene in locked) {
+            val name = state.project.scene(scene)!!.name
+            ok(state.applyCatalog("remove_object", mapOf("scene" to sceneId, "object" to named("$name button"))))
+        }
+
+        open(
+            state.project.scenes
+                .single { it.name == "How it works" }
+                .id,
+        )
+        ok(state.applyCatalog("remove_object", mapOf("scene" to sceneId, "object" to named("How text"))))
+        ok(state.applyCatalog("remove_object", mapOf("scene" to sceneId, "object" to named("How hint"))))
+        (explain + tryThis).forEachIndexed { index, line ->
+            require(line.length <= LINE) { "'$line' is longer than $LINE characters" }
+            val trying = index >= explain.size
+            val y = -2.4 + index * 0.55 + if (trying) 0.3 else 0.0
+            val id = label(if (trying) "Try this ${index - explain.size + 1}" else "Rule ${index + 1}", 0.0, y, line, 0.32)
+            if (trying) set(id, "graphics:text", "color", 0xFFFFEB3B)
+        }
+        val back = named("Back button")
+        give(back, "gameplay:tag")
+        set(back, "gameplay:tag", "tag", "back-button")
+        open(
+            state.project.scenes
+                .first()
+                .id,
+        )
     }
 
     /** An ending scene with a headline and a button back to scene [back]. */

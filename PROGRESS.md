@@ -1,6 +1,19 @@
 # SpawnKit progress
 
-## Current checkpoint — C12b test purchases (2026-11-23)
+## Current checkpoint — C17 complete-game templates (2026-11-23)
+
+- **Branch.** `feat/91-complete-games`, stacked on C12b (`feat/77-test-purchases`, PR #102). Open stack in merge
+  order: #99 (C15a), #100 (C15b), #101 (C12a), #102 (C12b), then this branch.
+  [Gameplay](docs/gameplay.md#complete-game-templates-c17), [#91](https://github.com/aioanei/spawnkit/issues/91).
+- **Added.**
+  - Toaster Tycoon, Sky Hopper and Star Defender as complete games in `presets/`, from recipes of builder calls.
+  - `GamePreset.complete`, and New game grouped into Complete games and Starters.
+  - The other preset files were rewritten in schema 3 with the same content.
+- **Evidence.** `CompleteGamesTest` 8 scripted-player tests, `PresetGamesTest` 14 over all eight presets, the recipe
+  check, and the picker groups on phone and desktop. Gates as recorded in the PR.
+- **Next.** C16 Character Forge ([#90](https://github.com/aioanei/spawnkit/issues/90)), then C13, C11c, C19 and C8.
+
+## Previous checkpoint — C12b test purchases (2026-11-23)
 
 - **Branch.** `feat/77-test-purchases`, stacked on C12a (`feat/77-test-ads`, PR #101). With C12a this completes
   [#77](https://github.com/aioanei/spawnkit/issues/77). Open stack, in merge order: #99 (C15a), #100 (C15b), #101

@@ -172,6 +172,32 @@ The first half of [#77](https://github.com/aioanei/spawnkit/issues/77). [Plan](p
 Tests: `AdSettingsTest` 4 (common), `AdsTest` 4 (player), the server's `AdStatsTest` 3, `TestAdsUiTest` on phone and
 desktop, and the `set_ads` parity case.
 
+## Complete-game templates (C17)
+
+[#91](https://github.com/aioanei/spawnkit/issues/91). Three complete games in **Project → New game**, listed under
+**Complete games** above the starters. They are made from builder calls in `PresetRecipes` like the other presets and
+use only general blocks (ADR-0006). Each has the full title layout (Play, Levels, Shop, How it works), kept values,
+a shop with test purchases, test ads, and win and lose scenes. An ending resets the kept values, so the next run
+starts fresh, while anything bought in the shop before playing is kept.
+
+| Template | Kind | What it uses |
+|---|---|---|
+| **Toaster Tycoon** | Tycoon | Tapping, income per second (Add one number to another), upgrades bought with toast, the Bakery unlocked at 300 toast, a 3-minute shift; a 1000-toast crate as a test purchase |
+| **Sky Hopper** | Platformer, 3 levels | Body and solid physics, gaps, patrolling enemies, a moving platform, camera follow with the HUD grouped inside the camera, coins and lives across levels; Super jump and an extra life as test purchases |
+| **Star Defender** | Shooter, 3 waves | Invaders spawned from a template at random spots, shots spawned from the ship, Leaves the play area, score and lives across waves; extra lives as a test purchase or for 50 score |
+
+`CompleteGamesTest` drives the real play session with scripted players: a tycoon reaches 5000 toast and an idle one
+runs out of time, then restarts fresh; toast bought in the shop carries into play; a hopper clears three levels
+(waiting at gaps and jumping over approaching enemies), one walking off the edge loses every life, and Super jump
+jumps higher; a pilot clears three waves with the score kept, and an idle one loses the ship. `PresetGamesTest` checks
+every preset loads without problems, uses the blocks it lists, and has working Play and How it works buttons, and the
+picker test checks the groups in both layouts.
+
+On the Android API 36 emulator, `tools/android-templates-smoke.py` opens each template from New game with real taps,
+plays its title screen and starts the first level ([picker](media/android-templates-picker.png),
+[Sky Hopper level 1](media/android-template-sky-play.png)). Known limit: in Sky Hopper, coins are kept when a level
+restarts after a lost life, while the level's coins come back, so they can be collected again.
+
 ## Test purchases (C12b)
 
 The second half of [#77](https://github.com/aioanei/spawnkit/issues/77), so a shop scene can sell things without

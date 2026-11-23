@@ -133,6 +133,26 @@ class NewGamePickerTest {
         GamePresets.all.forEach { preset ->
             onNodeWithText("Uses: " + preset.teaches.joinToString(" · ")).performScrollTo().assertIsDisplayed()
         }
+        // Complete games (C17) are listed first, under their own heading, above the starters. Positions are read without
+        // scrolling, so they are all measured in the same scroll state.
+        val complete =
+            onNodeWithTag("new-group:Complete games")
+                .fetchSemanticsNode()
+                .boundsInRoot.top
+        val starters =
+            onNodeWithTag("new-group:Starters")
+                .fetchSemanticsNode()
+                .boundsInRoot.top
+        val tycoon =
+            onNodeWithTag("new-preset-toaster-tycoon")
+                .fetchSemanticsNode()
+                .boundsInRoot.top
+        val blank =
+            onNodeWithTag("new-blank")
+                .fetchSemanticsNode()
+                .boundsInRoot.top
+        assertTrue(complete < tycoon && tycoon < blank, "the template sits under Complete games, before the starters")
+        assertTrue(starters < blank)
         onNodeWithTag("new-preset-$id").performScrollTo().performClick()
         waitForIdle()
         assertEquals(preset(id).name, session.state.project.name)
