@@ -17,6 +17,10 @@ checkout (`./kotlin build -m webPlayer -v release`); the Gradle tasks do that th
 `./gradlew :server:run` turns on Ktor's development mode, whose reloading class loader cannot read this project's
 Java 25 classes. Use the installed server, or set `-Dio.ktor.development=false`.
 
+For local development, copy `.env.example` to `.env` (ignored by git), fill in the keys and run
+`powershell -File tools/run-server-local.ps1`. It loads `.env` into the server's environment only, prints just the
+names it loaded, builds the installed server and starts it.
+
 ## Environment variables
 
 | Variable | Default | Meaning |
