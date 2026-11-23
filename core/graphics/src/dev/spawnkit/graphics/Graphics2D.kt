@@ -189,7 +189,7 @@ public class Graphics2D(
     public val spriteDescriptor: ComponentDescriptor<Sprite2D> =
         builder.describe(sprite) {
             create { Sprite2D() }
-            property("asset", ValueKind.Text(maxLength = 200), AuthoringInfo("Image", "Image asset from the project"), "", {
+            property("asset", ValueKind.Text(maxLength = 200, asset = "image"), AuthoringInfo("Image", "One of the project's images"), "", {
                 it.asset
             }, { s, v -> s.copy(asset = v) })
             property("width", SIZE, AuthoringInfo("Width"), 1.0, { it.width }, { s, v -> s.copy(width = v) })

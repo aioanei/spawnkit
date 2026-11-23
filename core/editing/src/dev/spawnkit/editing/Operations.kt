@@ -112,6 +112,26 @@ public sealed interface EditOperation {
         override val label: String = "Move scene",
     ) : EditOperation
 
+    /** Adds a PNG image ([data] in Base64) to the project, checked against the limits of ADR-0012. */
+    public data class AddImage(
+        public val name: String,
+        public val data: String,
+        override val label: String = "Import image $name",
+    ) : EditOperation
+
+    /** Renames an image. */
+    public data class RenameImage(
+        public val imageId: String,
+        public val name: String,
+        override val label: String = "Rename image",
+    ) : EditOperation
+
+    /** Removes an image that no sprite uses. */
+    public data class RemoveImage(
+        public val imageId: String,
+        override val label: String = "Remove image",
+    ) : EditOperation
+
     /**
      * Replaces an object's rules as one undoable step. Rules are not type-checked here, so creators can save rules that
      * are still being built; worlds report their problems ([SceneWorld.diagnostics]).
@@ -193,6 +213,39 @@ internal class OperationApplier(
                 editScene(project, operation.sceneId) { it.copy(name = operation.name.trim()) }
             }
 
+            is EditOperation.AddImage -> {
+                requireName(operation.name)
+                val info =
+                    try {
+                        ProjectImages.check(operation.data)
+                    } catch (problem: IllegalArgumentException) {
+                        reject(problem.message ?: "This image cannot be used")
+                    }
+                project.images.firstOrNull { it.hash == info.hash }?.let { reject("This picture is already in the game as ${it.name}") }
+                if (project.images.size >= ProjectImages.MAX_IMAGES) reject("A game can hold at most ${ProjectImages.MAX_IMAGES} images")
+                val image = ImageAsset("img-${project.nextId}", operation.name.trim(), info.hash, operation.data)
+                if (ProjectImages.totalBytes(project.images + image) > ProjectImages.MAX_TOTAL_BYTES) {
+                    reject("A game's images can take at most ${ProjectImages.MAX_TOTAL_BYTES / (1024 * 1024)} MB; remove one first")
+                }
+                created += image.id
+                project.copy(images = project.images + image, nextId = project.nextId + 1)
+            }
+
+            is EditOperation.RenameImage -> {
+                requireName(operation.name)
+                if (project.image(operation.imageId) == null) reject("That image no longer exists")
+                project.copy(images = project.images.map { if (it.id == operation.imageId) it.copy(name = operation.name.trim()) else it })
+            }
+
+            is EditOperation.RemoveImage -> {
+                val image = project.image(operation.imageId) ?: reject("That image no longer exists")
+                val users = imageUsers(project, image.id)
+                if (users.isNotEmpty()) {
+                    reject("${image.name} is used by ${users.take(3).joinToString()}${if (users.size > 3) " and others" else ""}; change those first")
+                }
+                project.copy(images = project.images.filter { it.id != image.id })
+            }
+
             is EditOperation.RemoveScene -> {
                 if (project.scene(operation.sceneId) == null) reject("That scene no longer exists")
                 if (project.scenes.size == 1) reject("A game needs at least one scene")
@@ -265,7 +318,7 @@ internal class OperationApplier(
             }
 
             is EditOperation.SetProperty -> {
-                val normalized = validateValue(operation.componentId, operation.propertyId, operation.value)
+                val normalized = validateValue(operation.componentId, operation.propertyId, operation.value, project)
                 editObject(project, operation.sceneId, operation.objectId) { obj ->
                     val doc =
                         obj.component(operation.componentId)
@@ -287,7 +340,7 @@ internal class OperationApplier(
         val components =
             operation.components.map { doc ->
                 descriptor(doc.componentId)
-                doc.copy(values = doc.values.mapValues { (property, value) -> validateValue(doc.componentId, property, value) })
+                doc.copy(values = doc.values.mapValues { (property, value) -> validateValue(doc.componentId, property, value, project) })
             }
         val id = "obj-${project.nextId}"
         created += id
@@ -376,11 +429,34 @@ internal class OperationApplier(
         componentId: String,
         propertyId: String,
         value: Any,
+        project: Project? = null,
     ): Any {
         val descriptor = descriptor(componentId)
         val property = descriptor.property(propertyId) ?: reject("${descriptor.component.authoring.name} has no '$propertyId'")
-        return checkKind(property.kind, property.authoring.name, value)
+        val checked = checkKind(property.kind, property.authoring.name, value)
+        val kind = property.kind
+        if (project != null && kind is ValueKind.Text && kind.asset == ProjectImages.ASSET_KIND && checked != "" && project.image(checked as String) == null) {
+            reject("${property.authoring.name}: there is no image '$checked'. Import it first")
+        }
+        return checked
     }
+
+    /** Names of objects whose properties show image [imageId], in scene order. */
+    private fun imageUsers(
+        project: Project,
+        imageId: String,
+    ): List<String> =
+        project.scenes.flatMap { scene ->
+            scene.objects.filter { obj ->
+                obj.components.any { doc ->
+                    val descriptor = runtime.catalog.firstOrNull { it.component.id == doc.componentId } ?: return@any false
+                    descriptor.properties.any { property ->
+                        val kind = property.kind
+                        kind is ValueKind.Text && kind.asset == ProjectImages.ASSET_KIND && doc.values[property.id] == imageId
+                    }
+                }
+            }.map { it.name }
+        }
 
     private fun <V : Any> checkKind(
         kind: ValueKind<V>,
@@ -402,6 +478,6 @@ private const val MAX_RULES = 200
 
 /** Largest numeric suffix among `scene-N` and `obj-N` IDs in the project, or 0. */
 internal fun Project.maxIdSuffix(): Long =
-    (scenes.map { it.id } + scenes.flatMap { scene -> scene.objects.map { it.id } })
+    (scenes.map { it.id } + scenes.flatMap { scene -> scene.objects.map { it.id } } + images.map { it.id })
         .mapNotNull { id -> id.substringAfterLast('-').toLongOrNull() }
         .maxOrNull() ?: 0

@@ -45,6 +45,16 @@ class GamePackageTest {
     }
 
     @Test
+    fun imagesTravelInsideTheGamePackage() {
+        val logo = ImageAsset("img-90", "Logo", "", ProjectImages.encode(TestPng.make(8, 8)))
+        val withImage = project.copy(images = listOf(logo.copy(hash = ProjectImages.check(logo.data).hash)), nextId = 91)
+
+        val decoded = GamePackageCodec.decode(GamePackageCodec.encode(GamePackage.of(withImage)))
+
+        assertEquals(withImage.images, decoded.project.images)
+    }
+
+    @Test
     fun runtimeCompatibilityIncludesFirstGenerationPackages() {
         val pkg = GamePackage.of(project)
         val json = GamePackageCodec.encode(pkg)

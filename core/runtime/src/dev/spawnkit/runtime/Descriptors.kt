@@ -100,12 +100,18 @@ public sealed interface ValueKind<V : Any> {
         override fun coerce(value: Any): Boolean? = value as? Boolean
     }
 
-    /** Text up to [maxLength] characters; [multiline] suggests a larger editor. */
+    /**
+     * Text up to [maxLength] characters; [multiline] suggests a larger editor. With an [asset] kind, such as `image`,
+     * the text is the ID of one of the project's assets of that kind (empty for none): editors offer a picker and
+     * refuse unknown IDs.
+     */
     public data class Text(
         /** Maximum characters. */
         public val maxLength: Int = 1_000,
         /** Whether line breaks are expected. */
         public val multiline: Boolean = false,
+        /** Kind of project asset the text names, or `null` for plain text. */
+        public val asset: String? = null,
     ) : ValueKind<String> {
         init {
             require(maxLength > 0) { "Text length limit must be positive" }

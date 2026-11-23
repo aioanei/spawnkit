@@ -63,9 +63,14 @@ public data class Project(
     public val name: String,
     /** Scenes in order; the first is the entry scene. */
     public val scenes: List<SceneDoc>,
-    /** Counter used to mint unique object and scene IDs. */
+    /** Counter used to mint unique object, scene and image IDs. */
     public val nextId: Long = 1,
+    /** PNG images that sprites can show (ADR-0012), in import order. */
+    public val images: List<ImageAsset> = emptyList(),
 ) {
+    /** The image with [id], or `null`. */
+    public fun image(id: String): ImageAsset? = images.firstOrNull { it.id == id }
+
     /** The scene with [id], or `null`. */
     public fun scene(id: String): SceneDoc? = scenes.firstOrNull { it.id == id }
 
@@ -87,6 +92,13 @@ public fun Project.problems(): List<String> {
     if (sceneIds.toSet().size != sceneIds.size) problems += "Two scenes share an ID"
     val objectIds = scenes.flatMap { scene -> scene.objects.map { it.id } }
     if (objectIds.toSet().size != objectIds.size) problems += "Two objects share an ID"
+    val imageIds = images.map { it.id }
+    if (imageIds.toSet().size != imageIds.size) problems += "Two images share an ID"
+    if (images.any { it.id.isBlank() || it.name.isBlank() }) problems += "Every image needs a name and an identifier"
+    if (images.size > ProjectImages.MAX_IMAGES) problems += "A project can hold at most ${ProjectImages.MAX_IMAGES} images"
+    if (ProjectImages.totalBytes(images) > ProjectImages.MAX_TOTAL_BYTES) {
+        problems += "A project's images can take at most ${ProjectImages.MAX_TOTAL_BYTES / (1024 * 1024)} MB"
+    }
     for (scene in scenes) {
         val parents = scene.objects.associate { it.id to it.parent }
         for (obj in scene.objects) {

@@ -134,6 +134,9 @@ public object Suggestions {
 
     /** Scenes of the project, offered by name; the value is the scene ID. */
     public const val SCENES: String = "scenes"
+
+    /** Images of the project, offered by name; the value is the image ID. */
+    public const val IMAGES: String = "images"
 }
 
 /** The project and installed capabilities that catalog arguments are checked against. */
