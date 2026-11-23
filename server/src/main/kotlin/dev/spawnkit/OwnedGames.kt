@@ -14,6 +14,7 @@ import org.jetbrains.exposed.v1.jdbc.update
 internal class ArcadeOwners(
     val accounts: Accounts,
     val games: OwnedGames,
+    val ads: AdStats? = null,
 )
 
 /**

@@ -63,7 +63,7 @@ internal fun Application.spawnkit(config: ServerConfig) {
     arcade(
         ArcadeStore(config.arcadeDirectory),
         WebPlayerBundle { ArcadeStore::class.java.getResourceAsStream("/spawnkit/web-player.zip") },
-        owners = ArcadeOwners(accounts, OwnedGames(db)),
+        owners = ArcadeOwners(accounts, OwnedGames(db), AdStats(db)),
     )
     aiRoutes(accounts, hosted)
 }
