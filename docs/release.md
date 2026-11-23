@@ -17,6 +17,10 @@ Return to the editor to correct a reported scene or object and try again.
   folder URL ending in `/`. Serve `.mjs` as `text/javascript` and `.wasm` as `application/wasm`.
 - **Publish game** sends the package to the Arcade server address you enter. Publishing creates a new release
   with its own play URL. Open or copy the link from the result. Anyone who can reach that server can play.
+- **Signed in** (Project → Account…, C11b), the Arcade card publishes to the account's server as the account's own game
+  and lists **My games**: Open, **Update with this game** (replaces it, same play link) and **Unpublish**. Each update
+  and removal asks first. Signed-in publishing goes through the account client, so it also works in the web and iOS
+  builders.
 - **Store builds** lists the identity, signing and account requirements for Android, iOS and desktop. These
   destinations depend on the planned build service (K5/K6). The web and iOS builders currently direct creators
   to the Android or desktop builder for release.

@@ -1,6 +1,26 @@
 # SpawnKit progress
 
-## Current checkpoint — C11a accounts server and hosted AI proxy (2026-11-23)
+## Current checkpoint — C11b accounts and hosted AI in the builder (2026-11-23)
+
+- **Branch.** `feat/76-accounts-builder`, stacked on C11a (PR #94). Plan:
+  [C11b](docs/plans/2026-11-23-c11b-accounts-builder.md). Step 0 is done: #86, #87 and #93 are merged, and issues
+  #89–#92 (C15–C18) are open.
+- **Added.**
+  - `AccountClient` (`ai`) for the C11a routes, and `AccountState` (`app/shared`): server address, sign-up with the
+    emailed code, sign-in, reset, sign-out and deletion. The session token lives only in `SecretStore`.
+  - **Project → Account…**: a full-screen account screen in both layouts.
+  - The assistant uses SpawnKit AI (`HostedModel`) when signed in to a server that offers it; the creator's own key
+    moved under Developer settings; signed out, the demo answers with a sign-in hint.
+  - The Release Manager publishes as the owner and lists **My games** with Update and Unpublish, each confirmed.
+- **Evidence.** `AccountClientTest` 6 against the real routes; builder JVM tests 73 (`AccountStateTest` 10,
+  `AccountUiTest` 4, `MyGamesUiTest` 2, `AssistantStateTest` 14). Gradle `spotlessCheck allJvmAndWebTests` and the
+  Toolchain `check ktlint` and `test -p jvm -p android` pass. On the API 36 emulator against a local-mode server,
+  real taps created an account with the console code, published as the owner and unpublished from My games
+  (`docs/media/android-account-*.png`, `tools/android-account-smoke.py`).
+- **Not live.** No model key on a server yet, so hosted AI was exercised with fakes only.
+- **Next.** C14 game blocks (#88).
+
+## Previous checkpoint — C11a accounts server and hosted AI proxy (2026-11-23)
 
 - **Branch.** `feat/76-accounts-server` ([#76](https://github.com/aioanei/spawnkit/issues/76)). Plan:
   [C11a](docs/plans/2026-11-22-c11a-accounts-server.md). #86, #87 and #93 are merged into `main`, and `main` is
