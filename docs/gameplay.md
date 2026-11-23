@@ -122,6 +122,34 @@ Text into the Play button with Move into…, plays the home screen and opens Lev
 - **Evidence.** Android emulator screenshots: [editing](media/android-title-edit.png),
   [playing the title](media/android-title-play.png), [after tapping Play](media/android-title-level.png).
 
+## Images in projects (C15b)
+
+The second half of [#89](https://github.com/aioanei/spawnkit/issues/89). Decision:
+[ADR-0012](adr/0012-images-in-projects.md); [plan](plans/2026-11-23-c15b-images.md).
+
+- **Stored in the project.** `Project.images` keeps each PNG in Base64 with its SHA-256. The workspace file moved to
+  schema 2; schema 1 files open with no images. Limits: 2048 × 2048 pixels and 512 KB per image, 4 MB per game, and a
+  10 Mi-character project file. Saves, exports, the Arcade and the web player carry the images with the project.
+- **Importing.** The Add panel's **Image…** piece chooses a picture on Android (the system picker) or desktop (a file
+  dialog) and places it in the scene, as one undo step; **Import…** only adds it to the game's image list. Other
+  formats and large photos are converted to a PNG whose longest side is at most 1024 pixels. iOS and the web builder
+  have no picker yet.
+- **Using.** A sprite's **Image** is chosen from the game's images in the inspector; **Pixelated** keeps pixel art
+  crisp. The image list offers Add, Rename and Remove; an image a sprite shows cannot be removed.
+- **Drawing.** `rememberProjectImages` decodes each picture once per hash and gives it to `RuntimeCanvas` in the
+  builder, Play, exported players and the web player. Images never enter the simulation.
+
+Tests: `ImagesTest` 10 (common: SHA-256 vectors, PNG checks, operations, catalog, schema 1 migration, damaged files);
+`GamePackageTest` and the server's `ArcadeTest` carry an image through export and the Arcade; a render test shows a
+pixelated sprite's hard edge; `ImagesUiTest` imports, places, picks and plays a picture on phone and desktop; parity
+cases cover the three image operations, the sprite's image and Pixelated.
+
+On the Android API 36 emulator, `tools/android-logo-smoke.py` pushes an original logo
+(`tools/fixtures/spawnkit-logo.png`) to the device's pictures, adds a title screen, imports the logo with **Image…**
+through the system photo picker, and plays the home screen with it. The photo picker hides file names, so the image is
+called Picture. Screenshots: [picker](media/android-logo-picker.png), [editing](media/android-logo-edit.png),
+[home screen with the logo](media/android-logo-play.png).
+
 ## Game-wide values, randomness, economy and spawning (C14a)
 
 Blocks for complete games ([#88](https://github.com/aioanei/spawnkit/issues/88)), all general and all in the block

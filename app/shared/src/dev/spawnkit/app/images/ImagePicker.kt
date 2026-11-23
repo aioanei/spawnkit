@@ -28,7 +28,10 @@ fun rememberImagePicker(): ImagePicker? = LocalImagePicker.current ?: rememberPl
 /** Largest side, in pixels, of pictures that have to be converted or shrunk to fit. */
 internal const val FIT_SIDE = 1024
 
-/** A file name without its folder and extension, as an image name. */
+/**
+ * A file name without its folder and extension, as an image name. Photo pickers that hide file names give only numbers,
+ * which become "Picture".
+ */
 internal fun imageName(fileName: String): String =
     fileName
         .substringAfterLast('/')
@@ -36,4 +39,4 @@ internal fun imageName(fileName: String): String =
         .substringBeforeLast('.')
         .trim()
         .take(80)
-        .ifEmpty { "Image" }
+        .takeIf { name -> name.any { it.isLetter() } } ?: "Picture"

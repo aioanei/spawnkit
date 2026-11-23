@@ -1,6 +1,34 @@
 # SpawnKit progress
 
-## Current checkpoint — C15a home screen kit (2026-11-23)
+## Current checkpoint — C15b images in projects (2026-11-23)
+
+- **Branch.** `feat/89-images`, stacked on C15a (`feat/89-home-screen-kit`, PR #99, green). [Plan](docs/plans/2026-11-23-c15b-images.md),
+  [ADR-0012](docs/adr/0012-images-in-projects.md); with C15a this completes [#89](https://github.com/aioanei/spawnkit/issues/89).
+- **Added.**
+  - `Project.images`: PNG in Base64 with SHA-256, schema 2 with the schema 1 migration, and limits of 2048 px,
+    512 KB per image and 4 MB per game. The file limit is 10 Mi characters.
+  - `add_image`, `rename_image` and `remove_image`. A sprite's image must exist, and an image in use cannot be
+    removed.
+  - **Pixelated** sprites.
+  - Decoding once per hash for the builder, Play, exported players and the web player.
+  - The Image piece and Import… on Android and desktop, converting other formats and big photos.
+  - The inspector's image chooser.
+- **Planned.** C19 visual redesign ([#98](https://github.com/aioanei/spawnkit/issues/98)) is in the plan before C8, at the
+  owner's request.
+- **Evidence.**
+  - Gradle `spotlessCheck allJvmAndWebTests localNativeTests` and the Toolchain `check ktlint`, `test -p jvm -p android`
+    and `test -p mingwX64` pass.
+  - New tests: `ImagesTest` 10, a package round trip, the server's `imagesTravelThroughTheArcadeToThePlayer`, a
+    pixelated render test, `ImagesUiTest` 3, `ImageNameTest` and parity cases for the image operations, sprite image
+    and Pixelated.
+  - Android API 36: `tools/android-logo-smoke.py` imported a logo through the system photo picker and played a home
+    screen showing it ([home screen with the logo](docs/media/android-logo-play.png)).
+- **Known limits.** No picker on iOS and the web builder yet; the photo picker hides file names (images are called
+  Picture); no image editing.
+- **Next.** C12 test ads and test purchases ([#77](https://github.com/aioanei/spawnkit/issues/77)), then C17, C16, C13,
+  C11c, C19 and C8.
+
+## Previous checkpoint — C15a home screen kit (2026-11-23)
 
 - **Branch.** `feat/89-home-screen-kit` from `main` after PR #97 (C14b, merged with the owner's consent; #88 closed).
   [Plan](docs/plans/2026-11-23-c15a-home-screen-kit.md), the first half of [#89](https://github.com/aioanei/spawnkit/issues/89).
