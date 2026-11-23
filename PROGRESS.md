@@ -23,7 +23,7 @@
 ## Previous checkpoint — C11a accounts server and hosted AI proxy (2026-11-23)
 
 - **Branch.** `feat/76-accounts-server` ([#76](https://github.com/aioanei/spawnkit/issues/76)). Plan:
-  [C11a](docs/plans/2026-11-22-c11a-accounts-server.md). #86 (AI-first plan) is merged into `main`, and `main` is
+  [C11a](docs/plans/2026-11-22-c11a-accounts-server.md). #86, #87 and #93 are merged into `main`, and `main` is
   merged into this branch.
 - **Added.**
   - SQLite through Exposed with a versioned schema; email accounts with Argon2id, hashed codes and session tokens,
@@ -41,7 +41,29 @@
   OAuth client yet (owner actions).
 - **Next.** C11b: email sign-in in the builder, `HostedModel` for the assistant, and My games in the Release Manager.
 
-## Current checkpoint — live session recorder (2026-11-22)
+## Previous checkpoint — C10b brain-rot presets and guidance (2026-11-22)
+
+- **Branch.** `feat/84-brainrot-presets` from `main`. Plan:
+  [C10b](docs/plans/2026-11-22-c10b-brainrot-presets.md).
+  [Issue #84](https://github.com/aioanei/spawnkit/issues/84). Owner: the templates show judges what the app can do
+  and guide users.
+- **Added.**
+  - **Aura Farmer:** a tap-fast clicker against a 15-second timer.
+  - **NPC Dodge:** survive 20 seconds while NPCs bounce along lanes and columns.
+  - Both use original characters. Each has a title, How it works, win and lose scenes.
+  - **Guidance in all five presets:** a How it works scene from every title (rules in short lines, one "Try this",
+    Back), and "Uses:" on each picker card listing the rule blocks the preset uses.
+- **Evidence.**
+  - `PresetGamesTest` 14, on every core target:
+    - scripted players win both new games, and idle players lose them;
+    - every How it works scene opens and returns;
+    - every listed block is used.
+  - `NewGamePickerTest` checks the Uses lines on phone and desktop.
+  - On the emulator, real taps opened Aura Farmer from New game and How it works. Twelve taps showed "Aura: 12".
+- **Next.** Write AI-first into the plan (owner, 2026-11-22: the AI builds whole games on our server, free, with a
+  $20 monthly cap; changes apply at once with Revert; nothing trimmed). Then C11 accounts with hosted AI.
+
+## Previous checkpoint — live session recorder (2026-11-22)
 
 - **Branch.** `feat/69-session-recorder`, stacked on C10 (PR #81). Part of C7
   ([#69](https://github.com/aioanei/spawnkit/issues/69)): recorded live sessions.

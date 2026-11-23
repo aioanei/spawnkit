@@ -8,6 +8,11 @@ project file, the same format the builder saves, embedded into the app by `core/
 | `coin-dash` | Coin Dash: move and collect every coin |
 | `tap-targets` | Tap Targets: tap the moving targets before time runs out |
 | `maze-run` | Maze Run: reach the exit without touching a wall |
+| `aura-farmer` | Aura Farmer: tap the Aura Toaster fast enough to farm 50 aura in 15 seconds |
+| `npc-dodge` | NPC Dodge: survive 20 seconds while NPCs ricochet around |
+
+Every preset's title screen has a How it works button. It opens a scene that explains the rules and suggests one
+change to try. `GamePresets` lists the rule blocks each preset uses, and a test checks they are really used.
 
 The files were made with the builder's own calls (object presets, catalog operations, rule operations and "Add
 title screen") in `app/shared/test@jvm/dev/spawnkit/app/presets/PresetRecipes.kt`. The recipe test checks that every

@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.runDesktopComposeUiTest
@@ -86,7 +87,7 @@ class NewGamePickerTest {
         val game = session.state.project
 
         session.chooseNew()
-        session.startNew(GamePreset("missing", "Missing", "Not embedded"))
+        session.startNew(GamePreset("missing", "Missing", "Not embedded", emptyList()))
 
         assertEquals(game, session.state.project)
         assertTrue(
@@ -108,9 +109,9 @@ class NewGamePickerTest {
         assertEquals(Project.blank(), session.state.project)
     }
 
-    @Test fun aPhoneOffersBlankAndThreePresets() = pick(360, 740, "maze-run", "new-game-picker-phone")
+    @Test fun aPhoneOffersBlankAndEveryPreset() = pick(360, 740, "maze-run", "new-game-picker-phone")
 
-    @Test fun aDesktopOffersBlankAndThreePresets() = pick(1280, 800, "coin-dash", "new-game-picker-desktop")
+    @Test fun aDesktopOffersBlankAndEveryPreset() = pick(1280, 800, "coin-dash", "new-game-picker-desktop")
 
     private fun pick(
         width: Int,
@@ -128,6 +129,9 @@ class NewGamePickerTest {
         capture(image)
         (listOf("new-blank") + GamePresets.all.map { "new-preset-${it.id}" }).forEach {
             onNodeWithTag(it).performScrollTo().assertIsDisplayed()
+        }
+        GamePresets.all.forEach { preset ->
+            onNodeWithText("Uses: " + preset.teaches.joinToString(" · ")).performScrollTo().assertIsDisplayed()
         }
         onNodeWithTag("new-preset-$id").performScrollTo().performClick()
         waitForIdle()
