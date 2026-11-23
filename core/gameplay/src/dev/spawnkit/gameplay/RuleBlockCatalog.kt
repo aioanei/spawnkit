@@ -357,7 +357,9 @@ public object RuleBlockCatalog {
                         "direction",
                         "Keeps moving",
                         "Direction the copy keeps moving in, or None.",
-                        ParameterType.Value(ValueKind.Choice(listOf(ChoiceOption(NONE, "None")) + Direction.entries.map { ChoiceOption(it.name, it.label) })),
+                        ParameterType.Value(
+                            ValueKind.Choice(listOf(ChoiceOption(NONE, "None")) + Direction.entries.map { ChoiceOption(it.name, it.label) }),
+                        ),
                         default = NONE,
                     ),
                     Parameter(

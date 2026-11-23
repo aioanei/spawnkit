@@ -4,8 +4,8 @@ import dev.spawnkit.editing.EditingOperations
 import dev.spawnkit.editing.OperationCatalog
 import dev.spawnkit.editing.Project
 import dev.spawnkit.editing.instantiateObject
-import dev.spawnkit.graphics.Transform2D
 import dev.spawnkit.graphics.Graphics2D
+import dev.spawnkit.graphics.Transform2D
 import dev.spawnkit.program.ProgramFeature
 import dev.spawnkit.program.ProgramHost
 import dev.spawnkit.program.ProgramHostBuilder
@@ -110,7 +110,7 @@ public class StandardEngine(
     /**
      * Makes the copy [request] asks for in [world], from the authored object of scene [sceneId] in [project] with that
      * tag (a template first). The copy runs its own rules. Returns it, or `null` when no object has the tag or the
-     * world already holds [MAX_OBJECTS] objects.
+     * complete copy would exceed [MAX_OBJECTS] objects.
      */
     public fun spawn(
         world: World,
@@ -120,8 +120,12 @@ public class StandardEngine(
     ): EntityHandle? {
         val scene = project.scene(sceneId) ?: return null
         val tag = request.tag.trim().lowercase()
-        val source = scene.objects.filter { it.tagName() == tag }.sortedBy { !it.isTemplate() }.firstOrNull() ?: return null
-        if (world.entities().size >= MAX_OBJECTS) return null
+        val source =
+            scene.objects
+                .filter { it.tagName() == tag }
+                .sortedBy { !it.isTemplate() }
+                .firstOrNull() ?: return null
+        if (world.entityCount + scene.subtree(source.id).size > MAX_OBJECTS) return null
         val copy = instantiateObject(runtime, world, project, sceneId, source.id, programs)?.entity(source.id) ?: return null
         world.remove(copy, gameplay.template)
         val at = world.get(copy, graphics.transform) ?: Transform2D()

@@ -95,7 +95,12 @@ class PlaySessionScenesTest {
 
         session.tapAndTick()
 
-        assertEquals(12, session.scene.world.get(session.scene.entity(onLevel)!!, engine.gameplay.number)?.value)
+        assertEquals(
+            12,
+            session.scene.world
+                .get(session.scene.entity(onLevel)!!, engine.gameplay.number)
+                ?.value,
+        )
     }
 
     @Test
@@ -123,7 +128,12 @@ class PlaySessionScenesTest {
         session.tapAndTick()
 
         val copy = engine.gameplay.tagged(session.scene.world, "enemy").single()
-        assertEquals(5.0, session.scene.world.get(copy, engine.graphics.transform)?.x)
+        assertEquals(
+            5.0,
+            session.scene.world
+                .get(copy, engine.graphics.transform)
+                ?.x,
+        )
     }
 
     @Test

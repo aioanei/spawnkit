@@ -438,7 +438,12 @@ public object RuleBlocks {
                         is SpawnPlace.Position -> "(${number(place.x)}, ${number(place.y)})"
                         is SpawnPlace.RandomArea -> "a random spot"
                     }
-                val moving = action.direction?.takeIf { action.speed > 0.0 }?.let { ", moving ${it.label} at ${number(action.speed)} per second" }
+                val moving =
+                    action.direction?.takeIf { action.speed > 0.0 }?.let {
+                        ", moving ${it.label} at ${number(
+                            action.speed,
+                        )} per second"
+                    }
                 "Spawn a copy of ${action.tag} at $at${moving.orEmpty()}"
             }
 
@@ -600,17 +605,38 @@ public object RuleBlocks {
     private fun recogniseCondition(expr: Expr): Condition? =
         runCatching {
             when {
-                expr is Expr.Literal && expr.value == BoolValue(true) -> Condition.Always
-                expr.isCall("tapped") -> Condition.Tapped
-                expr.isCall("touching") -> Condition.Touching(expr.textArgument())
-                expr.isCall("isDown") -> Condition.KeyHeld(expr.textArgument())
-                expr.isCall("wasPressed") -> Condition.KeyPressed(expr.textArgument())
+                expr is Expr.Literal && expr.value == BoolValue(true) -> {
+                    Condition.Always
+                }
+
+                expr.isCall("tapped") -> {
+                    Condition.Tapped
+                }
+
+                expr.isCall("touching") -> {
+                    Condition.Touching(expr.textArgument())
+                }
+
+                expr.isCall("isDown") -> {
+                    Condition.KeyHeld(expr.textArgument())
+                }
+
+                expr.isCall("wasPressed") -> {
+                    Condition.KeyPressed(expr.textArgument())
+                }
+
                 expr.isCall("leftArea") -> {
                     val (width, height) = (expr as Expr.CallHost).arguments.map { ((it as Expr.Literal).value as DecimalValue).value }
                     Condition.LeftArea(width, height)
                 }
-                expr is Expr.Binary -> recogniseComparison(expr)
-                else -> null
+
+                expr is Expr.Binary -> {
+                    recogniseComparison(expr)
+                }
+
+                else -> {
+                    null
+                }
             }
         }.getOrNull()
 
@@ -750,7 +776,10 @@ public object RuleBlocks {
     ): Pair<Expr, Expr> {
         fun decimal(expr: Expr) = call("decimalText", s, expr)
 
-        fun whole(min: Long, max: Long) = call("textOf", s, call("random", s, int(min, s), int(max, s)))
+        fun whole(
+            min: Long,
+            max: Long,
+        ) = call("textOf", s, call("random", s, int(min, s), int(max, s)))
         return when (place) {
             SpawnPlace.Self -> {
                 decimal(Expr.GetProperty(Expr.Self(s), "x", s)) to decimal(Expr.GetProperty(Expr.Self(s), "y", s))

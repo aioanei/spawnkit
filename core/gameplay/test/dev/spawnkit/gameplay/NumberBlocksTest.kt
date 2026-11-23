@@ -87,7 +87,8 @@ class NumberBlocksTest {
     @Test
     fun incomeIsAddedEverySecond() {
         numbered("income", 5)
-        val coins = numbered("coins", 0, Rule(Condition.EverySeconds(1), actions = listOf(Action.AddNumber(Target.Self, Target.Tagged("income")))))
+        val coins =
+            numbered("coins", 0, Rule(Condition.EverySeconds(1), actions = listOf(Action.AddNumber(Target.Self, Target.Tagged("income")))))
 
         val built = buildSceneWorld(engine.runtime, editor.project, scene, engine.programs).run(120)
 

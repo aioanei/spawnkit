@@ -23,7 +23,10 @@ class PlayAreaTest {
         components: List<ComponentDoc>,
         vararg rules: Rule,
     ): String {
-        val id = assertIs<OperationResult.Applied>(editor.apply(EditOperation.AddObject(scene, name, components = components))).createdIds.single()
+        val id =
+            assertIs<OperationResult.Applied>(
+                editor.apply(EditOperation.AddObject(scene, name, components = components)),
+            ).createdIds.single()
         if (rules.isNotEmpty()) editor.apply(EditOperation.SetRules(scene, id, RuleBlocks.compile(rules.toList())))
         return id
     }

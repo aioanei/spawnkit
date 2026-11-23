@@ -15,6 +15,7 @@ import dev.spawnkit.program.ProgramHostException
 import dev.spawnkit.program.TextType
 import dev.spawnkit.program.TextValue
 import dev.spawnkit.runtime.AuthoringInfo
+import dev.spawnkit.runtime.CheckpointSystem
 import dev.spawnkit.runtime.ComponentDescriptor
 import dev.spawnkit.runtime.ComponentType
 import dev.spawnkit.runtime.EntityHandle
@@ -28,7 +29,6 @@ import dev.spawnkit.runtime.StateRestoreContext
 import dev.spawnkit.runtime.StateValue
 import dev.spawnkit.runtime.ValueKind
 import dev.spawnkit.runtime.World
-import dev.spawnkit.runtime.CheckpointSystem
 import dev.spawnkit.runtime.WorldCommands
 import kotlin.math.abs
 
@@ -290,7 +290,8 @@ public class Gameplay(
         }
         val halfWidth = width / 2 / zoom
         val halfHeight = height / 2 / zoom
-        return own.right < centerX - halfWidth || own.left > centerX + halfWidth || own.bottom < centerY - halfHeight || own.top > centerY + halfHeight
+        return own.right < centerX - halfWidth || own.left > centerX + halfWidth || own.bottom < centerY - halfHeight ||
+            own.top > centerY + halfHeight
     }
 
     /** Whether [entity] has tag [name] (ignoring case and surrounding spaces). */

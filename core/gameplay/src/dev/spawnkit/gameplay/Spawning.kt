@@ -64,7 +64,13 @@ public data class SpawnRequest(
         /** The block whose [header] this is; throws for anything else. */
         public fun action(header: String): Action.Spawn {
             val json = Json.parseToJsonElement(header).jsonObject
-            fun text(key: String) = json.getValue(key).jsonPrimitive.takeIf { it.isString }!!.content
+
+            fun text(key: String) =
+                json
+                    .getValue(key)
+                    .jsonPrimitive
+                    .takeIf { it.isString }!!
+                    .content
 
             fun decimal(key: String) = json.getValue(key).jsonPrimitive.doubleOrNull!!
 
@@ -77,7 +83,12 @@ public data class SpawnRequest(
                     "random" -> SpawnPlace.RandomArea(whole("minX"), whole("maxX"), whole("minY"), whole("maxY"))
                     else -> error("unknown place")
                 }
-            return Action.Spawn(text("tag"), place, json["direction"]?.let { Direction.valueOf(it.jsonPrimitive.content) }, decimal("speed"))
+            return Action.Spawn(
+                text("tag"),
+                place,
+                json["direction"]?.let { Direction.valueOf(it.jsonPrimitive.content) },
+                decimal("speed"),
+            )
         }
 
         /** The request in an effect [payload], or `null` when it is damaged. */
@@ -107,7 +118,10 @@ public data class EngineRequests(
 )
 
 /** The tag of an authored object, normalised, or `null`. */
-internal fun ObjectDoc.tagName(): String? = (component("gameplay:tag")?.values?.get("tag") as? String)?.trim()?.lowercase()?.takeIf { it.isNotEmpty() }
+internal fun ObjectDoc.tagName(): String? =
+    (component("gameplay:tag")?.values?.get("tag") as? String)?.trim()?.lowercase()?.takeIf {
+        it.isNotEmpty()
+    }
 
 /** Whether an authored object is marked as a template. */
 internal fun ObjectDoc.isTemplate(): Boolean = component("gameplay:template")?.let { it.values["template"] as? Boolean ?: true } == true
@@ -117,7 +131,11 @@ internal fun Project.withoutTemplates(): Project =
     copy(
         scenes =
             scenes.map { scene ->
-                val left = scene.objects.filter { it.isTemplate() }.flatMap { scene.subtree(it.id) }.toSet()
+                val left =
+                    scene.objects
+                        .filter { it.isTemplate() }
+                        .flatMap { scene.subtree(it.id) }
+                        .toSet()
                 if (left.isEmpty()) scene else scene.copy(objects = scene.objects.filter { it.id !in left })
             },
     )

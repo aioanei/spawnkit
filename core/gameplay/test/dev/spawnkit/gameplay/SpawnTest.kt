@@ -39,7 +39,10 @@ class SpawnTest {
                 ComponentDoc("gameplay:number"),
                 if (template) ComponentDoc("gameplay:template") else null,
             )
-        val id = assertIs<OperationResult.Applied>(editor.apply(EditOperation.AddObject(scene, name, components = components))).createdIds.single()
+        val id =
+            assertIs<OperationResult.Applied>(
+                editor.apply(EditOperation.AddObject(scene, name, components = components)),
+            ).createdIds.single()
         if (rules.isNotEmpty()) editor.apply(EditOperation.SetRules(scene, id, RuleBlocks.compile(rules.toList())))
         return id
     }
@@ -89,13 +92,30 @@ class SpawnTest {
 
         assertEquals(emptyList(), built.tagged("enemy"))
         assertEquals(1, built.tagged("hero").size)
-        assertEquals(2, editor.project.scenes.single().objects.size, "the builder still shows the template")
+        assertEquals(
+            2,
+            editor.project.scenes
+                .single()
+                .objects.size,
+            "the builder still shows the template",
+        )
     }
 
     @Test
     fun aSpawnedCopyRunsItsOwnRules() {
-        add("Enemy", "enemy", template = true, rules = arrayOf(Rule(Condition.Always, actions = listOf(Action.ChangeNumber(Target.Self, 1)))))
-        add("Spawner", "spawner", x = 4.0, y = 2.0, rules = arrayOf(Rule(Condition.GameStarts, actions = listOf(Action.Spawn("enemy", SpawnPlace.Self)))))
+        add(
+            "Enemy",
+            "enemy",
+            template = true,
+            rules = arrayOf(Rule(Condition.Always, actions = listOf(Action.ChangeNumber(Target.Self, 1)))),
+        )
+        add(
+            "Spawner",
+            "spawner",
+            x = 4.0,
+            y = 2.0,
+            rules = arrayOf(Rule(Condition.GameStarts, actions = listOf(Action.Spawn("enemy", SpawnPlace.Self)))),
+        )
         val built = play().tick()
 
         val copy = built.tagged("enemy").single()
@@ -110,7 +130,14 @@ class SpawnTest {
     @Test
     fun copiesMoveInTheirDirection() {
         add("Shot", "shot", template = true)
-        add("Gun", "gun", rules = arrayOf(Rule(Condition.GameStarts, actions = listOf(Action.Spawn("shot", SpawnPlace.Position(1.0, 1.0), Direction.Right, 6.0)))))
+        add(
+            "Gun",
+            "gun",
+            rules =
+                arrayOf(
+                    Rule(Condition.GameStarts, actions = listOf(Action.Spawn("shot", SpawnPlace.Position(1.0, 1.0), Direction.Right, 6.0))),
+                ),
+        )
         val built = play().tick()
         val shot = built.tagged("shot").single()
 
@@ -123,7 +150,11 @@ class SpawnTest {
     @Test
     fun spawningAtARandomSpotRepeatsWithTheSameSeed() {
         add("Rock", "rock", template = true)
-        add("Sky", "sky", rules = arrayOf(Rule(Condition.Always, actions = listOf(Action.Spawn("rock", SpawnPlace.RandomArea(-10, 10, -5, 5))))))
+        add(
+            "Sky",
+            "sky",
+            rules = arrayOf(Rule(Condition.Always, actions = listOf(Action.Spawn("rock", SpawnPlace.RandomArea(-10, 10, -5, 5))))),
+        )
 
         val spots = { built: SceneWorld -> built.tick(5).tagged("rock").map { built.x(it) to built.y(it) } }
         val first = spots(play())
@@ -142,5 +173,42 @@ class SpawnTest {
         val built = play().tick()
 
         assertEquals(emptyList(), built.tagged("ghost"))
+    }
+
+    @Test
+    fun aCopyKeepsItsChildrenAndTheirRulesAndFitsTheObjectLimitAsAWhole() {
+        val parent = add("Enemy", "enemy", template = true)
+        val child =
+            assertIs<OperationResult.Applied>(
+                editor.apply(
+                    EditOperation.AddObject(
+                        scene,
+                        "Counter",
+                        parent = parent,
+                        components = listOf(ComponentDoc("gameplay:number")),
+                    ),
+                ),
+            ).createdIds.single()
+        editor.apply(
+            EditOperation.SetRules(
+                scene,
+                child,
+                RuleBlocks.compile(listOf(Rule(Condition.Always, actions = listOf(Action.ChangeNumber(Target.Self, 1))))),
+            ),
+        )
+        val built = play()
+        val request = SpawnRequest("enemy", 3.0, 4.0, 0.0, 0.0)
+        val copy = engine.spawn(built.world, editor.project, scene, request)!!
+        val counter = built.world.children(copy).single()
+        built.tick(2)
+
+        assertEquals(2L, built.world.get(counter, engine.gameplay.number)?.value)
+        assertEquals(child, built.objectId(counter))
+        assertEquals(3.0, built.x(copy))
+        repeat(StandardEngine.MAX_OBJECTS - built.world.entityCount - 1) { built.world.spawn() }
+        val before = built.world.entityCount
+
+        assertNull(engine.spawn(built.world, editor.project, scene, request), "a partial copy must never be made")
+        assertEquals(before, built.world.entityCount)
     }
 }

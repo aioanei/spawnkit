@@ -30,7 +30,10 @@ class RuleTraceSpawnTest {
         rule: Rule,
     ): String {
         val components = listOf(ComponentDoc("graphics:transform"), ComponentDoc("gameplay:number")) + extra
-        val id = assertIs<OperationResult.Applied>(editor.apply(EditOperation.AddObject(scene, name, components = components))).createdIds.single()
+        val id =
+            assertIs<OperationResult.Applied>(
+                editor.apply(EditOperation.AddObject(scene, name, components = components)),
+            ).createdIds.single()
         editor.apply(EditOperation.SetRules(scene, id, RuleBlocks.compile(listOf(rule))))
         return id
     }

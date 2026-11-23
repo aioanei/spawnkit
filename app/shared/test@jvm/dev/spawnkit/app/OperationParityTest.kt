@@ -306,7 +306,10 @@ class OperationParityTest {
                         tap("inc:max")
                         tap("block-done")
                     },
-                    { target("Coin") + mapOf("rule" to 1L, "block" to Picked("SetRandomNumber", mapOf("target" to tagged, "min" to 1L, "max" to 7L))) },
+                    {
+                        target("Coin") +
+                            mapOf("rule" to 1L, "block" to Picked("SetRandomNumber", mapOf("target" to tagged, "min" to 1L, "max" to 7L)))
+                    },
                 ),
             "AddNumber" to
                 Case(
@@ -321,7 +324,11 @@ class OperationParityTest {
                     },
                     {
                         target("Coin") +
-                            mapOf("rule" to 1L, "block" to Picked("AddNumber", mapOf("target" to tagged, "from" to Picked("tagged", mapOf("tag" to "coin")))))
+                            mapOf(
+                                "rule" to 1L,
+                                "block" to
+                                    Picked("AddNumber", mapOf("target" to tagged, "from" to Picked("tagged", mapOf("tag" to "coin")))),
+                            )
                     },
                 ),
             "Spawn" to
@@ -340,7 +347,11 @@ class OperationParityTest {
                         target("Coin") +
                             mapOf(
                                 "rule" to 1L,
-                                "block" to Picked("Spawn", mapOf("tag" to "coin", "place" to Picked("self"), "direction" to "Down", "speed" to 3.0)),
+                                "block" to
+                                    Picked(
+                                        "Spawn",
+                                        mapOf("tag" to "coin", "place" to Picked("self"), "direction" to "Down", "speed" to 3.0),
+                                    ),
                             )
                     },
                 ),
@@ -360,6 +371,40 @@ class OperationParityTest {
     @Test
     fun theGameBlocksGiveTheSameResultByHandAndByAgentTool() {
         for ((block, case) in blockCases) checkParity("add_block", block, case)
+    }
+
+    @Test
+    fun theGameComponentsGiveTheSameResultByHandAndByAgentTool() {
+        checkParity(
+            "set_property",
+            "Keep across scenes",
+            Case(
+                { select("Score") },
+                { tap("field:${it.id("Score")}/gameplay:number/keep") },
+                { target("Score") + mapOf("component" to "gameplay:number", "property" to "keep", "value" to true) },
+            ),
+        )
+        checkParity(
+            "add_component",
+            "Template",
+            Case(
+                { select("Coin") },
+                { tap("add-component:gameplay:template") },
+                { target("Coin") + ("component" to "gameplay:template") },
+            ),
+        )
+        checkParity(
+            "set_property",
+            "Steady movement",
+            Case(
+                {
+                    select("Player")
+                    apply(EditOperation.AddComponent(sceneId, id("Player"), "gameplay:motion"))
+                },
+                { tap("inc:${it.id("Player")}/gameplay:motion/vx") },
+                { target("Player") + mapOf("component" to "gameplay:motion", "property" to "vx", "value" to 0.5) },
+            ),
+        )
     }
 
     private fun checkParity(

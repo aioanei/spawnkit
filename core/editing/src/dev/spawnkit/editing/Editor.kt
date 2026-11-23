@@ -143,7 +143,7 @@ public class SceneWorld internal constructor(
     /** The entity created for authoring object [objectId], or `null`. */
     public fun entity(objectId: String): EntityHandle? = entities[objectId]
 
-    /** The authoring object an entity was created from, or `null` for entities created later (for example spawned during play). */
+    /** The authoring object an entity was created from, including spawned copies, or `null` without an authored identity. */
     public fun objectId(entity: EntityHandle): String? = if (world.isAlive(entity)) world.identity(entity)?.objectId else null
 }
 
@@ -197,7 +197,10 @@ public fun instantiateObject(
     if (scene.find(objectId) == null) return null
     val subtree = scene.subtree(objectId).toSet()
     val docs = scene.objects.filter { it.id in subtree }
-    val objects = docs.map { obj -> TemplateObject(obj.id, obj.parent?.takeIf { obj.id != objectId }, obj.components.map { seedFor(runtime, it) }) }
+    val objects =
+        docs.map { obj ->
+            TemplateObject(obj.id, obj.parent?.takeIf { obj.id != objectId }, obj.components.map { seedFor(runtime, it) })
+        }
     val instance = world.instantiate(SceneTemplate("copy.$objectId", objects))
     if (programs != null) {
         for (obj in docs) {

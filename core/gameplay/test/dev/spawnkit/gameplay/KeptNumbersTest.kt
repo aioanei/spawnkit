@@ -18,7 +18,8 @@ class KeptNumbersTest {
             .first()
             .id
 
-    private fun scene(name: String): String = assertIs<OperationResult.Applied>(editor.apply(EditOperation.AddScene(name))).createdIds.single()
+    private fun scene(name: String): String =
+        assertIs<OperationResult.Applied>(editor.apply(EditOperation.AddScene(name))).createdIds.single()
 
     private fun holder(
         scene: String,
@@ -98,7 +99,9 @@ class KeptNumbersTest {
 
     @Test
     fun keepIsAnEditableNumberProperty() {
-        val property = engine.gameplay.numberDescriptor.properties.single { it.id == "keep" }
+        val property =
+            engine.gameplay.numberDescriptor.properties
+                .single { it.id == "keep" }
 
         assertEquals("Keep across scenes", property.authoring.name)
         assertEquals(false, property.default)
