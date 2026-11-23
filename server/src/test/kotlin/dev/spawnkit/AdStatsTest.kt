@@ -113,6 +113,34 @@ class AdStatsTest {
         }
 
     @Test
+    fun testPurchasesAreCountedOnceAndShownNextToAds() =
+        withStore { directory ->
+            val ada = token("ada@example.com")
+            arcade(directory) {
+                val slug = client.publish(game, ada).json().text("slug")
+                suspend fun buy(
+                    n: Int,
+                    product: String,
+                ) = client.post("/api/games/$slug/purchase-events") {
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"session":"play-session-1","events":[{"n":$n,"product":"$product"}]}""")
+                }
+                assertEquals(HttpStatusCode.Accepted, buy(1, "100 coins").status)
+                assertEquals("""{"accepted":0}""", buy(1, "100 coins").bodyAsText(), "a retried purchase is not counted again")
+                buy(2, "100 coins")
+                buy(3, "Extra life")
+                client.report(slug, "play-session-1", Triple(3, "banner", "view"))
+
+                val stats = client.stats(slug, ada)
+                assertEquals(3, stats.getValue("purchases").jsonPrimitive.long)
+                assertEquals(0, stats.getValue("views").jsonPrimitive.long, "event numbers are shared, so number 3 was already used")
+                assertEquals("0.00", stats.getValue("revenue").jsonPrimitive.content, "test purchases charge nothing")
+                val items = stats.getValue("purchaseDays").jsonArray.map { it.jsonObject }
+                assertEquals(listOf("100 coins" to 2L, "Extra life" to 1L), items.map { it.getValue("product").jsonPrimitive.content to it.getValue("count").jsonPrimitive.long })
+            }
+        }
+
+    @Test
     fun onlyTheOwnerReadsTheStatistics() =
         withStore { directory ->
             val ada = token("ada@example.com")
