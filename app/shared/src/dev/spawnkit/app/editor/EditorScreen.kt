@@ -1,5 +1,9 @@
 package dev.spawnkit.app.editor
 
+import dev.spawnkit.editing.ImageAsset
+import dev.spawnkit.app.images.rememberImagePicker
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.AlertDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
@@ -353,13 +357,91 @@ private fun CompactObjectMenu(state: EditorState) {
 
 @Composable
 private fun Palette(state: EditorState) {
-    FlowRow(Modifier.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        for (preset in DefaultPresets) {
-            OutlinedButton({ state.add(preset) }, Modifier.testTag("add:${preset.name}"), enabled = state.play == null) {
-                Text(preset.name)
+    val picker = rememberImagePicker()
+    val editing = state.play == null
+    var renaming by remember { mutableStateOf<ImageAsset?>(null) }
+    Column(Modifier.verticalScroll(rememberScrollState()).padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            for (preset in DefaultPresets) {
+                OutlinedButton({ state.add(preset) }, Modifier.testTag("add:${preset.name}"), enabled = editing) {
+                    Text(preset.name)
+                }
+            }
+            if (picker != null) {
+                // The Image piece: choose a picture on this device, then it appears in the scene (C15b).
+                OutlinedButton(
+                    {
+                        picker.pick { result ->
+                            result
+                                .onSuccess { picked -> picked?.let { state.importImage(it.name, it.png, place = true) } }
+                                .onFailure { state.message = it.message ?: "This picture could not be imported" }
+                        }
+                    },
+                    Modifier.testTag("add:Image"),
+                    enabled = editing,
+                ) { Text("Image…") }
+            }
+        }
+        if (picker != null || state.project.images.isNotEmpty()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Images in this game", Modifier.weight(1f), style = MaterialTheme.typography.labelMedium)
+                if (picker != null) {
+                    TextButton(
+                        {
+                            picker.pick { result ->
+                                result
+                                    .onSuccess { picked -> picked?.let { state.importImage(it.name, it.png) } }
+                                    .onFailure { state.message = it.message ?: "This picture could not be imported" }
+                            }
+                        },
+                        Modifier.testTag("image-import"),
+                        enabled = editing,
+                    ) { Text("Import…") }
+                }
+            }
+            for (image in state.project.images) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(image.name, Modifier.weight(1f), maxLines = 1)
+                    TextButton({ state.addImageObject(image.id) }, Modifier.testTag("image-add:${image.name}"), enabled = editing) {
+                        Text("Add")
+                    }
+                    TextButton({ renaming = image }, Modifier.testTag("image-rename:${image.name}"), enabled = editing) { Text("Rename") }
+                    TextButton(
+                        { state.applyCatalog("remove_image", mapOf("image" to image.id)) },
+                        Modifier.testTag("image-remove:${image.name}"),
+                        enabled = editing,
+                    ) { Text("Remove") }
+                }
             }
         }
     }
+    renaming?.let { image -> RenameImage(state, image) { renaming = null } }
+}
+
+@Composable
+private fun RenameImage(
+    state: EditorState,
+    image: ImageAsset,
+    close: () -> Unit,
+) {
+    var name by remember { mutableStateOf(image.name) }
+    AlertDialog(
+        onDismissRequest = close,
+        title = { Text("Name this image") },
+        text = {
+            OutlinedTextField(name, { name = it.take(80) }, Modifier.testTag("image-name"), singleLine = true, label = { Text("Image name") })
+        },
+        confirmButton = {
+            Button(
+                {
+                    state.applyCatalog("rename_image", mapOf("image" to image.id, "name" to name))
+                    close()
+                },
+                Modifier.testTag("image-name-done"),
+            ) { Text("Done") }
+        },
+        dismissButton = { TextButton(close) { Text("Cancel") } },
+    )
 }
 
 /**

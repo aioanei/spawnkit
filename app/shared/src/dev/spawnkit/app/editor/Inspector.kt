@@ -42,6 +42,7 @@ import dev.spawnkit.app.assistant.AskAiButton
 import dev.spawnkit.editing.EditOperation
 import dev.spawnkit.editing.ObjectDoc
 import dev.spawnkit.editing.OperationResult
+import dev.spawnkit.editing.ProjectImages
 import dev.spawnkit.render.argb
 import dev.spawnkit.runtime.ComponentDescriptor
 import dev.spawnkit.runtime.PropertyDescriptor
@@ -278,7 +279,27 @@ private fun PropertyControl(
         }
 
         is ValueKind.Text -> {
-            CommitTextField(name, value as String, key, "field:$key", numeric = false) { set(it) }
+            if (kind.asset == ProjectImages.ASSET_KIND) {
+                // A sprite's picture: the project's images by name (ADR-0012), or none.
+                Column {
+                    Text(name, style = MaterialTheme.typography.labelMedium)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        FilterChip(value == "", { set("") }, { Text("None") }, Modifier.testTag("image:$key:none"))
+                        for (image in state.project.images) {
+                            FilterChip(value == image.id, { set(image.id) }, { Text(image.name) }, Modifier.testTag("image:$key:${image.name}"))
+                        }
+                    }
+                    if (state.project.images.isEmpty()) {
+                        Text(
+                            "Import a picture from the Add panel to show it here.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            } else {
+                CommitTextField(name, value as String, key, "field:$key", numeric = false) { set(it) }
+            }
         }
 
         is ValueKind.Choice -> {
