@@ -5,6 +5,7 @@ import dev.spawnkit.editing.ComponentDoc
 import dev.spawnkit.editing.EditOperation
 import dev.spawnkit.editing.Editor
 import dev.spawnkit.editing.OperationResult
+import dev.spawnkit.editing.ProjectImages
 import dev.spawnkit.gameplay.Action
 import dev.spawnkit.gameplay.Condition
 import dev.spawnkit.gameplay.Direction
@@ -152,11 +153,69 @@ class DemoModelTest {
             assertEquals(before, game.editor.project)
         }
 
+    /** A fake Character Forge: a photo is attached, and each style comes back as a small picture. */
+    private class Photo(
+        override val photoAttached: Boolean = true,
+    ) : CharacterMaker {
+        val sent = mutableListOf<List<String>>()
+
+        override fun unavailable(): String? = if (photoAttached) null else "Attach a photo in the chat first."
+
+        override suspend fun make(
+            styles: List<String>,
+            consent: Boolean,
+        ): CharacterResult {
+            sent += styles
+            val images =
+                styles.mapIndexed { i, style ->
+                    ForgedImage(
+                        style,
+                        CharacterRecipe.STYLES.getValue(style),
+                        ProjectImages.encode(TestPng.make(4 + i, 4)),
+                        "Fake, 2026-11-23",
+                    )
+                }
+            return CharacterResult(images, emptyMap())
+        }
+    }
+
+    @Test
+    fun characterPromptAsksBeforeSendingThePhotoAndMakesACharacter() =
+        runTest {
+            val game = Game(withObjects = false)
+            val photo = Photo()
+            val session = AgentSession(game.engine, game.editor, game.scene, DemoModel(), characters = photo)
+
+            val asked = assertIs<AgentOutcome.Confirmation>(session.ask(DemoModel.PROMPTS[3]))
+            assertEquals(listOf("pixel", "cartoon"), asked.styles)
+            assertEquals(emptyList(), photo.sent)
+            val proposal = assertIs<AgentOutcome.Proposal>(session.confirm(consent = true))
+
+            assertEquals(listOf(CharacterRecipe.LABEL), proposal.steps)
+            assertTrue(proposal.summary.startsWith("Your photo became"), proposal.summary)
+            assertIs<AcceptResult.Accepted>(session.accept("Assistant: character"))
+            assertEquals(2, game.editor.project.images.size)
+        }
+
+    @Test
+    fun characterPromptExplainsAMissingPhotoOrADecline() =
+        runTest {
+            val game = Game(withObjects = false)
+            val noPhoto = AgentSession(game.engine, game.editor, game.scene, DemoModel(), characters = Photo(photoAttached = false))
+            assertEquals("Attach a photo in the chat first.", assertIs<AgentOutcome.Answer>(noPhoto.ask(DemoModel.PROMPTS[3])).text)
+
+            val session = AgentSession(game.engine, game.editor, game.scene, DemoModel(), characters = Photo())
+            assertIs<AgentOutcome.Confirmation>(session.ask(DemoModel.PROMPTS[3]))
+            val declined = assertIs<AgentOutcome.Answer>(session.decline())
+            assertTrue(declined.text.contains("nothing was sent"), declined.text)
+            assertEquals(emptyList(), game.editor.project.images)
+        }
+
     @Test
     fun labelSaysNoModelIsCalled() {
         val info = DemoModel().info
         assertFalse(info.live)
         assertEquals("Scripted demo: a fixed script stands in for the AI model (no model is called)", info.label)
-        assertEquals(3, DemoModel.PROMPTS.size)
+        assertEquals(4, DemoModel.PROMPTS.size)
     }
 }

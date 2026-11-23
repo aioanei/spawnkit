@@ -31,6 +31,12 @@ public class StagedChanges(
     /** Staged steps, in order. */
     public val operations: List<EditOperation> get() = steps.toList()
 
+    /**
+     * The ID number the next staged object, scene or image gets, counting IDs retired by undo, so a [EditOperation.Batch]
+     * can refer to what it creates (as [Editor.saveSnapshot] gives for the workspace).
+     */
+    public val nextId: Long get() = scratch.saveSnapshot().nextId
+
     /** Labels of the staged steps, for the review screen. */
     public val labels: List<String> get() = steps.map { it.label }
 

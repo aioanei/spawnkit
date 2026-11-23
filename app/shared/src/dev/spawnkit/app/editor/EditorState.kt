@@ -106,9 +106,6 @@ private class BatchBuilder(
 
     fun scene(name: String): String = "scene-${next++}".also { operations += EditOperation.AddScene(name) }
 
-    /** Takes the next ID number for an operation added by hand, such as an image. */
-    fun reserve(): Long = next++
-
     fun obj(
         sceneId: String,
         name: String,
@@ -302,44 +299,16 @@ class EditorState(
         images: List<dev.spawnkit.ai.ForgedImage>,
         chosen: String,
     ) {
-        val batch = BatchBuilder(editor.saveSnapshot().nextId)
-        var chosenId: String? = null
-        for (image in images) {
-            val id = "img-${batch.reserve()}"
-            batch.operations +=
-                EditOperation.AddImage("${image.label} character", image.data, "Import image ${image.label} character", image.provenance)
-            if (image.style == chosen) chosenId = id
-        }
-        val imageId = chosenId ?: return
-        val components =
-            placed(round(camera.centerX), round(camera.centerY)) +
-                ComponentDoc(
-                    "graphics:sprite",
-                    mapOf(
-                        "asset" to imageId,
-                        "width" to 1.4,
-                        "height" to 1.4,
-                        "pixelated" to (chosen == "pixel"),
-                    ),
-                ) +
-                ComponentDoc("gameplay:body") + tag("player")
-        val character = batch.obj(sceneId, "Character", components)
-        batch.rules(
-            sceneId,
-            character,
-            listOf(
-                Rule(
-                    Condition.KeyHeld(dev.spawnkit.gameplay.StandardActions.LEFT),
-                    actions = listOf(Action.Move(dev.spawnkit.gameplay.Direction.Left, 4.0)),
-                ),
-                Rule(
-                    Condition.KeyHeld(dev.spawnkit.gameplay.StandardActions.RIGHT),
-                    actions = listOf(Action.Move(dev.spawnkit.gameplay.Direction.Right, 4.0)),
-                ),
-                Rule(Condition.KeyPressed(dev.spawnkit.gameplay.StandardActions.JUMP), actions = listOf(Action.Jump(15.0))),
-            ),
-        )
-        if (apply(EditOperation.Batch(batch.operations, "Add character")) is OperationResult.Applied) selection = character
+        val planned =
+            dev.spawnkit.ai.CharacterRecipe.batch(
+                images,
+                chosen,
+                sceneId,
+                round(camera.centerX),
+                round(camera.centerY),
+                editor.saveSnapshot().nextId,
+            ) ?: return
+        if (apply(planned.operation) is OperationResult.Applied) selection = planned.characterId
     }
 
     /** Adds an object that shows image [imageId] at the centre of the view and selects it. */

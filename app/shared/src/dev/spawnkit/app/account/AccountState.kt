@@ -16,16 +16,35 @@ import dev.spawnkit.ai.CharacterResult
 import dev.spawnkit.ai.HostedModel
 import dev.spawnkit.ai.ServerStatus
 import dev.spawnkit.app.assistant.HostedChoice
+import dev.spawnkit.app.assistant.PhotoForge
 import dev.spawnkit.app.assistant.SecretStore
 import dev.spawnkit.editing.ProjectImages
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.http.Url
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-/** One HTTP client for every SpawnKit server call; the platform's engine is found on the classpath. */
-internal val sharedHttpClient: HttpClient by lazy { HttpClient() }
+/**
+ * One HTTP client for every SpawnKit server call; the platform's engine is found on the classpath. Engines time out
+ * after 10 to 15 seconds by default, but Character Forge and long assistant replies take up to a few minutes, so the
+ * waits are set here explicitly.
+ */
+internal val sharedHttpClient: HttpClient by lazy {
+    HttpClient {
+        install(HttpTimeout) {
+            connectTimeoutMillis = CONNECT_TIMEOUT_MILLIS
+            requestTimeoutMillis = SERVER_WORK_MILLIS
+            socketTimeoutMillis = SERVER_WORK_MILLIS
+        }
+    }
+}
+
+private const val CONNECT_TIMEOUT_MILLIS = 15_000L
+
+/** Longest wait for a server answer: three images in a row through the image model take about two minutes. */
+private const val SERVER_WORK_MILLIS = 240_000L
 
 /**
  * The creator's SpawnKit account in the builder (C11b, ADR-0010): which server, who is signed in, and the session.
@@ -208,6 +227,12 @@ class AccountState(
         val token = token() ?: throw AccountException(SIGN_IN_FIRST, 401)
         val photo = ProjectImages.encode(ProjectImages.stripMetadata(png))
         return signedInApi().character(token, photo, styles, consent)
+    }
+
+    /** Character Forge for the assistant (C16b), when signed in to a server that offers it; otherwise `null`. */
+    fun photoForge(): PhotoForge? {
+        if (!signedIn || status?.characterAvailable != true) return null
+        return PhotoForge(::forge)
     }
 
     /** Test ad statistics of the owned game [slug] from Arcade plays (C12). Throws [AccountException] with a plain message. */

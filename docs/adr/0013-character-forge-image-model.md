@@ -39,6 +39,10 @@ text model already runs behind the server with the owner's key and a $20 monthly
      player tag and walking and jumping rules.
    - The images and the object use the ordinary catalog operations, so agents can arrange them. The upload itself
      becomes an agent tool that asks the creator first (C16b, ADR-0009).
+6. **Agent tool (C16b).** `make_character` takes styles and placement but never the photo, which stays in the builder
+   that the creator attached it to. The session pauses until the creator confirms with the same consent checkbox, then
+   sends the photo through the account's forge. The images and the Character are staged with the recipe the builder
+   uses, so both paths make the same game.
 
 ## Consequences
 

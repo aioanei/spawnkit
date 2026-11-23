@@ -14,7 +14,9 @@ import kotlinx.serialization.json.jsonObject
  * A keyless, labelled stand-in for a model, so creators without an API key can see the assistant work (C7c). A fixed
  * script handles only [PROMPTS]. It reads the real game through `look_at_game` and stages changes through the same
  * tools a live model uses, so IDs, validation, previews and undo are real; only the choices are scripted. It never
- * calls a model or the network and is always labelled with [LABEL] (AGENTS.md: replays and demos stay labelled).
+ * calls a model or the network and is always labelled with [LABEL] (AGENTS.md: replays and demos stay labelled). Its
+ * character example only asks for `make_character`: if the creator confirms, the session's real Character Forge makes
+ * the images, so the text is scripted but the pictures are not.
  */
 public class DemoModel : AgentModel {
     override val info: ModelInfo = ModelInfo("Scripted demo", "none", live = false, label = LABEL)
@@ -23,16 +25,29 @@ public class DemoModel : AgentModel {
 
     override suspend fun reply(request: ModelRequest): ModelReply {
         val start = request.messages.indexOfLast { it is AgentMessage.User }
-        val prompt = (request.messages.getOrNull(start) as? AgentMessage.User)?.text.orEmpty()
+        val text = (request.messages.getOrNull(start) as? AgentMessage.User)?.text.orEmpty()
+        val prompt = text.substringBefore(AgentSession.PHOTO_ATTACHED).trim()
         val after = request.messages.drop(start + 1)
         val step = after.count { it is AgentMessage.Assistant }
-        val known = PROMPTS.indexOfFirst { it.equals(prompt.trim(), ignoreCase = true) }
+        val known = PROMPTS.indexOfFirst { it.equals(prompt, ignoreCase = true) }
         if (known < 0) return finish(UNKNOWN)
+        if (known == CHARACTER) return character(step, after)
         return when (step) {
             0 -> reply(call(AgentToolbox.LOOK, JsonObject(emptyMap())))
             1 -> act(known, toolText(after, AgentToolbox.LOOK))
             else -> finish(if (known == WHY) toolText(after, AgentToolbox.TRACE) else SUMMARIES.getValue(known))
         }
+    }
+
+    /** Asks for pixel art and cartoon characters (the session asks the creator first), then reports what happened. */
+    private fun character(
+        step: Int,
+        after: List<AgentMessage>,
+    ): ModelReply {
+        if (step == 0) return reply(call(AgentToolbox.MAKE_CHARACTER, json("""{"styles":["pixel","cartoon"],"use":"pixel"}""")))
+        val result = json(toolText(after, AgentToolbox.MAKE_CHARACTER))
+        val problem = (result["problem"] as? JsonPrimitive)?.contentOrNull
+        return finish(problem ?: CHARACTER_DONE)
     }
 
     private fun act(
@@ -141,11 +156,17 @@ public class DemoModel : AgentModel {
                 "When the player touches a coin, add 1 to the score and remove the coin.",
                 "Make the player move with the arrow keys.",
                 "Why doesn't my coin rule work?",
+                "Make this person a character in the game.",
             )
 
         private const val COLLECT = 0
         private const val MOVE = 1
         private const val WHY = 2
+        private const val CHARACTER = 3
+
+        private const val CHARACTER_DONE =
+            "Your photo became a pixel art and a cartoon character. The Character shows the pixel art one, walks with " +
+                "Left and Right, and jumps. Accept, then press Play to try it."
 
         private val SUMMARIES =
             mapOf(

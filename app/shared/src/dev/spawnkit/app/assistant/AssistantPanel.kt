@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -38,6 +39,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import dev.spawnkit.ai.AgentOutcome
 import dev.spawnkit.ai.DemoModel
+import dev.spawnkit.app.images.rememberImagePicker
 
 /** The assistant: ask, review staged changes, then accept or reject them (C7c). */
 @Composable
@@ -104,6 +106,7 @@ fun AssistantPanel(
             Button(assistant::ask, Modifier.heightIn(min = 48.dp).testTag("assistant-ask"), enabled = assistant.canAsk()) { Text("Ask") }
             if (assistant.playing) Text("Stop the game to ask.", style = MaterialTheme.typography.bodySmall)
         }
+        AttachPhoto(assistant)
         if (assistant.running) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
@@ -118,6 +121,7 @@ fun AssistantPanel(
             is AgentOutcome.Proposal -> Proposal(assistant, outcome)
             is AgentOutcome.Answer -> Text(outcome.text, Modifier.testTag("assistant-answer"))
             is AgentOutcome.Question -> Question(assistant, outcome)
+            is AgentOutcome.Confirmation -> Confirmation(assistant, outcome)
             is AgentOutcome.Failed, null -> Unit
         }
         assistant.notice?.let { Text(it, Modifier.testTag("assistant-notice"), color = MaterialTheme.colorScheme.tertiary) }
@@ -168,6 +172,75 @@ private fun Question(
         OutlinedTextField(reply, { reply = it }, Modifier.fillMaxWidth().testTag("assistant-reply"), label = { Text("Or type an answer") })
         Button({ assistant.answer(reply) }, Modifier.heightIn(min = 48.dp).testTag("assistant-reply-send"), enabled = reply.isNotBlank()) {
             Text("Reply")
+        }
+    }
+}
+
+/** Attach a photo for Character Forge (C16b); the model is only told that one is attached. */
+@Composable
+private fun AttachPhoto(assistant: AssistantState) {
+    val picker = rememberImagePicker() ?: return
+    var problem by remember { mutableStateOf<String?>(null) }
+    val photo = assistant.photo
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (photo == null) {
+            OutlinedButton(
+                {
+                    problem = null
+                    picker.pick { result ->
+                        result
+                            .onSuccess { picked -> picked?.let(assistant::attach) }
+                            .onFailure { problem = it.message ?: "This photo could not be read" }
+                    }
+                },
+                Modifier.heightIn(min = 48.dp).testTag("assistant-attach"),
+                enabled = !assistant.running,
+            ) { Text("Attach photo") }
+        } else {
+            Text(
+                "Photo attached: ${photo.name}",
+                Modifier.weight(1f).testTag("assistant-photo"),
+                style = MaterialTheme.typography.bodySmall,
+            )
+            TextButton(
+                assistant::removePhoto,
+                Modifier.heightIn(min = 48.dp).testTag("assistant-photo-remove"),
+                enabled = !assistant.running,
+            ) {
+                Text("Remove")
+            }
+        }
+    }
+    problem?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+}
+
+/** The assistant asks before the photo leaves the device (ADR-0009, ADR-0013); consent is required to send it. */
+@Composable
+private fun Confirmation(
+    assistant: AssistantState,
+    confirmation: AgentOutcome.Confirmation,
+) {
+    var consent by remember(confirmation) { mutableStateOf(false) }
+    Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = MaterialTheme.shapes.medium) {
+        Column(Modifier.fillMaxWidth().padding(12.dp).testTag("assistant-confirm"), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(confirmation.message, fontWeight = FontWeight.SemiBold)
+            Text(
+                "Your photo leaves this device and goes only to the image model. It is not saved on the server or in your " +
+                    "game. Each style uses part of your SpawnKit AI allowance.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(consent, { consent = it }, Modifier.testTag("assistant-consent"))
+                Text("This is me, or this person agreed")
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    { assistant.confirm(consent) },
+                    Modifier.heightIn(min = 48.dp).testTag("assistant-send-photo"),
+                    enabled = consent,
+                ) { Text("Send photo") }
+                OutlinedButton(assistant::decline, Modifier.heightIn(min = 48.dp).testTag("assistant-dont-send")) { Text("Don't send") }
+            }
         }
     }
 }

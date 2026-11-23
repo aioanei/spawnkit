@@ -49,7 +49,7 @@ public class SessionRecorder(
                 outcome = session.answer(answer)
             }
             log += conclude(session, prompt, outcome)
-            if (outcome is AgentOutcome.Failed || outcome is AgentOutcome.Question) break
+            if (outcome is AgentOutcome.Failed || outcome is AgentOutcome.Question || outcome is AgentOutcome.Confirmation) break
         }
         return RecordingRun(recorder.recording(script, recordedOn, note), log, session.cost)
     }
@@ -96,6 +96,11 @@ public class SessionRecorder(
 
             is AgentOutcome.Question -> {
                 "Question left open: ${outcome.question}"
+            }
+
+            is AgentOutcome.Confirmation -> {
+                // Recordings never send photos: the recorder has no character maker, so this is not expected.
+                "Confirmation left open: ${outcome.message}"
             }
 
             is AgentOutcome.Failed -> {
