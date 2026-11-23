@@ -2,6 +2,7 @@ package dev.spawnkit.app.presets
 
 import dev.spawnkit.app.editor.DefaultPresets
 import dev.spawnkit.app.editor.EditorState
+import dev.spawnkit.app.editor.TitleLayout
 import dev.spawnkit.editing.OperationResult
 import dev.spawnkit.editing.Project
 import dev.spawnkit.gameplay.Action
@@ -27,6 +28,7 @@ internal object PresetRecipes {
             "maze-run" to ::mazeRun,
             "aura-farmer" to ::auraFarmer,
             "npc-dodge" to ::npcDodge,
+            "toaster-tycoon" to ::toasterTycoon,
         )
 
     private val keyMoves =
@@ -310,6 +312,116 @@ internal object PresetRecipes {
     /** Seconds to farm the aura. */
     const val AURA_SECONDS = 15L
 
+    /**
+     * A complete tycoon game (C17): tap the toaster for toast, buy Toaster Bots and Golden Toasters that raise income
+     * per second, unlock the Bakery at $BAKERY_PRICE toast for Mega Ovens, and reach $TOAST_GOAL toast before the shift
+     * ends. Toast, income and time are kept across scenes. A full title screen (Play, Levels, Shop, How it works), a
+     * shop with a test purchase, test ads, and win and lose scenes. Original characters, brain-rot style.
+     */
+    fun toasterTycoon(): Project =
+        Recipe("Toaster Tycoon").run {
+            renameScene("Kitchen")
+            val kitchen = sceneId
+            box("Background", 0.0, 0.0, 16.0, 9.0, 0xFF4E342E, layer = -1)
+            toastHud()
+            val toaster = box("Toaster", 0.0, -0.5, 3.0, 2.0, 0xFFFF7043, tag = "toaster")
+            label("Toaster label", 0.0, -0.5, "TAP TO TOAST", 0.5)
+            rule(toaster, Rule(Condition.Tapped, actions = listOf(Action.ChangeNumber(Target.Tagged("toast"), 1))))
+            upgrade("Toaster Bot", -2.1, 1.6, "Bot +1/s: 15", 15, 1)
+            upgrade("Golden Toaster", 2.1, 1.6, "Gold +5/s: 100", 100, 5)
+            val bakery = addScene("Bakery")
+            box("Background", 0.0, 0.0, 16.0, 9.0, 0xFF6D4C41, layer = -1)
+            toastHud()
+            upgrade("Mega Oven", 0.0, 0.2, "Oven +25/s: 400", 400, 25)
+            val back = box("Kitchen door", 0.0, 2.9, 4.2, 0.9, 0xFF546E7A, tag = "kitchen-door")
+            label("Kitchen door label", 0.0, 2.9, "Back to the Kitchen", 0.4)
+            rule(back, Rule(Condition.Tapped, actions = listOf(Action.GoToScene(kitchen))))
+            open(kitchen)
+            val door = box("Bakery door", 0.0, 2.9, 4.2, 0.9, 0xFF546E7A, tag = "bakery-door")
+            label("Bakery door label", 0.0, 2.9, "Bakery: needs $BAKERY_PRICE toast", 0.36)
+            rule(
+                door,
+                Rule(
+                    Condition.Tapped,
+                    listOf(Condition.NumberIs(Target.Tagged("toast"), Comparison.AtLeast, BAKERY_PRICE)),
+                    listOf(Action.GoToScene(bakery)),
+                ),
+            )
+
+            completeTitle(
+                0xFFBF360C,
+                "Toast, upgrade, build an empire.",
+                listOf(
+                    "Tap the toaster: +1 Toast.",
+                    "Upgrades cost toast and add",
+                    "income every second.",
+                    "Toast, Income and Time are",
+                    "kept across scenes.",
+                    "The Bakery opens at $BAKERY_PRICE.",
+                    "Reach $TOAST_GOAL toast to win.",
+                ),
+                listOf("Try this: make the Mega Oven", "cost 300 toast."),
+                listOf(bakery),
+            )
+            val shop =
+                state.project.scenes
+                    .single { it.name == "Shop" }
+                    .id
+            open(shop)
+            toastHud()
+            val crate = box("Toast crate", 0.0, 1.0, 4.4, 1.1, 0xFFFFA000, tag = "toast-crate")
+            label("Toast crate label", 0.0, 1.0, "1000 toast: $0.99", 0.45)
+            rule(crate, Rule(Condition.Tapped, actions = listOf(Action.TestPurchase("1000 toast", 99, Target.Tagged("toast"), 1000))))
+            set(named("Shop text"), "graphics:text", "text", "Test purchases: no money is charged.")
+            set(named("Shop hint"), "graphics:text", "text", "Tap the crate to try one.")
+
+            // Endings go back to the title, whose Play button starts a fresh run.
+            val title =
+                state.project.scenes
+                    .first()
+                    .id
+            val win = endScene("Toast Empire", "TOAST EMPIRE!", "$TOAST_GOAL toast. Peak breakfast.", "Toast again", title, 0xFFF57F17)
+            val lose = endScene("Shift over", "Shift over", "The toast went cold.", "Try again", title, 0xFF37474F)
+            for (area in listOf(kitchen, bakery)) {
+                open(area)
+                rule(
+                    named("Toast"),
+                    Rule(Condition.NumberIs(Target.Self, Comparison.AtLeast, TOAST_GOAL), actions = listOf(Action.GoToScene(win))),
+                )
+                rule(named("Time"), Rule(Condition.NumberIs(Target.Self, Comparison.AtMost, 0), actions = listOf(Action.GoToScene(lose))))
+            }
+            // An ending resets toast, income and time, so the next run starts fresh while toast bought in the shop
+            // before playing is kept.
+            for (ending in listOf(win, lose)) {
+                open(ending)
+                toastHud(visible = false)
+                rule(
+                    named("Toast"),
+                    Rule(
+                        Condition.GameStarts,
+                        actions =
+                            listOf(
+                                Action.SetNumber(Target.Self, 0),
+                                Action.SetNumber(Target.Tagged("income"), 0),
+                                Action.SetNumber(Target.Tagged("time"), TYCOON_SECONDS),
+                            ),
+                    ),
+                )
+            }
+            open(title)
+            ok(state.applyCatalog("set_ads", mapOf("banner" to true, "interstitial" to true, "every" to 3L)))
+            state.editor.saveSnapshot()
+        }
+
+    /** Toast needed to win Toaster Tycoon. */
+    const val TOAST_GOAL = 5_000L
+
+    /** Toast that opens the Bakery. */
+    const val BAKERY_PRICE = 300L
+
+    /** Length of a Toaster Tycoon shift, in seconds. */
+    const val TYCOON_SECONDS = 180L
+
     /** Seconds to survive in NPC Dodge. */
     const val SURVIVE_SECONDS = 20L
 }
@@ -491,6 +603,125 @@ private class Recipe(
             ),
         )
         return id
+    }
+
+    /** The object named [name] in the open scene. */
+    fun named(name: String): String =
+        state.scene.objects
+            .single { it.name == name }
+            .id
+
+    /** Shows a kept number tagged [tag] as "[prefix]n" at ([x], [y]), starting at [start]. */
+    fun kept(
+        name: String,
+        tag: String,
+        x: Double,
+        y: Double,
+        prefix: String,
+        start: Long,
+        size: Double,
+        visible: Boolean,
+    ): String {
+        val id = place("Score", name, x, y)
+        set(id, "gameplay:tag", "tag", tag)
+        set(id, "gameplay:number", "keep", true)
+        if (start != 0L) set(id, "gameplay:number", "number", start)
+        set(id, "graphics:text", "text", "$prefix$start")
+        set(id, "graphics:text", "size", size)
+        if (!visible) set(id, "graphics:text", "visible", false)
+        rule(id, Rule(Condition.Always, actions = listOf(Action.ShowNumber(Target.Self, prefix))))
+        return id
+    }
+
+    /**
+     * Toaster Tycoon's Toast, Income and Time, kept across scenes. In play areas income is added and time counts
+     * down every second; elsewhere ([visible] false) they only carry the values.
+     */
+    fun toastHud(visible: Boolean = true) {
+        val toast = kept("Toast", "toast", 0.0, -3.6, "Toast: ", 0, 0.6, visible)
+        kept("Income", "income", 0.0, -2.95, "Income per second: ", 0, 0.38, visible)
+        val time = kept("Time", "time", 0.0, -2.45, "Time: ", PresetRecipes.TYCOON_SECONDS, 0.38, visible)
+        if (!visible) return
+        rule(toast, Rule(Condition.EverySeconds(1), actions = listOf(Action.AddNumber(Target.Self, Target.Tagged("income")))))
+        rule(time, Rule(Condition.EverySeconds(1), actions = listOf(Action.ChangeNumber(Target.Self, -1))))
+    }
+
+    /** A button that, when there is enough toast, spends [price] toast and adds [income] to income per second. */
+    fun upgrade(
+        name: String,
+        x: Double,
+        y: Double,
+        text: String,
+        price: Long,
+        income: Long,
+    ): String {
+        val id = box(name, x, y, 3.8, 0.9, 0xFF2E7D32, tag = name.lowercase().replace(' ', '-'))
+        label("$name label", x, y, text, 0.36)
+        rule(
+            id,
+            Rule(
+                Condition.Tapped,
+                listOf(Condition.NumberIs(Target.Tagged("toast"), Comparison.AtLeast, price)),
+                listOf(Action.ChangeNumber(Target.Tagged("toast"), -price), Action.ChangeNumber(Target.Tagged("income"), income)),
+            ),
+        )
+        return id
+    }
+
+    /**
+     * The complete "+ Title screen" layout (Play, Levels, Shop, How it works) in the game's colors, with a line on how
+     * to play and the How it works scene explaining [explain] and suggesting [tryThis]. Scenes in [locked] are left
+     * out of Levels, so they must be unlocked in play.
+     */
+    fun completeTitle(
+        color: Long,
+        howToPlay: String,
+        explain: List<String>,
+        tryThis: List<String>,
+        locked: List<String> = emptyList(),
+    ) {
+        state.addTitleScreen(TitleLayout.Full)
+        check(state.scene.name == "Title") { state.message ?: "No title screen" }
+        set(named("Background"), "graphics:shape", "color", color)
+        set(named("Title text"), "graphics:text", "size", 1.1)
+        set(named("Title text"), "graphics:transform", "y", -2.6)
+        label("How to play", 0.0, -1.5, howToPlay, 0.36)
+        val howButton = named("How it works button")
+        give(howButton, "gameplay:tag")
+        set(howButton, "gameplay:tag", "tag", "how-button")
+
+        val levels =
+            state.project.scenes
+                .single { it.name == "Levels" }
+                .id
+        open(levels)
+        for (scene in locked) {
+            val name = state.project.scene(scene)!!.name
+            ok(state.applyCatalog("remove_object", mapOf("scene" to sceneId, "object" to named("$name button"))))
+        }
+
+        open(
+            state.project.scenes
+                .single { it.name == "How it works" }
+                .id,
+        )
+        ok(state.applyCatalog("remove_object", mapOf("scene" to sceneId, "object" to named("How text"))))
+        ok(state.applyCatalog("remove_object", mapOf("scene" to sceneId, "object" to named("How hint"))))
+        (explain + tryThis).forEachIndexed { index, line ->
+            require(line.length <= LINE) { "'$line' is longer than $LINE characters" }
+            val trying = index >= explain.size
+            val y = -2.4 + index * 0.55 + if (trying) 0.3 else 0.0
+            val id = label(if (trying) "Try this ${index - explain.size + 1}" else "Rule ${index + 1}", 0.0, y, line, 0.32)
+            if (trying) set(id, "graphics:text", "color", 0xFFFFEB3B)
+        }
+        val back = named("Back button")
+        give(back, "gameplay:tag")
+        set(back, "gameplay:tag", "tag", "back-button")
+        open(
+            state.project.scenes
+                .first()
+                .id,
+        )
     }
 
     /** An ending scene with a headline and a button back to scene [back]. */

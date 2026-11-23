@@ -10,6 +10,7 @@ project file, the same format the builder saves, embedded into the app by `core/
 | `maze-run` | Maze Run: reach the exit without touching a wall |
 | `aura-farmer` | Aura Farmer: tap the Aura Toaster fast enough to farm 50 aura in 15 seconds |
 | `npc-dodge` | NPC Dodge: survive 20 seconds while NPCs ricochet around |
+| `toaster-tycoon` | Toaster Tycoon (complete game, C17): tap, buy upgrades, unlock the Bakery, reach 5000 toast in 3 minutes |
 
 Every preset's title screen has a How it works button. It opens a scene that explains the rules and suggests one
 change to try. `GamePresets` lists the rule blocks each preset uses, and a test checks they are really used.

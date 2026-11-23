@@ -16,6 +16,11 @@ public class GamePreset(
     public val pitch: String,
     /** Rule blocks the preset shows how to use, by their names in the rule editor; the picker lists them. */
     public val teaches: List<String>,
+    /**
+     * Whether this is a complete game (C17): a full home screen, levels or areas, kept values, a shop with test
+     * purchases, test ads, and win and lose scenes. Others are starters that show a few blocks.
+     */
+    public val complete: Boolean = false,
 ) {
     /** A fresh copy of the preset's project. Throws [IllegalArgumentException] when the embedded file cannot be read. */
     public fun project(): Project =
@@ -56,6 +61,22 @@ public object GamePresets {
                 "NPC Dodge",
                 "Survive 20 seconds while NPCs ricochet around you.",
                 listOf("Holding a key", "Touching", "Number is", "Set a number", "Every … seconds", "Go to scene"),
+            ),
+            GamePreset(
+                "toaster-tycoon",
+                "Toaster Tycoon",
+                "Toast, buy upgrades, unlock the Bakery and build a toast empire before the shift ends.",
+                listOf(
+                    "Tapped",
+                    "Every … seconds",
+                    "Add one number to another",
+                    "Add to a number",
+                    "Number is",
+                    "Test purchase",
+                    "Game starts",
+                    "Go to scene",
+                ),
+                complete = true,
             ),
         )
 }
