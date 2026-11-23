@@ -78,5 +78,20 @@ public object GamePresets {
                 ),
                 complete = true,
             ),
+            GamePreset(
+                "star-defender",
+                "Star Defender",
+                "Shoot the invaders across three waves; buy extra lives in the shop.",
+                listOf(
+                    "Holding a key",
+                    "Pressing a key",
+                    "Spawn a copy",
+                    "Touching",
+                    "Leaves the play area",
+                    "Test purchase",
+                    "Go to scene",
+                ),
+                complete = true,
+            ),
         )
 }

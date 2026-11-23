@@ -11,6 +11,7 @@ import dev.spawnkit.gameplay.Condition
 import dev.spawnkit.gameplay.Direction
 import dev.spawnkit.gameplay.Rule
 import dev.spawnkit.gameplay.RuleOperations
+import dev.spawnkit.gameplay.SpawnPlace
 import dev.spawnkit.gameplay.StandardActions
 import dev.spawnkit.gameplay.Target
 
@@ -29,6 +30,7 @@ internal object PresetRecipes {
             "aura-farmer" to ::auraFarmer,
             "npc-dodge" to ::npcDodge,
             "toaster-tycoon" to ::toasterTycoon,
+            "star-defender" to ::starDefender,
         )
 
     private val keyMoves =
@@ -413,6 +415,144 @@ internal object PresetRecipes {
             state.editor.saveSnapshot()
         }
 
+    /**
+     * A complete shooter (C17): steer the ship with Left and Right and fire with Jump. Enemies are spawned from a
+     * template at random spots, faster each wave; shooting $WAVE_KILLS clears a wave, and three waves win. Score and
+     * lives are kept across waves. The shop sells extra lives for score or as a test purchase. Full title screen,
+     * test ads, and win and lose scenes. Original characters.
+     */
+    fun starDefender(): Project =
+        Recipe("Star Defender").run {
+            renameScene("Wave 1")
+            val waves = mutableListOf(sceneId)
+            waves += addScene("Wave 2")
+            waves += addScene("Wave 3")
+            completeTitle(
+                0xFF0D47A1,
+                "Shoot the invaders. Save the stars.",
+                listOf(
+                    "Left and Right move the ship.",
+                    "Jump fires a shot upwards.",
+                    "Enemies spawn at random spots",
+                    "every few moments.",
+                    "A hit adds 10 score.",
+                    "$WAVE_KILLS hits clear the wave.",
+                    "A crash costs a life.",
+                ),
+                listOf("Try this: spawn enemies every", "second in Wave 1."),
+            )
+            val title =
+                state.project.scenes
+                    .first()
+                    .id
+            val win = endScene("Galaxy saved", "GALAXY SAVED!", "Three waves cleared.", "Fly again", title, 0xFF1A237E)
+            val lose = endScene("Ship lost", "Ship lost", "The invaders got through.", "Try again", title, 0xFF4A148C)
+            waves.forEachIndexed { index, wave ->
+                open(wave)
+                val next = waves.getOrNull(index + 1) ?: win
+                box("Background", 0.0, 0.0, 16.0, 9.0, 0xFF0B1026, layer = -1)
+                label("Wave label", 0.0, -3.6, "Wave ${index + 1}", 0.5)
+                starHud()
+                val kills = place("Score", "Hits", 3.0, -3.0)
+                set(kills, "gameplay:tag", "tag", "hits")
+                set(kills, "graphics:text", "text", "Hits: 0")
+                set(kills, "graphics:text", "size", 0.35)
+                rule(kills, Rule(Condition.Always, actions = listOf(Action.ShowNumber(Target.Self, "Hits: "))))
+                rule(kills, Rule(Condition.NumberIs(Target.Self, Comparison.AtLeast, WAVE_KILLS), actions = listOf(Action.GoToScene(next))))
+                rule(named("Lives"), Rule(Condition.NumberIs(Target.Self, Comparison.AtMost, 0), actions = listOf(Action.GoToScene(lose))))
+
+                val ship = box("Ship", 0.0, 3.3, 0.9, 0.6, 0xFF4FC3F7, tag = "ship")
+                rule(ship, Rule(Condition.KeyHeld(StandardActions.LEFT), actions = listOf(Action.Move(Direction.Left, 6.0))))
+                rule(ship, Rule(Condition.KeyHeld(StandardActions.RIGHT), actions = listOf(Action.Move(Direction.Right, 6.0))))
+                rule(
+                    ship,
+                    Rule(
+                        Condition.KeyPressed(StandardActions.JUMP),
+                        actions = listOf(Action.Spawn("shot", SpawnPlace.Self, Direction.Up, 14.0)),
+                    ),
+                )
+
+                val shot = box("Shot", 0.0, 5.0, 0.18, 0.5, 0xFFFFF176, tag = "shot")
+                give(shot, "gameplay:template")
+                rule(shot, Rule(Condition.LeftArea(), actions = listOf(Action.RemoveSelf)))
+                rule(shot, Rule(Condition.Touching("enemy"), actions = listOf(Action.RemoveSelf)))
+
+                val enemy = box("Invader", 0.0, -6.0, 0.9, 0.7, 0xFFE53935, tag = "enemy")
+                give(enemy, "gameplay:template")
+                rule(
+                    enemy,
+                    Rule(
+                        Condition.Touching("shot"),
+                        actions =
+                            listOf(
+                                Action.ChangeNumber(Target.Tagged("score"), 10),
+                                Action.ChangeNumber(Target.Tagged("hits"), 1),
+                                Action.RemoveSelf,
+                            ),
+                    ),
+                )
+                rule(
+                    enemy,
+                    Rule(Condition.Touching("ship"), actions = listOf(Action.ChangeNumber(Target.Tagged("lives"), -1), Action.RemoveSelf)),
+                )
+                rule(enemy, Rule(Condition.LeftArea(), actions = listOf(Action.RemoveSelf)))
+
+                val spawner = place("Box", "Spawner", 0.0, -5.0)
+                takeAway(spawner, "graphics:shape")
+                val period = (3L - index).coerceAtLeast(1L)
+                rule(
+                    spawner,
+                    Rule(
+                        Condition.EverySeconds(period),
+                        actions = listOf(Action.Spawn("enemy", SpawnPlace.RandomArea(-3, 3, -5, -5), Direction.Down, 1.5 + index * 0.5)),
+                    ),
+                )
+            }
+
+            open(
+                state.project.scenes
+                    .single { it.name == "Shop" }
+                    .id,
+            )
+            starHud()
+            val lifePack = box("Life pack", 0.0, 0.6, 4.4, 1.0, 0xFFFFA000, tag = "life-pack")
+            label("Life pack label", 0.0, 0.6, "3 lives: $0.99", 0.42)
+            rule(lifePack, Rule(Condition.Tapped, actions = listOf(Action.TestPurchase("3 extra lives", 99, Target.Tagged("lives"), 3))))
+            val trade = box("Life for score", 0.0, 2.0, 4.4, 1.0, 0xFF2E7D32, tag = "life-for-score")
+            label("Life for score label", 0.0, 2.0, "1 life: 50 score", 0.42)
+            rule(
+                trade,
+                Rule(
+                    Condition.Tapped,
+                    listOf(Condition.NumberIs(Target.Tagged("score"), Comparison.AtLeast, 50)),
+                    listOf(Action.ChangeNumber(Target.Tagged("score"), -50), Action.ChangeNumber(Target.Tagged("lives"), 1)),
+                ),
+            )
+            set(named("Shop text"), "graphics:text", "text", "Test purchases: no money is charged.")
+            set(named("Shop hint"), "graphics:text", "text", "Or trade 50 score for a life.")
+
+            for (ending in listOf(win, lose)) {
+                open(ending)
+                starHud(visible = false)
+                rule(
+                    named("Score"),
+                    Rule(
+                        Condition.GameStarts,
+                        actions = listOf(Action.SetNumber(Target.Self, 0), Action.SetNumber(Target.Tagged("lives"), STAR_LIVES)),
+                    ),
+                )
+            }
+            open(title)
+            ok(state.applyCatalog("set_ads", mapOf("banner" to true, "interstitial" to true, "every" to 2L)))
+            state.editor.saveSnapshot()
+        }
+
+    /** Hits that clear a Star Defender wave. */
+    const val WAVE_KILLS = 8L
+
+    /** Lives a Star Defender run starts with. */
+    const val STAR_LIVES = 3L
+
     /** Toast needed to win Toaster Tycoon. */
     const val TOAST_GOAL = 5_000L
 
@@ -644,6 +784,12 @@ private class Recipe(
         if (!visible) return
         rule(toast, Rule(Condition.EverySeconds(1), actions = listOf(Action.AddNumber(Target.Self, Target.Tagged("income")))))
         rule(time, Rule(Condition.EverySeconds(1), actions = listOf(Action.ChangeNumber(Target.Self, -1))))
+    }
+
+    /** Star Defender's Score and Lives, kept across waves; shown unless [visible] is false. */
+    fun starHud(visible: Boolean = true) {
+        kept("Score", "score", -2.6, -3.0, "Score: ", 0, 0.4, visible)
+        kept("Lives", "lives", 0.0, -3.0, "Lives: ", PresetRecipes.STAR_LIVES, 0.4, visible)
     }
 
     /** A button that, when there is enough toast, spends [price] toast and adds [income] to income per second. */
