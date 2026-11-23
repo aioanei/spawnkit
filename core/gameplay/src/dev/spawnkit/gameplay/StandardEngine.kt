@@ -97,9 +97,20 @@ public class StandardEngine(
             for (effect in pending) {
                 val payload = (effect.payload as? TextValue)?.value ?: continue
                 when (effect.effect) {
-                    RuleBlocks.GO_TO_SCENE -> scene = payload
-                    RuleBlocks.SPAWN -> SpawnRequest.parse(payload)?.let(spawns::add)
-                    RuleBlocks.PURCHASE -> runCatching { PurchaseRequest.action(payload) }.getOrNull()?.let { purchases += PurchaseRequest(it, entity) }
+                    RuleBlocks.GO_TO_SCENE -> {
+                        scene = payload
+                    }
+
+                    RuleBlocks.SPAWN -> {
+                        SpawnRequest.parse(payload)?.let(spawns::add)
+                    }
+
+                    RuleBlocks.PURCHASE -> {
+                        runCatching { PurchaseRequest.action(payload) }.getOrNull()?.let {
+                            purchases +=
+                                PurchaseRequest(it, entity)
+                        }
+                    }
                 }
             }
             instance.acknowledgeEffects(pending.last().id)

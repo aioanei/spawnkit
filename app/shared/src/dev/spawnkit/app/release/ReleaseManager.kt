@@ -534,6 +534,11 @@ private fun AdStatistics(
                         )}",
                     )
                     Text("Revenue: $0.00 — test ads earn nothing", Modifier.testTag("ad-revenue"), fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Test purchases ${current.purchases} — no money is charged",
+                        Modifier.testTag("purchase-total"),
+                    )
+                    for (item in current.purchaseDays) Text("${item.day}: ${item.count} × ${item.product}")
                     if (current.days.isEmpty()) Text("No ad views yet. Plays on the Arcade are counted; previews are not.")
                     for (day in current.days) {
                         Text("${day.day}: ${day.views} views, ${day.clicks} clicks, ${clickRate(day.views, day.clicks)}")

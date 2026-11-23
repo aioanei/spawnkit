@@ -49,7 +49,11 @@ class TestPurchaseTest {
             return id
         }
         add("Coins", "coins")
-        add("Shop item", "item", listOf(Rule(Condition.GameStarts, actions = listOf(Action.TestPurchase("Big bag", 199, Target.Tagged("coins"), 50)))))
+        add(
+            "Shop item",
+            "item",
+            listOf(Rule(Condition.GameStarts, actions = listOf(Action.TestPurchase("Big bag", 199, Target.Tagged("coins"), 50)))),
+        )
         val world = buildSceneWorld(engine.runtime, editor.project, scene, engine.programs).world
         world.step()
 

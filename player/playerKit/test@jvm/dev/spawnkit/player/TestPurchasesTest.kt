@@ -44,7 +44,12 @@ class TestPurchasesTest {
                             "Coin pack",
                             rules =
                                 RuleBlocks.compile(
-                                    listOf(Rule(Condition.GameStarts, actions = listOf(Action.TestPurchase("100 coins", 99, Target.Tagged("coins"), 100)))),
+                                    listOf(
+                                        Rule(
+                                            Condition.GameStarts,
+                                            actions = listOf(Action.TestPurchase("100 coins", 99, Target.Tagged("coins"), 100)),
+                                        ),
+                                    ),
                                 ),
                         ),
                     ),
@@ -84,7 +89,12 @@ class TestPurchasesTest {
         runComposeUiTest {
             val reported = mutableListOf<Pair<String, Long>>()
             mainClock.autoAdvance = false
-            setContent { GamePlayer(GamePackage.of(shop), touchControls = false, purchaseReporter = { product, cents -> reported += product to cents }) }
+            setContent {
+                GamePlayer(GamePackage.of(shop), touchControls = false, purchaseReporter = { product, cents ->
+                    reported +=
+                        product to cents
+                })
+            }
             mainClock.advanceTimeBy(300)
             onNodeWithText(TEST_PURCHASE_LABEL).assertIsDisplayed()
             onNodeWithText("Buy 100 coins for $0.99?").assertIsDisplayed()

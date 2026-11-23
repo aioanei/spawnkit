@@ -88,6 +88,20 @@ public data class AdStatsReport(
     public val clicks: Long,
     /** Counts per day, newest first. */
     public val days: List<AdDayCount>,
+    /** Test purchases in all; no money was charged. */
+    public val purchases: Long = 0,
+    /** Test purchases per day and product, newest day first. */
+    public val purchaseDays: List<PurchaseCount> = emptyList(),
+)
+
+/** Test purchases of one product on one UTC day (C12). */
+public data class PurchaseCount(
+    /** The day, `YYYY-MM-DD`. */
+    public val day: String,
+    /** What was bought. */
+    public val product: String,
+    /** How many times. */
+    public val count: Long,
 )
 
 /** A SpawnKit server's accounts and Arcade, as the builder uses them (C11b). [AccountClient] is the real one. */
@@ -315,7 +329,12 @@ public class AccountClient(
                 val day = it.obj()
                 AdDayCount(day.text("day"), day.whole("views"), day.whole("clicks"))
             }
-        return AdStatsReport(json.whole("views"), json.whole("clicks"), days)
+        val bought =
+            (json["purchaseDays"] as? JsonArray ?: unreadable()).map {
+                val item = it.obj()
+                PurchaseCount(item.text("day"), item.text("product"), item.whole("count"))
+            }
+        return AdStatsReport(json.whole("views"), json.whole("clicks"), days, json.whole("purchases"), bought)
     }
 
     private fun JsonObject.whole(key: String): Long = (get(key) as? JsonPrimitive)?.takeUnless { it.isString }?.longOrNull ?: unreadable()

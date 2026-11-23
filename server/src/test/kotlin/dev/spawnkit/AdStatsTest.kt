@@ -118,6 +118,7 @@ class AdStatsTest {
             val ada = token("ada@example.com")
             arcade(directory) {
                 val slug = client.publish(game, ada).json().text("slug")
+
                 suspend fun buy(
                     n: Int,
                     product: String,
@@ -136,7 +137,13 @@ class AdStatsTest {
                 assertEquals(0, stats.getValue("views").jsonPrimitive.long, "event numbers are shared, so number 3 was already used")
                 assertEquals("0.00", stats.getValue("revenue").jsonPrimitive.content, "test purchases charge nothing")
                 val items = stats.getValue("purchaseDays").jsonArray.map { it.jsonObject }
-                assertEquals(listOf("100 coins" to 2L, "Extra life" to 1L), items.map { it.getValue("product").jsonPrimitive.content to it.getValue("count").jsonPrimitive.long })
+                assertEquals(
+                    listOf("100 coins" to 2L, "Extra life" to 1L),
+                    items.map {
+                        it.getValue("product").jsonPrimitive.content to
+                            it.getValue("count").jsonPrimitive.long
+                    },
+                )
             }
         }
 

@@ -192,7 +192,11 @@ fun PurchaseLayer(
     val request = session.pendingPurchase ?: return
     val action = request.action
     Column(
-        modifier.fillMaxSize().background(Color(0xE6101418)).padding(24.dp).testTag("purchase"),
+        modifier
+            .fillMaxSize()
+            .background(Color(0xE6101418))
+            .padding(24.dp)
+            .testTag("purchase"),
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -202,7 +206,11 @@ fun PurchaseLayer(
             color = Color.White,
             style = MaterialTheme.typography.headlineSmall,
         )
-        Text("This is a test: nothing is paid, and the item is still granted.", color = Color.White, style = MaterialTheme.typography.bodySmall)
+        Text(
+            "This is a test: nothing is paid, and the item is still granted.",
+            color = Color.White,
+            style = MaterialTheme.typography.bodySmall,
+        )
         Button(
             { session.completePurchase(buy = true)?.let { reporter?.purchased(it.action.product, it.action.priceCents) } },
             Modifier.heightIn(min = 48.dp).testTag("purchase-buy"),
