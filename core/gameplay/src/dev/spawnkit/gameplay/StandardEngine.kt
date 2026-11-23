@@ -9,6 +9,7 @@ import dev.spawnkit.program.ProgramHostBuilder
 import dev.spawnkit.program.ProgramLimits
 import dev.spawnkit.program.TextValue
 import dev.spawnkit.runtime.AuthoringInfo
+import dev.spawnkit.runtime.EntityHandle
 import dev.spawnkit.runtime.InputAction
 import dev.spawnkit.runtime.Runtime
 import dev.spawnkit.runtime.RuntimeBuilder
@@ -87,6 +88,41 @@ public class StandardEngine(
         }
         return requested
     }
+
+    /**
+     * Carries game-wide values from [from] to [to] when the game changes scene. Every kept number in [from] is recorded
+     * in [memory] by tag (the first object with a tag wins, ignoring case and spaces); then every kept number in [to]
+     * whose tag is in [memory] takes that value. [memory] lives for the whole play, so a value survives a scene that
+     * has no object for it.
+     */
+    public fun carryKeptNumbers(
+        from: World,
+        to: World,
+        memory: MutableMap<String, Long>,
+    ) {
+        val seen = mutableSetOf<String>()
+        for (entity in from.entities(gameplay.number)) {
+            val number = from.get(entity, gameplay.number)?.takeIf { it.keep } ?: continue
+            val key = keptKey(from, entity) ?: continue
+            if (seen.add(key)) memory[key] = number.value
+        }
+        for (entity in to.entities(gameplay.number)) {
+            val number = to.get(entity, gameplay.number)?.takeIf { it.keep } ?: continue
+            val value = keptKey(to, entity)?.let(memory::get) ?: continue
+            to.set(entity, gameplay.number, number.copy(value = value))
+        }
+    }
+
+    private fun keptKey(
+        world: World,
+        entity: EntityHandle,
+    ): String? =
+        world
+            .get(entity, gameplay.tag)
+            ?.name
+            ?.trim()
+            ?.lowercase()
+            ?.takeIf { it.isNotEmpty() }
 
     /** Engine defaults. */
     public companion object {

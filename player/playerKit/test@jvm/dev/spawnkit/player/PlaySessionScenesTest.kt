@@ -71,6 +71,33 @@ class PlaySessionScenesTest {
     }
 
     @Test
+    fun keptNumbersCarryAcrossTheSceneChange() {
+        goTo(level)
+        val kept = { scene: String, value: Long ->
+            (
+                editor.apply(
+                    EditOperation.AddObject(
+                        scene,
+                        "Coins",
+                        components =
+                            listOf(
+                                ComponentDoc("gameplay:tag", mapOf("tag" to "coins")),
+                                ComponentDoc("gameplay:number", mapOf("number" to value, "keep" to true)),
+                            ),
+                    ),
+                ) as OperationResult.Applied
+            ).createdIds.single()
+        }
+        kept(title, 12)
+        val onLevel = kept(level, 0)
+        val session = engine.playSession(editor.project, title)
+
+        session.tapAndTick()
+
+        assertEquals(12, session.scene.world.get(session.scene.entity(onLevel)!!, engine.gameplay.number)?.value)
+    }
+
+    @Test
     fun goingToTheSameSceneRestartsIt() {
         goTo(title)
         val session = engine.playSession(editor.project, title)

@@ -34,10 +34,16 @@ public data class Tag(
     public val name: String = "",
 )
 
-/** A whole number kept by an object, such as a score, coins or lives. */
+/**
+ * A whole number kept by an object, such as a score, coins or lives. With [keep], it is a game-wide value: when the
+ * game goes to another scene, it carries over to the object with the same tag there (see
+ * [StandardEngine.carryKeptNumbers]).
+ */
 public data class NumberValue(
     /** Current value. */
     public val value: Long = 0,
+    /** Whether the value is kept across scenes. */
+    public val keep: Boolean = false,
 )
 
 /** An axis-aligned box in world units, used for touching and tapping. */
@@ -106,7 +112,18 @@ public class Gameplay(
                 AuthoringInfo("Value"),
                 0L,
                 { it.value },
-                { _, v -> NumberValue(v) },
+                { n, v -> n.copy(value = v) },
+            )
+            property(
+                "keep",
+                ValueKind.YesNo,
+                AuthoringInfo(
+                    "Keep across scenes",
+                    "The number keeps its value in the next scene, on the object with the same tag. Use it for coins, lives or a level.",
+                ),
+                false,
+                { it.keep },
+                { n, v -> n.copy(keep = v) },
             )
         }
 
@@ -275,10 +292,20 @@ private object NumberCodec : StateCodec<NumberValue> {
     override fun capture(
         value: NumberValue,
         context: StateCaptureContext,
-    ): StateValue = StateValue.Integer(value.value)
+    ): StateValue =
+        // Numbers that are not kept use the original state, so existing checkpoints and hashes are unchanged.
+        if (value.keep) {
+            StateValue.Record(mapOf("value" to StateValue.Integer(value.value), "keep" to StateValue.Flag(true)))
+        } else {
+            StateValue.Integer(value.value)
+        }
 
     override fun restore(
         state: StateValue,
         context: StateRestoreContext,
-    ): NumberValue = NumberValue((state as StateValue.Integer).value)
+    ): NumberValue =
+        when (state) {
+            is StateValue.Record -> NumberValue((state.fields.getValue("value") as StateValue.Integer).value, keep = true)
+            else -> NumberValue((state as StateValue.Integer).value)
+        }
 }

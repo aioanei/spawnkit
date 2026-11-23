@@ -27,6 +27,7 @@ class PlaySession(
     startSceneId: String? = null,
     private val sceneRequest: (World) -> String? = { null },
     private val buildScene: (String) -> SceneWorld? = { null },
+    private val onSceneChange: (from: World, to: World) -> Unit = { _, _ -> },
 ) {
     /** The world being played; replaced when the game goes to another scene. */
     var scene by mutableStateOf(scene)
@@ -103,6 +104,7 @@ class PlaySession(
             message = "A rule asked for a scene that no longer exists."
             return
         }
+        onSceneChange(scene.world, next.world)
         scene = next
         sceneId = requested
         message = null
@@ -123,15 +125,20 @@ class PlaySession(
 
 /**
  * A play session of [project] starting at scene [sceneId], which follows "Go to scene" blocks to fresh worlds of the
- * same project snapshot. The builder's Play and exported players both use it.
+ * same project snapshot, carrying numbers marked "Keep across scenes" (C14). The builder's Play and exported players
+ * both use it.
  */
 fun StandardEngine.playSession(
     project: Project,
     sceneId: String,
-): PlaySession =
-    PlaySession(
+): PlaySession {
+    val kept = mutableMapOf<String, Long>()
+    return PlaySession(
         buildSceneWorld(runtime, project, sceneId, programs),
         actions,
         sceneId,
         ::takeSceneRequest,
-    ) { id -> project.scene(id)?.let { buildSceneWorld(runtime, project, it.id, programs) } }
+        buildScene = { id -> project.scene(id)?.let { buildSceneWorld(runtime, project, it.id, programs) } },
+        onSceneChange = { from, to -> carryKeptNumbers(from, to, kept) },
+    )
+}
