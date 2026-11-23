@@ -302,6 +302,26 @@ public sealed interface Action {
         }
     }
 
+    /**
+     * A test purchase (C12): after the moment, players ask "Buy [product] for $price?", labelled "TEST PURCHASE: no
+     * money is charged". If the player buys, [amount] is added to the [target]'s number, such as coins or lives.
+     */
+    public data class TestPurchase(
+        /** What is sold, as players see it. */
+        public val product: String,
+        /** Price shown, in cents; no money is ever charged. */
+        public val priceCents: Long,
+        /** Object whose number grows when bought. */
+        public val target: Target,
+        /** Amount added to that number. */
+        public val amount: Long,
+    ) : Action {
+        init {
+            require(product.isNotBlank() && product.length <= MAX_PRODUCT) { "Name the product in 1 to $MAX_PRODUCT characters" }
+            require(priceCents in 0..MAX_PRICE_CENTS) { "Choose a price from $0.00 to $999.99" }
+        }
+    }
+
     /** Switches the game to scene [sceneId] at the end of the tick; the new scene starts fresh. */
     public data class GoToScene(
         /** ID of the scene to go to. */
@@ -485,6 +505,10 @@ public object RuleBlocks {
                 "Set speed ${action.direction.label} to ${number(action.speed)} per second"
             }
 
+            is Action.TestPurchase -> {
+                "Test purchase \"${action.product}\" for ${price(action.priceCents)}, then add ${action.amount} to ${name(action.target)}"
+            }
+
             is Action.GoToScene -> {
                 when {
                     scenes.isEmpty() -> "Go to scene ${action.sceneId}"
@@ -637,6 +661,10 @@ public object RuleBlocks {
                 Stmt.SetProperty(Expr.Self(s), property, Expr.Literal(DecimalValue(speed), s), s)
             }
 
+            is Action.TestPurchase -> {
+                Stmt.RequestEffect(PURCHASE, text(PurchaseRequest.header(action), s), s)
+            }
+
             is Action.GoToScene -> {
                 Stmt.RequestEffect(GO_TO_SCENE, text(action.sceneId, s), s)
             }
@@ -750,6 +778,10 @@ public object RuleBlocks {
                     var first = stmt.payload
                     while (first is Expr.Binary) first = first.left
                     SpawnRequest.action(((first as Expr.Literal).value as TextValue).value.removeSuffix("\n"))
+                }
+
+                stmt is Stmt.RequestEffect && stmt.effect == PURCHASE -> {
+                    PurchaseRequest.action(((stmt.payload as Expr.Literal).value as TextValue).value)
                 }
 
                 stmt is Stmt.RequestEffect && stmt.effect == GO_TO_SCENE -> {
@@ -923,9 +955,17 @@ public object RuleBlocks {
 
     /** Effect a "Spawn a copy" block requests; see [SpawnRequest]. Players act on it after the tick. */
     public const val SPAWN: String = "spawn"
+
+    /** Effect a "Test purchase" block requests; see [PurchaseRequest]. Players ask to confirm it after the tick. */
+    public const val PURCHASE: String = "purchase"
+
+    /** [cents] as dollars, such as $0.99. */
+    public fun price(cents: Long): String = "$${cents / 100}.${(cents % 100).toString().padStart(2, '0')}"
 }
 
 private const val TICKS_PER_SECOND = 60L
 private const val MAX_SECONDS = 86_400L
 private const val MAX_SPEED = 1_000.0
 private const val MAX_AREA = 100_000.0
+private const val MAX_PRODUCT = 60
+private const val MAX_PRICE_CENTS = 99_999L

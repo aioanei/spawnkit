@@ -2,6 +2,7 @@ package dev.spawnkit.gameplay
 
 import dev.spawnkit.editing.ObjectDoc
 import dev.spawnkit.editing.Project
+import dev.spawnkit.runtime.EntityHandle
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
@@ -109,12 +110,52 @@ public data class SpawnRequest(
     }
 }
 
-/** What the rules of one tick asked players to do: switch scene, and make copies. */
+/**
+ * A test purchase a rule asked for (C12): the block, and the object whose rule asked, so "this object" grants to it.
+ * The block's effect payload is its arguments as a JSON object.
+ */
+public data class PurchaseRequest(
+    /** The block. */
+    public val action: Action.TestPurchase,
+    /** The object whose rule asked. */
+    public val entity: EntityHandle,
+) {
+    /** Encoding of the block arguments. */
+    public companion object {
+        /** The payload for [action]. */
+        public fun header(action: Action.TestPurchase): String =
+            buildJsonObject {
+                put("product", JsonPrimitive(action.product))
+                put("price", JsonPrimitive(action.priceCents))
+                when (val target = action.target) {
+                    Target.Self -> put("self", JsonPrimitive(true))
+                    is Target.Tagged -> put("tag", JsonPrimitive(target.tag))
+                }
+                put("amount", JsonPrimitive(action.amount))
+            }.toString()
+
+        /** The block whose [header] this is; throws for anything else. */
+        public fun action(header: String): Action.TestPurchase {
+            val json = Json.parseToJsonElement(header).jsonObject
+            val target = json["tag"]?.jsonPrimitive?.content?.let { Target.Tagged(it) } ?: Target.Self
+            return Action.TestPurchase(
+                json.getValue("product").jsonPrimitive.content,
+                json.getValue("price").jsonPrimitive.longOrNull!!,
+                target,
+                json.getValue("amount").jsonPrimitive.longOrNull!!,
+            )
+        }
+    }
+}
+
+/** What the rules of one tick asked players to do: switch scene, make copies and offer test purchases. */
 public data class EngineRequests(
     /** The scene a "Go to scene" block asked for (the last one wins), or `null`. */
     public val scene: String?,
     /** Copies to make, in the order rules asked. */
     public val spawns: List<SpawnRequest>,
+    /** Test purchases to offer, in the order rules asked. */
+    public val purchases: List<PurchaseRequest> = emptyList(),
 )
 
 /** The tag of an authored object, normalised, or `null`. */
