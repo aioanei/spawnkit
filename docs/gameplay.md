@@ -193,6 +193,11 @@ jumps higher; a pilot clears three waves with the score kept, and an idle one lo
 every preset loads without problems, uses the blocks it lists, and has working Play and How it works buttons, and the
 picker test checks the groups in both layouts.
 
+On the Android API 36 emulator, `tools/android-templates-smoke.py` opens each template from New game with real taps,
+plays its title screen and starts the first level ([picker](media/android-templates-picker.png),
+[Sky Hopper level 1](media/android-template-sky-play.png)). Known limit: in Sky Hopper, coins are kept when a level
+restarts after a lost life, while the level's coins come back, so they can be collected again.
+
 ## Test purchases (C12b)
 
 The second half of [#77](https://github.com/aioanei/spawnkit/issues/77), so a shop scene can sell things without
