@@ -1,10 +1,5 @@
 package dev.spawnkit
 
-import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.Json
 import dev.spawnkit.accounts.optionalAccount
 import dev.spawnkit.accounts.signedIn
 import dev.spawnkit.editing.GamePackage
@@ -32,7 +27,12 @@ import io.ktor.server.routing.put
 import io.ktor.server.routing.routing
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonObject
 import java.io.IOException
 import java.io.InputStream
 import java.util.concurrent.Semaphore
@@ -222,7 +222,11 @@ private fun Route.adRoutes(
             val text = readLimitedText(limits.bytes) { ArcadeProblem(HttpStatusCode.PayloadTooLarge, "Send at most 50 ad events at once.") }
             val (session, events) = parseAdEvents(text)
             val accepted = withContext(Dispatchers.IO) { ads.record(slug, session, events) }
-            respondText(JsonObject(mapOf("accepted" to JsonPrimitive(accepted))).toString(), ContentType.Application.Json, HttpStatusCode.Accepted)
+            respondText(
+                JsonObject(mapOf("accepted" to JsonPrimitive(accepted))).toString(),
+                ContentType.Application.Json,
+                HttpStatusCode.Accepted,
+            )
         }
     }
     get("/api/games/{slug}/ad-stats") {
@@ -257,7 +261,8 @@ private fun Route.adRoutes(
 
 /** The play session and events of an ad report, or a 400 problem explaining what is wrong. */
 private fun parseAdEvents(text: String): Pair<String, List<AdEventReport>> {
-    fun bad(): Nothing = throw ArcadeProblem(HttpStatusCode.BadRequest, "Send {\"session\": id, \"events\": [{\"n\", \"placement\", \"kind\"}]}.")
+    fun bad(): Nothing =
+        throw ArcadeProblem(HttpStatusCode.BadRequest, "Send {\"session\": id, \"events\": [{\"n\", \"placement\", \"kind\"}]}.")
     val root = runCatching { Json.parseToJsonElement(text).jsonObject }.getOrNull() ?: bad()
     val session = (root["session"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: bad()
     if (!session.matches(SESSION_ID)) bad()

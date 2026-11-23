@@ -51,7 +51,14 @@ class AdStatsTest {
         limits: PublishLimits = PublishLimits(bytes = MAX_AD_EVENT_BYTES, perAddress = 30, perServer = 3_000),
         block: suspend ApplicationTestBuilder.() -> Unit,
     ) = testApplication {
-        application { arcade(ArcadeStore(directory), playerFixture(), owners = ArcadeOwners(accounts, OwnedGames(db), ads), adLimits = limits) }
+        application {
+            arcade(
+                ArcadeStore(directory),
+                playerFixture(),
+                owners = ArcadeOwners(accounts, OwnedGames(db), ads),
+                adLimits = limits,
+            )
+        }
         block()
     }
 
@@ -79,7 +86,11 @@ class AdStatsTest {
                 val slug = client.publish(game, ada).json().text("slug")
                 val view = Triple(1, "banner", "view")
                 assertEquals(HttpStatusCode.Accepted, client.report(slug, "play-session-1", view, Triple(2, "banner", "click")).status)
-                assertEquals("""{"accepted":0}""", client.report(slug, "play-session-1", view).bodyAsText(), "a retried event is not counted again")
+                assertEquals(
+                    """{"accepted":0}""",
+                    client.report(slug, "play-session-1", view).bodyAsText(),
+                    "a retried event is not counted again",
+                )
                 client.report(slug, "play-session-2", view)
                 now += 24 * 60 * 60 * 1000
                 client.report(slug, "play-session-3", Triple(1, "interstitial", "view"))
@@ -88,7 +99,13 @@ class AdStatsTest {
                 assertEquals(3, stats.getValue("views").jsonPrimitive.long)
                 assertEquals(1, stats.getValue("clicks").jsonPrimitive.long)
                 assertEquals("0.00", stats.getValue("revenue").jsonPrimitive.content, "test ads never earn")
-                assertEquals(true, stats.getValue("testAds").jsonPrimitive.content.toBoolean())
+                assertEquals(
+                    true,
+                    stats
+                        .getValue("testAds")
+                        .jsonPrimitive.content
+                        .toBoolean(),
+                )
                 val days = stats.getValue("days").jsonArray.map { it.jsonObject }
                 assertEquals(listOf("2025-11-25", "2025-11-24"), days.map { it.getValue("day").jsonPrimitive.content })
                 assertEquals(listOf(1L, 2L), days.map { it.getValue("views").jsonPrimitive.long })
@@ -115,10 +132,20 @@ class AdStatsTest {
             arcade(directory, PublishLimits(bytes = MAX_AD_EVENT_BYTES, perAddress = 3, perServer = 100)) {
                 val slug = client.publish(game, ada).json().text("slug")
                 assertEquals(HttpStatusCode.NotFound, client.report("missing", "play-session-1", Triple(1, "banner", "view")).status)
-                assertEquals(HttpStatusCode.BadRequest, client.report(slug, "x", Triple(1, "banner", "view")).status, "session IDs are random tokens")
+                assertEquals(
+                    HttpStatusCode.BadRequest,
+                    client.report(slug, "x", Triple(1, "banner", "view")).status,
+                    "session IDs are random tokens",
+                )
                 assertEquals(HttpStatusCode.BadRequest, client.report(slug, "play-session-1", Triple(1, "popup", "view")).status)
                 assertEquals(HttpStatusCode.TooManyRequests, client.report(slug, "play-session-1", Triple(1, "banner", "view")).status)
-                assertEquals(0, client.stats(slug, ada).getValue("views").jsonPrimitive.long)
+                assertEquals(
+                    0,
+                    client
+                        .stats(slug, ada)
+                        .getValue("views")
+                        .jsonPrimitive.long,
+                )
             }
         }
 }

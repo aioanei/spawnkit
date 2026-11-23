@@ -159,7 +159,8 @@ public object ProjectCodec {
     }
 
     private fun JsonFields.readAds(): AdSettings {
-        fun flag(name: String) = requireNotNull((get(name) as? JsonPrimitive)?.takeUnless { it.isString }?.booleanOrNull) { "The ad settings are damaged" }
+        fun flag(name: String) =
+            requireNotNull((get(name) as? JsonPrimitive)?.takeUnless { it.isString }?.booleanOrNull) { "The ad settings are damaged" }
         return AdSettings(flag("banner"), flag("interstitial"), integer("every").toInt())
     }
 

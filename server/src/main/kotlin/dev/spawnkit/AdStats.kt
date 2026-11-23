@@ -41,14 +41,20 @@ internal class AdStats(
         events: List<AdEventReport>,
     ): Int =
         db.tx {
-            val day = Instant.ofEpochMilli(clock()).atZone(ZoneOffset.UTC).toLocalDate().toString()
+            val day =
+                Instant
+                    .ofEpochMilli(clock())
+                    .atZone(ZoneOffset.UTC)
+                    .toLocalDate()
+                    .toString()
             var accepted = 0
             for (event in events.distinctBy { it.number }) {
                 val seen =
                     AdEventsSeen
                         .selectAll()
-                        .where { (AdEventsSeen.game eq slug) and (AdEventsSeen.session eq session) and (AdEventsSeen.number eq event.number) }
-                        .any()
+                        .where {
+                            (AdEventsSeen.game eq slug) and (AdEventsSeen.session eq session) and (AdEventsSeen.number eq event.number)
+                        }.any()
                 if (seen) continue
                 AdEventsSeen.insert {
                     it[game] = slug
