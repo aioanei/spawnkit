@@ -44,7 +44,11 @@ class HomeScreenKitTest {
         val state = EditorState()
         state.apply(EditOperation.AddScene("Level 2"))
         val level2 = state.sceneNamed("Level 2")
-        state.selectScene(state.project.scenes.first().id)
+        state.selectScene(
+            state.project.scenes
+                .first()
+                .id,
+        )
 
         state.piece("Button")
 
@@ -103,8 +107,16 @@ class HomeScreenKitTest {
         assertEquals("Title", state.scene.name)
         assertEquals(
             listOf(
-                "Background", "Title text", "Play button", "Play label", "Levels button", "Levels label", "Shop button",
-                "Shop label", "How it works button", "How it works label",
+                "Background",
+                "Title text",
+                "Play button",
+                "Play label",
+                "Levels button",
+                "Levels label",
+                "Shop button",
+                "Shop label",
+                "How it works button",
+                "How it works label",
             ),
             state.scene.objects.map { it.name },
         )

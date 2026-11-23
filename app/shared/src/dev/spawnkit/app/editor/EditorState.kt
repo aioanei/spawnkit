@@ -458,6 +458,8 @@ class EditorState(
         if (layout != TitleLayout.PlayOnly) {
             // The Play button moves up to make room for the others.
             batch.operations += EditOperation.SetProperty(title, play, "graphics:transform", "y", -0.2)
+            batch.operations += EditOperation.SetProperty(title, play, "graphics:shape", "width", 4.4)
+            batch.operations += EditOperation.SetProperty(title, play, "graphics:shape", "height", 1.1)
             val extras = mutableListOf("Levels")
             if (layout == TitleLayout.Full) extras += listOf("Shop", "How it works")
             val scenes = extras.map { it to batch.scene(it) }

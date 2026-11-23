@@ -62,7 +62,13 @@ class MoveIntoTest {
         val label = add("Label", 4.0, 3.0)
         apply(move(label, panel))
 
-        assertEquals(panel, editor.project.scene(scene)!!.find(label)!!.parent)
+        assertEquals(
+            panel,
+            editor.project
+                .scene(scene)!!
+                .find(label)!!
+                .parent,
+        )
         assertEquals(1.0, transform(label)["x"])
         assertEquals(1.0, transform(label)["y"])
         assertEquals(0.5, transform(label)["scaleX"], "half size inside a double-size group, so it looks the same")
@@ -75,7 +81,12 @@ class MoveIntoTest {
         val label = add("Label", 1.0, 1.0, parent = panel)
         apply(move(label, null))
 
-        assertNull(editor.project.scene(scene)!!.find(label)!!.parent)
+        assertNull(
+            editor.project
+                .scene(scene)!!
+                .find(label)!!
+                .parent,
+        )
         assertEquals(4.0, transform(label)["x"])
         assertEquals(3.0, transform(label)["y"])
         assertEquals(2.0, transform(label)["scaleX"])
@@ -87,7 +98,16 @@ class MoveIntoTest {
         val panel = add("Panel", 2.0, 1.0, scale = 2.0)
         add("Label", 4.0, 3.0)
         val before = editor.project
-        apply(move(editor.project.scene(scene)!!.objects.last().id, panel))
+        apply(
+            move(
+                editor.project
+                    .scene(scene)!!
+                    .objects
+                    .last()
+                    .id,
+                panel,
+            ),
+        )
         editor.undo()
 
         assertEquals(before, editor.project)

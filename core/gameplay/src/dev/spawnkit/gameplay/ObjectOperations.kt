@@ -53,7 +53,11 @@ public object ObjectOperations {
                     )
                 val current = transform(obj)
                 for ((property, value) in local) {
-                    if (current[property] != value) operations += EditOperation.SetProperty(sceneId, objectId, TRANSFORM, property, value, label)
+                    if (current[property] !=
+                        value
+                    ) {
+                        operations += EditOperation.SetProperty(sceneId, objectId, TRANSFORM, property, value, label)
+                    }
                 }
             }
         }
@@ -121,6 +125,7 @@ public object ObjectOperations {
 
     private fun transform(obj: ObjectDoc): Map<String, Double> {
         val values = obj.component(TRANSFORM)?.values.orEmpty()
+
         fun read(
             key: String,
             default: Double,

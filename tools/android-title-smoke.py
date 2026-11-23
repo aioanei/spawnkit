@@ -115,6 +115,7 @@ else:
 tap("Player", scroll=False)
 tap("Scene", scroll=False, below=1400)
 tap("+ Title screen")
+tap("Play")  # the Play-only layout
 time.sleep(1)
 screenshot("android-title-edit.png")
 tap("Play", exact=False, scroll=False)

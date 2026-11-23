@@ -92,6 +92,7 @@ fun Inspector(
             return@Column
         }
         NameField(state, obj)
+        GroupRow(state, obj)
         if (onAskAi != null) AskAiButton { onAskAi("Help me change ${obj.name}.") }
         for (doc in obj.components) {
             val descriptor =
@@ -112,6 +113,58 @@ fun Inspector(
             Switch(state.showAdvanced, { state.showAdvanced = it }, Modifier.testTag("advanced"))
             Spacer(Modifier.width(8.dp))
             Text("Show advanced options", style = MaterialTheme.typography.bodySmall)
+        }
+    }
+}
+
+/**
+ * Where the object sits in the scene's groups, and "Move into…": the `move_into` operation agents use too (C15). The
+ * object stays where it is on screen. Dragging a row in the scene list onto another does the same.
+ */
+@Composable
+private fun GroupRow(
+    state: EditorState,
+    obj: ObjectDoc,
+) {
+    var open by remember(obj.id) { mutableStateOf(false) }
+    val parent = obj.parent?.let(state.scene::find)
+    Column {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                parent?.let { "Inside ${it.name}" } ?: "At the top level",
+                Modifier.weight(1f).testTag("group-of:${obj.name}"),
+                style = MaterialTheme.typography.bodySmall,
+            )
+            TextButton({ open = !open }, Modifier.testTag("move-into")) { Text("Move into…") }
+        }
+        if (open) {
+            val inside = state.scene.subtree(obj.id).toSet()
+            val groups = state.scene.objects.filter { it.id !in inside && it.id != obj.parent }
+            Text(
+                "Choose a group. It moves, turns and resizes with the group, and stays where it is now.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (parent != null) {
+                    OutlinedButton(
+                        {
+                            open = false
+                            state.moveInto(obj.id, null)
+                        },
+                        Modifier.testTag("move-into:top"),
+                    ) { Text("Top level") }
+                }
+                for (group in groups) {
+                    OutlinedButton(
+                        {
+                            open = false
+                            state.moveInto(obj.id, group.id)
+                        },
+                        Modifier.testTag("move-into:${group.name}"),
+                    ) { Text(group.name) }
+                }
+            }
         }
     }
 }
