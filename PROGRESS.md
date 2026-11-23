@@ -1,6 +1,24 @@
 # SpawnKit progress
 
-## Current checkpoint — C16b Character Forge agent tool (2026-11-23)
+## Current checkpoint — live Anthropic tool calls fixed (2026-11-23)
+
+- **Branch.** `fix/koog-anyof`, stacked on C16b (`feat/90-character-agent`, PR #105).
+- **Fixed.** Koog 1.3.0's Anthropic client refuses `AnyOf` tool parameters, so every live request with the full
+  toolbox failed: SpawnKit AI and the creator's own key. `KoogModel` now sends choices in a flat form (one object
+  chosen by `block`/`kind`; `{number | whole_number | text | yes_no}` for plain values) and maps replies back.
+  [AI Studio](docs/ai-studio.md#models-recording-and-replay).
+- **Upstream reports.** New [docs/upstream](docs/upstream/README.md), one ready-to-file report per JetBrains problem:
+  - the Koog `AnyOf` refusal;
+  - the Toolchain's Wasm setup changing an ancestor Node project;
+  - a CI crash on a truncated `FakeDependency.jar`.
+
+  `AGENTS.md` now asks agents to add such reports.
+- **Evidence.** `KoogAnthropicWireTest` drives the real Anthropic client against a local stand-in: it failed before
+  the fix with the live error and passes after it. `KoogModelTest` checks that no tool has an `AnyOf` parameter and
+  that replies are restored. A one-off live check with the owner's key built a rule and set a width (about $0.20).
+- **Next.** C13, C11c, C19 and C8.
+
+## Previous checkpoint — C16b Character Forge agent tool (2026-11-23)
 
 - **Branch.** `feat/90-character-agent`, stacked on C16a (`feat/90-character-forge`, PR #104). With C16a this completes
   [#90](https://github.com/aioanei/spawnkit/issues/90). [Plan](docs/plans/2026-11-23-c16b-character-agent.md),
@@ -19,9 +37,7 @@
   - New tests: `CharacterToolTest` 7, `DemoModelTest` +2, `CharacterAgentUiTest` 3 (phone, desktop, decline).
   - Android API 36: `tools/android-character-smoke.py` ran from an illustrated portrait to a playable character, with
     live images and the labelled demo.
-- **Found.** Koog 1.3.0's Anthropic client rejects `AnyOf` tool parameters. Live Anthropic requests with the full
-  toolbox therefore fail, both SpawnKit AI and the creator's own key. Needs a fix before C13.
-- **Next.** Fix the Koog `AnyOf` conversion with a live check. Then C13, C11c, C19 and C8.
+- **Found.** Koog 1.3.0's Anthropic client rejects `AnyOf` tool parameters; fixed in the next checkpoint.
 
 ## Previous checkpoint — C16a Character Forge (2026-11-23)
 

@@ -171,6 +171,20 @@ unavailable on most machines. Use the aggregates above.
 - Tests use `kotlin.test` in `commonTest` unless a platform API is under test. No live LLM/image API calls in tests;
   use the replaying executor and recorded fixtures.
 
+## Upstream reports
+
+The owner reports bugs in JetBrains products (Kotlin, Compose Multiplatform, the Kotlin Toolchain, Koog, Ktor, IntelliJ
+tooling and the like) to show the teams that the project uses them.
+- **When to write one.** You find behaviour in such a product that is wrong, crashes, or contradicts its documentation.
+  First confirm it is not caused by SpawnKit: reproduce it in isolation where possible, and say so when you could not.
+- **Where.** Add one Markdown file per problem under [docs/upstream/](docs/upstream/README.md), written to be filed as
+  it is: title with product and version, environment, steps to reproduce, expected and actual (quoting the error),
+  SpawnKit's workaround, and evidence. Add a row to the index there.
+- **Tell the owner** in your summary.
+- **Never** include secrets, keys, personal data or the owner's details. Never file the report yourself.
+- **Third-party problems** found on the way (for example Google's Android Gradle Plugin) go in the same folder only
+  when a JetBrains product is involved. Say which part belongs to whom.
+
 ## Guardrails
 
 - Never commit secrets: `.env`, API keys, keystores, signing certificates. Keys come from the environment (development, CI, desktop) or the platform's secure storage on devices, never

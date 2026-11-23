@@ -103,10 +103,68 @@ class KoogModelTest {
             assertEquals(tools.map { it.name }, executor.tools.map { it.name })
             val addRule = executor.tools.first { it.name == "add_rule" }
             assertEquals(listOf("scene", "object", "when"), addRule.requiredParameters.map { it.name })
-            val whenType = assertIs<ToolParameterType.AnyOf>(addRule.requiredParameters.last().type)
-            assertTrue(whenType.types.any { it.name == "Touching" }, "Block variants are named by their block ID")
+            // Koog's Anthropic client refuses AnyOf, so block choices become one object chosen by its block ID.
+            val whenType = assertIs<ToolParameterType.Object>(addRule.requiredParameters.last().type)
+            val block = whenType.properties.first { it.name == "block" }
+            assertEquals(listOf("block"), whenType.requiredProperties)
+            assertTrue("Touching" in assertIs<ToolParameterType.Enum>(block.type).entries, "Blocks are chosen by their block ID")
+            assertTrue(whenType.properties.any { it.name == "tag" }, "Each block's settings are offered")
+            executor.tools.forEach { assertFalse(hasAnyOf(it), "${it.name} has no AnyOf parameter") }
             assertFalse("key" in info.toString().lowercase(), "Model info carries no credentials")
         }
+
+    private fun hasAnyOf(tool: ToolDescriptor): Boolean = (tool.requiredParameters + tool.optionalParameters).any { hasAnyOf(it.type) }
+
+    private fun hasAnyOf(type: ToolParameterType): Boolean =
+        when (type) {
+            is ToolParameterType.AnyOf -> true
+            is ToolParameterType.List -> hasAnyOf(type.itemsType)
+            is ToolParameterType.Object -> type.properties.any { hasAnyOf(it.type) }
+            else -> false
+        }
+
+    @Test
+    fun choicesTheModelMadeInTheFlatFormComeBackInTheToolsOwnForm() =
+        runTest {
+            val engine = StandardEngine()
+            val tools = AgentToolbox.definitions(engine)
+            val rule =
+                """{"scene":"scene-1","object":"obj-2","when":{"block":"Touching","tag":"player"},""" +
+                    """"do":[{"block":"ChangeNumber","target":{"kind":"tagged","tag":"score"},"amount":1}]}"""
+            val executor =
+                executorFor(
+                    set("toolu_1", "graphics:shape", "width", """{"number":2.5}"""),
+                    set("toolu_2", "graphics:text", "text", """{"text":"Hi"}"""),
+                    set("toolu_3", "graphics:sprite", "pixelated", """{"yes_no":true}"""),
+                    MessagePart.Tool.Call("toolu_4", "add_rule", json(rule)),
+                )
+            val info = ModelInfo("test-model", "Test", live = true, label = "Live: test-model")
+            val model = KoogModel(executor, LLModel(LLMProvider.Anthropic, "test-model"), info)
+            val calls = model.reply(ModelRequest("Hi", emptyList(), tools)).calls
+
+            assertEquals(JsonPrimitive(2.5), calls[0].input["value"])
+            assertEquals(JsonPrimitive("Hi"), calls[1].input["value"])
+            assertEquals(JsonPrimitive(true), calls[2].input["value"])
+            assertEquals(json(rule), calls[3].input, "flattened block choices already have the tool's own form")
+        }
+
+    private fun set(
+        id: String,
+        component: String,
+        property: String,
+        value: String,
+    ) = MessagePart.Tool.Call(
+        id,
+        "set_property",
+        json("""{"scene":"scene-1","object":"obj-2","component":"$component","property":"$property","value":$value}"""),
+    )
+
+    private fun json(text: String) =
+        kotlinx.serialization.json.Json
+            .parseToJsonElement(text) as JsonObject
+
+    private fun executorFor(vararg calls: MessagePart.Tool.Call) =
+        FakeExecutor(Message.Assistant(calls.toList(), ResponseMetaInfo(Instant.fromEpochSeconds(0))))
 
     @Test
     fun outputTokensAreCappedWhenAsked() =

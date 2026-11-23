@@ -107,7 +107,7 @@ which have the environment requirements described below.
    - Build-time `npmInstall` for `wasm-js/app` is not affected: it uses its own directory.
    - Do not run `kotlin test -p wasmJs` where any ancestor directory of the repository contains a `package.json`.
    - CI runners are unaffected.
-   - To be reported upstream (YouTrack `KTC`) with a minimal reproduction.
+   - To be reported upstream (YouTrack `KTC`): [ready-to-file report](upstream/kotlin-toolchain-wasm-pnpm-ancestor.md).
 2. **Android release builds always run R8.** Shrinking and resource shrinking are on, whereas Gradle has minify off.
    Release AAB packaging succeeds; runtime of a shrunk release build has not yet been verified on a device. Add
    `proguard-rules.pro` keep rules if reflection-based code appears.
