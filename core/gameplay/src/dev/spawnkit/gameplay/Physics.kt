@@ -156,7 +156,8 @@ internal class PhysicsSystem(
                 val pushDown = b.bottom - own.top
                 if (min(pushLeft, pushRight) < min(pushUp, pushDown)) {
                     own.shift(if (pushLeft < pushRight) -pushLeft else pushRight, 0.0)
-                } else if (pushUp < pushDown) {
+                } else if (pushUp <= pushDown) {
+                    // A body placed right in the middle of a solid ends up standing on it.
                     own.shift(0.0, -pushUp)
                     if (vy > 0.0) vy = 0.0
                     grounded = true

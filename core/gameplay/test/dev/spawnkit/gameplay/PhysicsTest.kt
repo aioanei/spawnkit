@@ -206,6 +206,16 @@ class PhysicsTest {
     }
 
     @Test
+    fun aBodyPlacedInTheMiddleOfASolidEndsUpOnTop() {
+        add("Platform", 0.0, 0.0, width = 6.0, height = 0.6, extra = listOf(solid))
+        add("Player", 0.0, 0.0, width = 0.9, height = 0.9, extra = listOf(body()))
+        val play = play().tick(10)
+
+        assertNear(-0.75, play.y("player"), "standing on the platform")
+        assertTrue(play.body("player").onGround)
+    }
+
+    @Test
     fun aBodyOnASolidIsNotBlockedByItself() {
         ground()
         add("Crate", 0.0, 0.0, extra = listOf(body(), solid))

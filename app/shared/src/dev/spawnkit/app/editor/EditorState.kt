@@ -44,7 +44,9 @@ val DefaultPresets: List<ObjectPreset> =
     listOf(
         ObjectPreset("Box", "A colored square") { x, y -> placed(x, y) + shape("rectangle", 1.0, 1.0, 0xFF4CAF50) },
         ObjectPreset("Circle", "A round shape") { x, y -> placed(x, y) + shape("ellipse", 1.0, 1.0, 0xFFFFC107) },
-        ObjectPreset("Platform", "A wide floor piece") { x, y -> placed(x, y) + shape("rectangle", 6.0, 0.6, 0xFF8D6E63) },
+        ObjectPreset("Platform", "A floor piece bodies stand on") { x, y ->
+            placed(x, y) + shape("rectangle", 6.0, 0.6, 0xFF8D6E63) + ComponentDoc("gameplay:solid")
+        },
         ObjectPreset("Player", "The hero of your game") { x, y ->
             placed(x, y) + shape("rectangle", 0.9, 0.9, 0xFF2196F3) + tag("player")
         },
