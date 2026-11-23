@@ -194,9 +194,126 @@ public class Gameplay(
             )
         }
 
+    /** Physics bodies. */
+    public val body: ComponentType<Body> =
+        builder.component(
+            "gameplay:body",
+            AuthoringInfo("Body", "Falls with gravity, jumps and is stopped by solid objects", "Physics"),
+            BodyCodec,
+        )
+
+    /** Descriptor of [body]. */
+    public val bodyDescriptor: ComponentDescriptor<Body> =
+        builder.describe(body) {
+            create { Body() }
+            property(
+                "vx",
+                ValueKind.Decimal(-MAX_SPEED, MAX_SPEED),
+                AuthoringInfo("Speed across", "Units per second; negative moves left. Solids stop it."),
+                0.0,
+                { it.vx },
+                { b, v -> b.copy(vx = v) },
+            )
+            property(
+                "vy",
+                ValueKind.Decimal(-MAX_SPEED, MAX_SPEED),
+                AuthoringInfo("Speed down", "Units per second; negative moves up. Gravity changes it every moment."),
+                0.0,
+                { it.vy },
+                { b, v -> b.copy(vy = v) },
+            )
+            property(
+                "gravity",
+                ValueKind.Decimal(-MAX_SPEED, MAX_SPEED),
+                AuthoringInfo("Gravity", "How strongly the body is pulled down. 0 floats, as in a game seen from above."),
+                Body.DEFAULT_GRAVITY,
+                { it.gravity },
+                { b, v -> b.copy(gravity = v) },
+            )
+            property(
+                "bounce",
+                ValueKind.Decimal(0.0, 1.0),
+                AuthoringInfo("Bounce", "0 stops when it hits something; 1 bounces back as fast as it came."),
+                0.0,
+                { it.bounce },
+                { b, v -> b.copy(bounce = v) },
+            )
+            property(
+                "maxFall",
+                ValueKind.Decimal(0.0, MAX_SPEED),
+                AuthoringInfo("Fastest fall", "Gravity never makes it fall faster than this, in units per second."),
+                Body.DEFAULT_MAX_FALL,
+                { it.maxFall },
+                { b, v -> b.copy(maxFall = v) },
+            )
+        }
+
+    /** Solid objects. */
+    public val solid: ComponentType<Solid> =
+        builder.component(
+            "gameplay:solid",
+            AuthoringInfo("Solid", "Bodies cannot pass through it: ground, walls and platforms", "Physics"),
+            SolidCodec,
+        )
+
+    /** Descriptor of [solid]. */
+    public val solidDescriptor: ComponentDescriptor<Solid> =
+        builder.describe(solid) {
+            create { Solid() }
+            property(
+                "solid",
+                ValueKind.YesNo,
+                AuthoringInfo("Solid", "When on, bodies stand on it and are stopped by it. Bodies on it move with it."),
+                true,
+                { it.enabled },
+                { s, v -> s.copy(enabled = v) },
+            )
+        }
+
+    /** Following another object. */
+    public val follow: ComponentType<Follow> =
+        builder.component(
+            "gameplay:follow",
+            AuthoringInfo("Follow", "Stays with an object that has a tag; put it on a camera to follow the player", "View"),
+            FollowCodec,
+        )
+
+    /** Descriptor of [follow]. */
+    public val followDescriptor: ComponentDescriptor<Follow> =
+        builder.describe(follow) {
+            create { Follow() }
+            property(
+                "tag",
+                ValueKind.Text(maxLength = 100),
+                AuthoringInfo("Follow tag", "The first object with this tag is followed, for example player."),
+                "player",
+                { it.tag },
+                { f, v -> f.copy(tag = v) },
+            )
+            property(
+                "across",
+                ValueKind.YesNo,
+                AuthoringInfo("Follow across", "Moves left and right with the object."),
+                true,
+                { it.across },
+                { f, v -> f.copy(across = v) },
+            )
+            property(
+                "down",
+                ValueKind.YesNo,
+                AuthoringInfo("Follow up and down", "Moves up and down with the object. Turn it off for a level that only scrolls sideways."),
+                true,
+                { it.down },
+                { f, v -> f.copy(down = v) },
+            )
+        }
+
     init {
         // After rules, so a rule that changes the speed takes effect in the same moment.
         builder.system("gameplay:motion", after = setOf("program:execute")) { MotionSystem() }
+        // After everything that moves objects, so bodies ride platforms and stop at walls wherever they were moved.
+        builder.system("gameplay:physics", after = setOf("program:execute", "gameplay:motion")) { PhysicsSystem(this, graphics) }
+        builder.system("gameplay:follow", after = setOf("gameplay:physics")) { FollowSystem(this, graphics) }
     }
 
     /** Moves objects with [motion] every tick. It keeps no state of its own, so checkpoints capture nothing. */
@@ -368,8 +485,9 @@ public class Gameplay(
 
     /**
      * Binds presentation and gameplay properties and functions for rules: transform properties without a prefix,
-     * other presentation properties prefixed by component (`shape_width`, `text_text`, …), `tag`, `number`, and the
-     * functions `touching`, `tapped`, `firstTagged`, `countTagged`, `textOf`, `random` and `tick`.
+     * other presentation properties prefixed by component (`shape_width`, `text_text`, …), `tag`, `number`, steady
+     * movement, body and follow properties (`motion_vx`, `body_vy`, `follow_tag`, …), and the functions `touching`,
+     * `tapped`, `onGround`, `firstTagged`, `countTagged`, `textOf`, `random` and `tick`.
      */
     public fun bind(host: ProgramHostBuilder): ProgramHostBuilder =
         host
@@ -381,7 +499,16 @@ public class Gameplay(
             .properties(tagDescriptor)
             .properties(numberDescriptor)
             .properties(motionDescriptor, "motion_")
+            .properties(bodyDescriptor, "body_")
+            .properties(followDescriptor, "follow_")
             .function(
+                "onGround",
+                emptyList(),
+                BoolType,
+                info("Is on the ground", "This object's body stood on a solid object after the last moment"),
+            ) {
+                BoolValue(it.world.get(it.self, body)?.onGround == true)
+            }.function(
                 "touching",
                 listOf(TextType),
                 BoolType,
