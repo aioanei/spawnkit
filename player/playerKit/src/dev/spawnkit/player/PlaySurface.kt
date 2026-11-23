@@ -207,7 +207,7 @@ private fun PlayLoop(session: PlaySession) {
                 accumulator += (now - last).coerceAtMost(250_000_000L)
                 last = now
                 while (accumulator >= stepNanos) {
-                    if (!session.scene.world.isFaulted) {
+                    if (!session.scene.world.isFaulted && !session.paused) {
                         session.scene.world.submitInput(session.nextInput())
                         session.scene.world.step()
                         session.afterTick()

@@ -70,6 +70,26 @@ public data class ArcadeGame(
     public val playUrl: String,
 )
 
+/** Test ad views and clicks of one game on one UTC day (C12). */
+public data class AdDayCount(
+    /** The day, `YYYY-MM-DD`. */
+    public val day: String,
+    /** Ads seen. */
+    public val views: Long,
+    /** Ads tapped. */
+    public val clicks: Long,
+)
+
+/** A game's test ad statistics from Arcade plays (C12). Revenue is always zero: test ads earn nothing. */
+public data class AdStatsReport(
+    /** Ads seen in all. */
+    public val views: Long,
+    /** Ads tapped in all. */
+    public val clicks: Long,
+    /** Counts per day, newest first. */
+    public val days: List<AdDayCount>,
+)
+
 /** A SpawnKit server's accounts and Arcade, as the builder uses them (C11b). [AccountClient] is the real one. */
 public interface AccountService {
     /** What the server offers. */
@@ -134,6 +154,12 @@ public interface AccountService {
         token: String,
         slug: String,
     )
+
+    /** Test ad statistics of the owned game [slug] (C12). */
+    public suspend fun adStats(
+        token: String,
+        slug: String,
+    ): AdStatsReport
 }
 
 /**
@@ -276,6 +302,23 @@ public class AccountClient(
             (json["email"] as? JsonPrimitive)?.contentOrNull,
             json.text("plan"),
         )
+
+    override suspend fun adStats(
+        token: String,
+        slug: String,
+    ): AdStatsReport {
+        val json = call(HttpMethod.Get, "/api/games/${checkedSlug(slug)}/ad-stats", token = token).obj()
+        // Test ads earn nothing; a server claiming otherwise is not one this builder understands.
+        if (json.text("revenue") != "0.00") unreadable()
+        val days =
+            (json["days"] as? JsonArray ?: unreadable()).map {
+                val day = it.obj()
+                AdDayCount(day.text("day"), day.whole("views"), day.whole("clicks"))
+            }
+        return AdStatsReport(json.whole("views"), json.whole("clicks"), days)
+    }
+
+    private fun JsonObject.whole(key: String): Long = (get(key) as? JsonPrimitive)?.takeUnless { it.isString }?.longOrNull ?: unreadable()
 
     private fun game(json: JsonObject): ArcadeGame {
         val path = json.text("playUrl")

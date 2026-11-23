@@ -40,6 +40,7 @@ fun GamePlayer(
     pkg: GamePackage,
     touchControls: Boolean,
     modifier: Modifier = Modifier,
+    adReporter: AdReporter? = null,
 ) {
     val engine = remember { StandardEngine() }
     val problems = remember(pkg) { pkg.project.capabilityProblems(engine.runtime) }
@@ -62,6 +63,7 @@ fun GamePlayer(
             .onKeyEvent { session.handlePlayKey(it) },
     ) {
         PlaySurface(session, engine.graphics, CameraView(zoom = 1.0), pixelsPerUnit, touchControls, focus, images)
+        AdLayer(session, pkg.project.ads, pkg.startScene, adReporter)
         RuleProblemBanner(session, engine, pkg, Modifier.align(Alignment.TopCenter))
     }
     LaunchedEffect(session) { focus.requestFocus() }

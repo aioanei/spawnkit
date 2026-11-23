@@ -1,6 +1,23 @@
 # SpawnKit progress
 
-## Current checkpoint — C15b images in projects (2026-11-23)
+## Current checkpoint — C12a test ads with real counts (2026-11-23)
+
+- **Branch.** `feat/77-test-ads`, stacked on C15b (`feat/89-images`, PR #100), which is stacked on C15a (PR #99).
+  [Plan](docs/plans/2026-11-23-c12a-test-ads.md), the first half of [#77](https://github.com/aioanei/spawnkit/issues/77).
+- **Added.**
+  - `Project.ads` with workspace schema 3 and `set_ads`.
+  - `AdLayer`, `AdSchedule`, `AdHost` and `TestAdHost`; interstitials pause play, and builder previews never report.
+  - The Arcade web player's batched reporter.
+  - The server's de-duplicated ad counts (database schema 2) and owner-only statistics.
+  - The Release Manager's Test ads card and Ad statistics, with "$0.00 — test ads earn nothing" and a labelled What if
+    estimate. [Gameplay](docs/gameplay.md#test-ads-with-real-counts-c12a).
+- **Evidence.** New tests: `AdSettingsTest` 4, `AdsTest` 4, `AdStatsTest` 3, `TestAdsUiTest` 2 and the `set_ads`
+  parity case. Gates as recorded in the PR.
+- **Known limits.** The web player's reports are fire-and-forget (lost reports are not retried); the What if rate is
+  not saved.
+- **Next.** C12b test purchases, then C17, C16, C13, C11c, C19 and C8.
+
+## Previous checkpoint — C15b images in projects (2026-11-23)
 
 - **Branch.** `feat/89-images`, stacked on C15a (`feat/89-home-screen-kit`, PR #99, green). [Plan](docs/plans/2026-11-23-c15b-images.md),
   [ADR-0012](docs/adr/0012-images-in-projects.md); with C15a this completes [#89](https://github.com/aioanei/spawnkit/issues/89).

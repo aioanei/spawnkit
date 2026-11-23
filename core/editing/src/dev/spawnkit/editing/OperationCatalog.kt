@@ -163,6 +163,7 @@ public object EditingOperations {
                 addImage,
                 renameImage,
                 removeImage,
+                setAds,
             ),
         )
     }
@@ -328,6 +329,40 @@ public object EditingOperations {
                 property.id,
                 value("value"),
                 "Change ${property.authoring.name} of ${obj().name}",
+            )
+        }
+
+    private val setAds =
+        OperationSpec(
+            "set_ads",
+            AuthoringInfo(
+                "Set test ads",
+                "Chooses where the game shows test ads: a banner on the title screen, and a full-screen ad between " +
+                    "scenes. They are labelled test ads, earn nothing, and only Arcade plays are counted.",
+                "Release",
+            ),
+            listOf(
+                Parameter("banner", "Banner", "A banner on the title screen.", ParameterType.Value(ValueKind.YesNo), default = false),
+                Parameter(
+                    "interstitial",
+                    "Between scenes",
+                    "A full-screen ad between scenes, never before the first play.",
+                    ParameterType.Value(ValueKind.YesNo),
+                    default = false,
+                ),
+                Parameter(
+                    "every",
+                    "Scene changes apart",
+                    "How many scene changes between full-screen ads.",
+                    ParameterType.Value(ValueKind.WholeNumber(1, AdSettings.MAX_EVERY.toLong())),
+                    default = 3L,
+                ),
+            ),
+            listOf("Show a test banner on the title screen", "Show a test ad every 3 levels"),
+        ) {
+            EditOperation.SetAds(
+                AdSettings(value("banner") as Boolean, value("interstitial") as Boolean, whole("every").toInt()),
+                "Change test ads",
             )
         }
 

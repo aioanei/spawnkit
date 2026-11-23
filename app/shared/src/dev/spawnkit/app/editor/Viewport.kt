@@ -40,6 +40,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import dev.spawnkit.graphics.ViewTransform
+import dev.spawnkit.player.AdLayer
 import dev.spawnkit.player.PlaySurface
 import dev.spawnkit.player.handlePlayKey
 import dev.spawnkit.player.rememberProjectImages
@@ -96,6 +97,15 @@ private fun ViewportContent(
     val images = rememberProjectImages(state.project.images)
     if (session != null) {
         PlaySurface(session, state.engine.graphics, state.camera, pixelsPerUnit, touchControls, focus, images)
+        // Previews show the game's test ads but never report them, so the creator's own plays are not counted.
+        AdLayer(
+            session,
+            state.project.ads,
+            state.project.scenes
+                .firstOrNull()
+                ?.id,
+            reporter = null,
+        )
         return
     }
     // Rebuilt for every project revision, scene change and drag step: preview worlds are cheap and never shared.

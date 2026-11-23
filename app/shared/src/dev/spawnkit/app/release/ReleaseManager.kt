@@ -26,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -45,13 +46,16 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import dev.spawnkit.ai.AccountException
+import dev.spawnkit.ai.AdStatsReport
 import dev.spawnkit.ai.ArcadeGame
 import dev.spawnkit.app.account.AccountState
 import dev.spawnkit.app.editor.EditorState
+import dev.spawnkit.editing.AdSettings
 import dev.spawnkit.editing.GamePackage
 import dev.spawnkit.editing.GamePackageCodec
 import dev.spawnkit.editing.releaseProblem
@@ -234,6 +238,7 @@ internal fun ReleaseManager(
                         ) {
                             Text("Release Manager", Modifier.semantics { heading() }, style = MaterialTheme.typography.headlineMedium)
                             GameSettings(session)
+                            TestAdsCard(session.state, enabled = session.active == null)
                             if (!platform.available) Text("Open this project in the Android or desktop builder to export or publish.")
                             if (expanded) {
                                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -373,6 +378,7 @@ private fun MyGames(
 ) {
     LaunchedEffect(owner) { owner.refreshGames() }
     var updating by remember { mutableStateOf<ArcadeGame?>(null) }
+    var statistics by remember { mutableStateOf<ArcadeGame?>(null) }
     var removing by remember { mutableStateOf<ArcadeGame?>(null) }
     Text("My games", Modifier.semantics { heading() }, style = MaterialTheme.typography.titleMedium)
     if (owner.games.isEmpty()) Text("Games you publish while signed in appear here.", style = MaterialTheme.typography.bodySmall)
@@ -387,6 +393,9 @@ private fun MyGames(
                     enabled = enabled,
                 ) {
                     Text("Update with this game")
+                }
+                TextButton({ statistics = game }, Modifier.heightIn(min = 48.dp).testTag("my-game-stats-${game.slug}")) {
+                    Text("Ad statistics")
                 }
                 TextButton(
                     { removing = game },
@@ -419,6 +428,7 @@ private fun MyGames(
             dismissButton = { TextButton({ updating = null }, Modifier.testTag("update-confirm-no")) { Text("Cancel") } },
         )
     }
+    statistics?.let { game -> AdStatistics(owner, game) { statistics = null } }
     removing?.let { game ->
         AlertDialog(
             onDismissRequest = { removing = null },
@@ -437,6 +447,123 @@ private fun MyGames(
         )
     }
 }
+
+/**
+ * Where the game shows test ads (C12): the `set_ads` operation, the same one agents use. Test ads are labelled panels
+ * that earn nothing; only plays on the Arcade are counted.
+ */
+@Composable
+private fun TestAdsCard(
+    state: EditorState,
+    enabled: Boolean,
+) {
+    val ads = state.project.ads
+
+    fun set(
+        banner: Boolean = ads.banner,
+        interstitial: Boolean = ads.interstitial,
+        every: Int = ads.every,
+    ) {
+        state.applyCatalog("set_ads", mapOf("banner" to banner, "interstitial" to interstitial, "every" to every.toLong()))
+    }
+    DestinationCard("Test ads", Modifier.fillMaxWidth()) {
+        Text(
+            "Labelled test ads, off until you turn them on. They earn nothing; plays on the Arcade are counted so you can " +
+                "see views and clicks, and your own previews never are.",
+            style = MaterialTheme.typography.bodySmall,
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Banner on the title screen", Modifier.weight(1f))
+            Switch(ads.banner, { set(banner = it) }, Modifier.testTag("ads-banner"), enabled = enabled)
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Full-screen ad between scenes", Modifier.weight(1f))
+            Switch(ads.interstitial, { set(interstitial = it) }, Modifier.testTag("ads-interstitial"), enabled = enabled)
+        }
+        if (ads.interstitial) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Every ${ads.every} scene changes, never before the first play", Modifier.weight(1f))
+                OutlinedButton(
+                    { set(every = ads.every - 1) },
+                    Modifier.testTag("ads-every-dec"),
+                    enabled = enabled && ads.every > 1,
+                ) { Text("−") }
+                OutlinedButton(
+                    { set(every = ads.every + 1) },
+                    Modifier.testTag("ads-every-inc"),
+                    enabled = enabled && ads.every < AdSettings.MAX_EVERY,
+                ) { Text("+") }
+            }
+        }
+    }
+}
+
+/**
+ * Test ad statistics of [game] from Arcade plays (C12): views, clicks and click-through rate per day, revenue that is
+ * always $0.00, and an optional What if line that is clearly an estimate.
+ */
+@Composable
+private fun AdStatistics(
+    owner: AccountState,
+    game: ArcadeGame,
+    close: () -> Unit,
+) {
+    var report by remember(game) { mutableStateOf<AdStatsReport?>(null) }
+    var problem by remember(game) { mutableStateOf<String?>(null) }
+    var rate by remember(game) { mutableStateOf("") }
+    LaunchedEffect(game) {
+        try {
+            report = owner.adStats(game.slug)
+        } catch (failure: AccountException) {
+            problem = failure.message
+        }
+    }
+    AlertDialog(
+        onDismissRequest = close,
+        title = { Text("Ad statistics · ${game.title}") },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()).testTag("ad-stats"), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                problem?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                val current = report
+                if (current == null && problem == null) Text("Loading…")
+                if (current != null) {
+                    Text(
+                        "Views ${current.views} · Clicks ${current.clicks} · Click-through rate ${clickRate(
+                            current.views,
+                            current.clicks,
+                        )}",
+                    )
+                    Text("Revenue: $0.00 — test ads earn nothing", Modifier.testTag("ad-revenue"), fontWeight = FontWeight.SemiBold)
+                    if (current.days.isEmpty()) Text("No ad views yet. Plays on the Arcade are counted; previews are not.")
+                    for (day in current.days) {
+                        Text("${day.day}: ${day.views} views, ${day.clicks} clicks, ${clickRate(day.views, day.clicks)}")
+                    }
+                    OutlinedTextField(
+                        rate,
+                        { rate = it.take(8) },
+                        Modifier.fillMaxWidth().testTag("what-if-rate"),
+                        label = { Text("What if: dollars per 1,000 views") },
+                        singleLine = true,
+                    )
+                    rate.toDoubleOrNull()?.takeIf { it >= 0 && it < 1000 }?.let { perThousand ->
+                        val cents = (current.views * perThousand / 10).toLong()
+                        Text(
+                            "About $${cents / 100}.${(cents % 100).toString().padStart(2, '0')} — an estimate, not earnings",
+                            Modifier.testTag("what-if-estimate"),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(close, Modifier.testTag("ad-stats-close")) { Text("Close") } },
+    )
+}
+
+private fun clickRate(
+    views: Long,
+    clicks: Long,
+): String = if (views == 0L) "—" else "${(clicks * 1000 / views) / 10}.${(clicks * 1000 / views) % 10}%"
 
 @Composable
 private fun DestinationCard(

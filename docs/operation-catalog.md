@@ -36,6 +36,7 @@ checked arguments into an `EditOperation`. The editor validates the operation ag
 | Scenes (C9) | `add_scene`, `rename_scene`, `remove_scene`, `move_scene` (position 1 is the start scene) | `EditingOperations` |
 | Objects | `add_object`, `remove_object`, `rename_object`, `duplicate_object` | `EditingOperations` |
 | Components | `add_component`, `remove_component`, `set_property` | `EditingOperations` |
+| Release (C12) | `set_ads` (banner on the title screen, interstitial between scenes, scene changes apart) | `EditingOperations` |
 | Images (C15) | `add_image` (Base64 PNG), `rename_image`, `remove_image` (refused while a sprite shows it) | `EditingOperations` |
 | Grouping (C15) | `move_into` (into a group, or back to the top level, keeping the object where it is on screen) | `ObjectOperations` (`core/gameplay`) |
 | Rules | `add_rule`, `add_block`, `change_block`, `remove_block`, `move_rule`, `duplicate_rule`, `remove_rule` | `RuleOperations` (`core/gameplay`) |

@@ -114,6 +114,23 @@ internal object AiSpend : Table("ai_spend") {
     override val primaryKey = PrimaryKey(account, day)
 }
 
+/** Test ad events already counted, by play session and number, so each is counted once (C12). No personal data. */
+internal object AdEventsSeen : Table("ad_events_seen") {
+    val game = varchar("game_slug", 36).references(Games.slug, onDelete = ReferenceOption.CASCADE)
+    val session = varchar("session", 64)
+    val number = integer("number")
+    override val primaryKey = PrimaryKey(game, session, number)
+}
+
+/** Test ad views and clicks per game and UTC day (C12). */
+internal object AdCounts : Table("ad_counts") {
+    val game = varchar("game_slug", 36).references(Games.slug, onDelete = ReferenceOption.CASCADE)
+    val day = varchar("day", 10)
+    val views = long("views").default(0)
+    val clicks = long("clicks").default(0)
+    override val primaryKey = PrimaryKey(game, day)
+}
+
 /**
  * The server's SQLite database (ADR-0010). [open] creates it on first use and applies the migrations in order, in one
  * transaction. A database written by a newer server is refused rather than changed.
@@ -129,11 +146,12 @@ internal class Db private constructor(
 
     companion object {
         /** The schema this server writes. Add a migration below when it changes. */
-        const val SCHEMA_VERSION: Int = 1
+        const val SCHEMA_VERSION: Int = 2
 
         private val migrations: Map<Int, JdbcTransaction.() -> Unit> =
             mapOf(
                 1 to { SchemaUtils.create(Accounts, Identities, EmailCodes, Sessions, Games, Projects, Likes, Plays, AiSpend) },
+                2 to { SchemaUtils.create(AdEventsSeen, AdCounts) },
             )
 
         /** Opens (creating if needed) the database file at [file]. */

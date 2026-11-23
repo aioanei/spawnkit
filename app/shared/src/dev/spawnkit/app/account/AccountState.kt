@@ -9,6 +9,7 @@ import dev.spawnkit.ai.AccountException
 import dev.spawnkit.ai.AccountProfile
 import dev.spawnkit.ai.AccountService
 import dev.spawnkit.ai.AccountSession
+import dev.spawnkit.ai.AdStatsReport
 import dev.spawnkit.ai.AgentModel
 import dev.spawnkit.ai.ArcadeGame
 import dev.spawnkit.ai.HostedModel
@@ -191,6 +192,12 @@ class AccountState(
     /** Unpublishes the owned game [slug]. */
     suspend fun unpublish(slug: String) {
         owned { api, token -> api.unpublish(token, slug) }
+    }
+
+    /** Test ad statistics of the owned game [slug] from Arcade plays (C12). Throws [AccountException] with a plain message. */
+    suspend fun adStats(slug: String): AdStatsReport {
+        val token = token() ?: throw AccountException(SIGN_IN_FIRST, 401)
+        return signedInApi().adStats(token, slug)
     }
 
     override fun toString(): String = "AccountState(server=${secrets.read(SERVER_NAME)}, account=$account)"

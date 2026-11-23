@@ -27,7 +27,12 @@ import io.ktor.server.routing.put
 import io.ktor.server.routing.routing
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonObject
 import java.io.IOException
 import java.io.InputStream
 import java.util.concurrent.Semaphore
@@ -99,6 +104,7 @@ internal fun Application.arcade(
     player: WebPlayerBundle,
     limits: PublishLimits = PublishLimits(),
     owners: ArcadeOwners? = null,
+    adLimits: PublishLimits = PublishLimits(bytes = MAX_AD_EVENT_BYTES, perAddress = 30, perServer = 3_000),
 ) {
     owners?.games?.importUnowned(store.list())
     routing {
@@ -126,6 +132,7 @@ internal fun Application.arcade(
             }
         }
         if (owners != null) ownerRoutes(store, player, limits, owners)
+        if (owners?.ads != null) adRoutes(store, owners, owners.ads, adLimits)
         get("/play/{slug}/{asset...}") {
             call.arcadeResponse {
                 val slug = pathParameters["slug"]
@@ -192,6 +199,90 @@ private fun Route.ownerRoutes(
         }
     }
 }
+
+/**
+ * Test ad counts (C12). Players report views and clicks without signing in: a random play-session ID and numbered
+ * events, no personal data, rate-limited per address. Only the game's owner reads the statistics, and revenue is
+ * always zero because test ads earn nothing.
+ */
+private fun Route.adRoutes(
+    store: ArcadeStore,
+    owners: ArcadeOwners,
+    ads: AdStats,
+    limits: PublishLimits,
+) {
+    post("/api/games/{slug}/ad-events") {
+        call.arcadeResponse {
+            if (!limits.allow(request.local.remoteAddress)) {
+                response.header(HttpHeaders.RetryAfter, "60")
+                throw ArcadeProblem(HttpStatusCode.TooManyRequests, "Too many ad reports. Try again in a minute.")
+            }
+            val file = withContext(Dispatchers.IO) { store.find(pathParameters["slug"]) }
+            val slug = file.fileName.toString().removeSuffix(".game")
+            val text = readLimitedText(limits.bytes) { ArcadeProblem(HttpStatusCode.PayloadTooLarge, "Send at most 50 ad events at once.") }
+            val (session, events) = parseAdEvents(text)
+            val accepted = withContext(Dispatchers.IO) { ads.record(slug, session, events) }
+            respondText(
+                JsonObject(mapOf("accepted" to JsonPrimitive(accepted))).toString(),
+                ContentType.Application.Json,
+                HttpStatusCode.Accepted,
+            )
+        }
+    }
+    get("/api/games/{slug}/ad-stats") {
+        call.arcadeResponse {
+            val slug = requireOwned(store, owners)
+            val days = withContext(Dispatchers.IO) { ads.daily(slug) }
+            val body =
+                JsonObject(
+                    mapOf(
+                        "testAds" to JsonPrimitive(true),
+                        "views" to JsonPrimitive(days.sumOf { it.views }),
+                        "clicks" to JsonPrimitive(days.sumOf { it.clicks }),
+                        "revenue" to JsonPrimitive("0.00"),
+                        "days" to
+                            JsonArray(
+                                days.map {
+                                    JsonObject(
+                                        mapOf(
+                                            "day" to JsonPrimitive(it.day),
+                                            "views" to JsonPrimitive(it.views),
+                                            "clicks" to JsonPrimitive(it.clicks),
+                                        ),
+                                    )
+                                },
+                            ),
+                    ),
+                )
+            respondText(body.toString(), ContentType.Application.Json)
+        }
+    }
+}
+
+/** The play session and events of an ad report, or a 400 problem explaining what is wrong. */
+private fun parseAdEvents(text: String): Pair<String, List<AdEventReport>> {
+    fun bad(): Nothing =
+        throw ArcadeProblem(HttpStatusCode.BadRequest, "Send {\"session\": id, \"events\": [{\"n\", \"placement\", \"kind\"}]}.")
+    val root = runCatching { Json.parseToJsonElement(text).jsonObject }.getOrNull() ?: bad()
+    val session = (root["session"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: bad()
+    if (!session.matches(SESSION_ID)) bad()
+    val events = (root["events"] as? JsonArray) ?: bad()
+    if (events.size > MAX_AD_EVENTS) bad()
+    return session to
+        events.map { element ->
+            val event = element as? JsonObject ?: bad()
+            val number = (event["n"] as? JsonPrimitive)?.takeUnless { it.isString }?.intOrNull ?: bad()
+            val placement = (event["placement"] as? JsonPrimitive)?.content ?: bad()
+            val kind = (event["kind"] as? JsonPrimitive)?.content ?: bad()
+            if (number !in 0..MAX_EVENT_NUMBER || placement !in setOf("banner", "interstitial") || kind !in setOf("view", "click")) bad()
+            AdEventReport(number, placement, kind == "click")
+        }
+}
+
+private val SESSION_ID = Regex("[A-Za-z0-9-]{8,64}")
+private const val MAX_AD_EVENTS = 50
+private const val MAX_EVENT_NUMBER = 100_000
+internal const val MAX_AD_EVENT_BYTES = 8 * 1024
 
 /** The slug of an existing game the signed-in account owns: 401 when signed out, 404 when missing, 403 otherwise. */
 private suspend fun RoutingCall.requireOwned(

@@ -112,6 +112,12 @@ public sealed interface EditOperation {
         override val label: String = "Move scene",
     ) : EditOperation
 
+    /** Changes where the game shows test ads (C12). */
+    public data class SetAds(
+        public val settings: AdSettings,
+        override val label: String = "Change test ads",
+    ) : EditOperation
+
     /** Adds a PNG image ([data] in Base64) to the project, checked against the limits of ADR-0012. */
     public data class AddImage(
         public val name: String,
@@ -211,6 +217,13 @@ internal class OperationApplier(
             is EditOperation.RenameScene -> {
                 requireName(operation.name)
                 editScene(project, operation.sceneId) { it.copy(name = operation.name.trim()) }
+            }
+
+            is EditOperation.SetAds -> {
+                if (operation.settings.every !in 1..AdSettings.MAX_EVERY) {
+                    reject("Choose 1 to ${AdSettings.MAX_EVERY} scene changes between interstitial ads")
+                }
+                project.copy(ads = operation.settings)
             }
 
             is EditOperation.AddImage -> {
