@@ -141,7 +141,7 @@ class ProjectPersistenceTest {
         val malformed = assertFailsWith<IllegalArgumentException> { ProjectCodec.decode("{broken") }
         assertTrue(malformed.message.orEmpty().contains("damaged"))
         val text = ProjectCodec.encode(project)
-        assertFailsWith<IllegalArgumentException> { ProjectCodec.decode(text.replace("\"schemaVersion\":3", "\"schemaVersion\":999")) }
+        assertFailsWith<IllegalArgumentException> { ProjectCodec.decode(text.replace("\"schemaVersion\":4", "\"schemaVersion\":999")) }
         assertFailsWith<IllegalArgumentException> {
             ProjectCodec.decode(
                 text.replace("\"kind\":\"evaluate\"", "\"kind\":\"future-instruction\""),
