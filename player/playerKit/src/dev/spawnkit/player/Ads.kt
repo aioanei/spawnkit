@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.spawnkit.editing.AdSettings
+import dev.spawnkit.gameplay.RuleBlocks
 
 /** Where an ad appears (C12). */
 enum class AdPlacement(
@@ -164,6 +165,57 @@ fun AdLayer(
                 ) { Text("Close ad") }
             }
         }
+    }
+}
+
+/** Receives completed test purchases (C12). The Arcade's web player reports them; previews and offline games pass none. */
+fun interface PurchaseReporter {
+    fun purchased(
+        product: String,
+        priceCents: Long,
+    )
+}
+
+/** The label on every test purchase. */
+const val TEST_PURCHASE_LABEL = "TEST PURCHASE: no money is charged"
+
+/**
+ * Asks the player to confirm a test purchase a rule offered (C12b): "Buy ⟨product⟩ for ⟨price⟩?", labelled
+ * [TEST_PURCHASE_LABEL]. Buying grants the item through its number; cancelling grants nothing. Play is paused meanwhile.
+ */
+@Composable
+fun PurchaseLayer(
+    session: PlaySession,
+    reporter: PurchaseReporter?,
+    modifier: Modifier = Modifier,
+) {
+    val request = session.pendingPurchase ?: return
+    val action = request.action
+    Column(
+        modifier
+            .fillMaxSize()
+            .background(Color(0xE6101418))
+            .padding(24.dp)
+            .testTag("purchase"),
+        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(TEST_PURCHASE_LABEL, color = Color(0xFFFFF59D), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+        Text(
+            "Buy ${action.product} for ${RuleBlocks.price(action.priceCents)}?",
+            color = Color.White,
+            style = MaterialTheme.typography.headlineSmall,
+        )
+        Text(
+            "This is a test: nothing is paid, and the item is still granted.",
+            color = Color.White,
+            style = MaterialTheme.typography.bodySmall,
+        )
+        Button(
+            { session.completePurchase(buy = true)?.let { reporter?.purchased(it.action.product, it.action.priceCents) } },
+            Modifier.heightIn(min = 48.dp).testTag("purchase-buy"),
+        ) { Text("Buy (test)") }
+        Button({ session.completePurchase(buy = false) }, Modifier.heightIn(min = 48.dp).testTag("purchase-cancel")) { Text("Cancel") }
     }
 }
 

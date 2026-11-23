@@ -8,6 +8,7 @@ import androidx.compose.runtime.setValue
 import dev.spawnkit.editing.Project
 import dev.spawnkit.editing.SceneWorld
 import dev.spawnkit.editing.buildSceneWorld
+import dev.spawnkit.gameplay.PurchaseRequest
 import dev.spawnkit.gameplay.StandardEngine
 import dev.spawnkit.runtime.InputAction
 import dev.spawnkit.runtime.InputFrame
@@ -29,7 +30,28 @@ class PlaySession(
     private val sceneRequest: (world: World, sceneId: String?) -> String? = { _, _ -> null },
     private val buildScene: (String) -> SceneWorld? = { null },
     private val onSceneChange: (from: World, to: World) -> Unit = { _, _ -> },
+    private val grant: (World, PurchaseRequest) -> Unit = { _, _ -> },
 ) {
+    /** A test purchase waiting for the player to buy or cancel (C12); play is paused meanwhile. */
+    var pendingPurchase by mutableStateOf<PurchaseRequest?>(null)
+        private set
+
+    /** Asks the player to confirm [request], unless another purchase is already waiting. */
+    fun offer(request: PurchaseRequest) {
+        if (pendingPurchase != null) return
+        pendingPurchase = request
+        paused = true
+    }
+
+    /** Ends the waiting purchase: grants it in the current world when [buy], then play continues. */
+    fun completePurchase(buy: Boolean): PurchaseRequest? {
+        val request = pendingPurchase ?: return null
+        if (buy) grant(scene.world, request)
+        pendingPurchase = null
+        paused = false
+        return request.takeIf { buy }
+    }
+
     /** The world being played; replaced when the game goes to another scene. */
     var scene by mutableStateOf(scene)
         private set
@@ -143,12 +165,16 @@ fun StandardEngine.playSession(
 ): PlaySession {
     val kept = mutableMapOf<String, Long>()
     val played = playProject(project)
-    return PlaySession(
-        buildSceneWorld(runtime, played, sceneId, programs),
-        actions,
-        sceneId,
-        sceneRequest = { world, current -> handleRequests(world, project, current ?: sceneId) },
-        buildScene = { id -> played.scene(id)?.let { buildSceneWorld(runtime, played, it.id, programs) } },
-        onSceneChange = { from, to -> carryKeptNumbers(from, to, kept) },
-    )
+    lateinit var session: PlaySession
+    session =
+        PlaySession(
+            buildSceneWorld(runtime, played, sceneId, programs),
+            actions,
+            sceneId,
+            sceneRequest = { world, current -> handleRequests(world, project, current ?: sceneId) { session.offer(it) } },
+            buildScene = { id -> played.scene(id)?.let { buildSceneWorld(runtime, played, it.id, programs) } },
+            onSceneChange = { from, to -> carryKeptNumbers(from, to, kept) },
+            grant = { world, request -> grant(world, request) },
+        )
+    return session
 }

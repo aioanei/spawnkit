@@ -172,6 +172,27 @@ The first half of [#77](https://github.com/aioanei/spawnkit/issues/77). [Plan](p
 Tests: `AdSettingsTest` 4 (common), `AdsTest` 4 (player), the server's `AdStatsTest` 3, `TestAdsUiTest` on phone and
 desktop, and the `set_ads` parity case.
 
+## Test purchases (C12b)
+
+The second half of [#77](https://github.com/aioanei/spawnkit/issues/77), so a shop scene can sell things without
+charging money.
+
+- **The block.** "Test purchase ⟨product⟩ for $⟨price⟩, then add ⟨amount⟩ to ⟨number⟩" (`Action.TestPurchase`, in the
+  catalog as `TestPurchase`). It compiles to a `purchase` effect; `StandardEngine.handleRequests` hands purchases to
+  the player, and `StandardEngine.grant` adds the amount to the target's number, for example coins, lives or a
+  game-wide value that unlocks a skin or a level.
+- **Players.** `PlaySession.offer` pauses play, and `PurchaseLayer` asks "Buy ⟨product⟩ for ⟨price⟩?" under **TEST
+  PURCHASE: no money is charged**. Buy grants the item; Cancel grants nothing. Builder Play shows the same dialog and
+  never reports.
+- **Counting.** The Arcade's web player reports completed purchases to `POST /api/games/{slug}/purchase-events`, with
+  the same play-session ID and event numbers as ads, so each is counted once (database schema 3). Ad statistics show
+  "Test purchases N — no money is charged" per day and product, and revenue stays $0.00.
+- **Later.** Real payments (Google Play Billing, App Store, Stripe) can plug in behind the same purchase step after
+  launch.
+
+Tests: `TestPurchaseTest` 2 (common), `TestPurchasesTest` 2 (player), the server's purchase counting in `AdStatsTest`,
+the statistics in `TestAdsUiTest`, and the `TestPurchase` parity case.
+
 ## Game-wide values, randomness, economy and spawning (C14a)
 
 Blocks for complete games ([#88](https://github.com/aioanei/spawnkit/issues/88)), all general and all in the block

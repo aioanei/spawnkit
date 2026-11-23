@@ -89,6 +89,7 @@ public class StandardEngine(
     public fun takeRequests(world: World): EngineRequests {
         var scene: String? = null
         val spawns = mutableListOf<SpawnRequest>()
+        val purchases = mutableListOf<PurchaseRequest>()
         for (entity in world.entities(programs.behavior)) {
             val instance = world.get(entity, programs.behavior) ?: continue
             val pending = instance.pendingEffects
@@ -96,13 +97,25 @@ public class StandardEngine(
             for (effect in pending) {
                 val payload = (effect.payload as? TextValue)?.value ?: continue
                 when (effect.effect) {
-                    RuleBlocks.GO_TO_SCENE -> scene = payload
-                    RuleBlocks.SPAWN -> SpawnRequest.parse(payload)?.let(spawns::add)
+                    RuleBlocks.GO_TO_SCENE -> {
+                        scene = payload
+                    }
+
+                    RuleBlocks.SPAWN -> {
+                        SpawnRequest.parse(payload)?.let(spawns::add)
+                    }
+
+                    RuleBlocks.PURCHASE -> {
+                        runCatching { PurchaseRequest.action(payload) }.getOrNull()?.let {
+                            purchases +=
+                                PurchaseRequest(it, entity)
+                        }
+                    }
                 }
             }
             instance.acknowledgeEffects(pending.last().id)
         }
-        return EngineRequests(scene, spawns)
+        return EngineRequests(scene, spawns, purchases)
     }
 
     /** [project] as it is played: objects marked Template are left out until a rule spawns a copy. */
@@ -137,16 +150,36 @@ public class StandardEngine(
 
     /**
      * What players do after each tick of [world], playing scene [sceneId] of [project]: makes the requested copies,
-     * then returns the scene a rule asked for, or `null`.
+     * passes test purchases to [purchase] (players ask the player to confirm, then call [grant]), and returns the scene
+     * a rule asked for, or `null`.
      */
     public fun handleRequests(
         world: World,
         project: Project,
         sceneId: String,
+        purchase: (PurchaseRequest) -> Unit = {},
     ): String? {
         val requests = takeRequests(world)
         requests.spawns.forEach { spawn(world, project, sceneId, it) }
+        requests.purchases.forEach(purchase)
         return requests.scene
+    }
+
+    /**
+     * Grants a confirmed test purchase (C12): adds its amount to the number of its target in [world], the object that
+     * asked or the first object with the tag. Nothing happens when the target has no number.
+     */
+    public fun grant(
+        world: World,
+        request: PurchaseRequest,
+    ) {
+        val target =
+            when (val chosen = request.action.target) {
+                Target.Self -> request.entity.takeIf { world.isAlive(it) }
+                is Target.Tagged -> gameplay.tagged(world, chosen.tag).firstOrNull()
+            } ?: return
+        val number = world.get(target, gameplay.number) ?: return
+        world.set(target, gameplay.number, number.copy(value = number.value + request.action.amount))
     }
 
     /**

@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import dev.spawnkit.graphics.ViewTransform
 import dev.spawnkit.player.AdLayer
 import dev.spawnkit.player.PlaySurface
+import dev.spawnkit.player.PurchaseLayer
 import dev.spawnkit.player.handlePlayKey
 import dev.spawnkit.player.rememberProjectImages
 import dev.spawnkit.render.CanvasStyle
@@ -106,6 +107,7 @@ private fun ViewportContent(
                 ?.id,
             reporter = null,
         )
+        PurchaseLayer(session, reporter = null)
         return
     }
     // Rebuilt for every project revision, scene change and drag step: preview worlds are cheap and never shared.

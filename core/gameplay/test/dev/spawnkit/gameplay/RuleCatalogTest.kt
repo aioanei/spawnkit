@@ -56,11 +56,12 @@ class RuleCatalogTest {
             Action.Spawn("enemy", SpawnPlace.RandomArea(-5, 5, 0, 0), Direction.Down, 3.0),
             Action.Jump(15.0),
             Action.SetSpeed(Direction.Left, 8.0),
+            Action.TestPurchase("Extra life", 49, Target.Tagged("lives"), 1),
         ).onEach {
             when (it) {
                 is Action.Move, is Action.ChangeNumber, is Action.SetNumber, is Action.SetText, is Action.ShowNumber,
                 Action.RemoveSelf, is Action.GoToScene, is Action.SetRandomNumber, is Action.AddNumber,
-                is Action.Spawn, is Action.Jump, is Action.SetSpeed,
+                is Action.Spawn, is Action.Jump, is Action.SetSpeed, is Action.TestPurchase,
                 -> Unit
             }
         }

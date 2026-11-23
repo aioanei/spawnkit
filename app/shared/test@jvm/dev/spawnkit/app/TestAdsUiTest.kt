@@ -18,6 +18,7 @@ import androidx.compose.ui.test.runDesktopComposeUiTest
 import dev.spawnkit.ai.AdDayCount
 import dev.spawnkit.ai.AdStatsReport
 import dev.spawnkit.ai.ArcadeGame
+import dev.spawnkit.ai.PurchaseCount
 import dev.spawnkit.app.account.AccountState
 import dev.spawnkit.app.account.FakeAccountService
 import dev.spawnkit.app.assistant.MemorySecretStore
@@ -68,6 +69,8 @@ class TestAdsUiTest {
                     views = 120,
                     clicks = 6,
                     days = listOf(AdDayCount("2026-11-23", 80, 4), AdDayCount("2026-11-22", 40, 2)),
+                    purchases = 3,
+                    purchaseDays = listOf(PurchaseCount("2026-11-23", "100 coins", 3)),
                 )
             val session = ProjectSession(TestProjectFiles())
             setContent {
@@ -86,6 +89,8 @@ class TestAdsUiTest {
             tap("my-game-stats-coin-dash-1")
             onNodeWithTag("ad-revenue").assertTextContains("$0.00 — test ads earn nothing", substring = true)
             onNodeWithText("Views 120 · Clicks 6 · Click-through rate 5.0%", substring = true).assertExists()
+            onNodeWithTag("purchase-total").assertTextContains("Test purchases 3 — no money is charged", substring = true)
+            onNodeWithText("2026-11-23: 3 × 100 coins").assertExists()
             onNodeWithTag("what-if-rate").performTextReplacement("2.5")
             waitForIdle()
             onNodeWithTag("what-if-estimate").assertTextContains("About $0.30 — an estimate, not earnings", substring = true)

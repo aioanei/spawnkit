@@ -229,10 +229,29 @@ private fun Route.adRoutes(
             )
         }
     }
+    post("/api/games/{slug}/purchase-events") {
+        call.arcadeResponse {
+            if (!limits.allow(request.local.remoteAddress)) {
+                response.header(HttpHeaders.RetryAfter, "60")
+                throw ArcadeProblem(HttpStatusCode.TooManyRequests, "Too many purchase reports. Try again in a minute.")
+            }
+            val file = withContext(Dispatchers.IO) { store.find(pathParameters["slug"]) }
+            val slug = file.fileName.toString().removeSuffix(".game")
+            val text = readLimitedText(limits.bytes) { ArcadeProblem(HttpStatusCode.PayloadTooLarge, "Send at most 50 purchases at once.") }
+            val (session, purchases) = parsePurchases(text)
+            val accepted = withContext(Dispatchers.IO) { ads.recordPurchases(slug, session, purchases) }
+            respondText(
+                JsonObject(mapOf("accepted" to JsonPrimitive(accepted))).toString(),
+                ContentType.Application.Json,
+                HttpStatusCode.Accepted,
+            )
+        }
+    }
     get("/api/games/{slug}/ad-stats") {
         call.arcadeResponse {
             val slug = requireOwned(store, owners)
             val days = withContext(Dispatchers.IO) { ads.daily(slug) }
+            val bought = withContext(Dispatchers.IO) { ads.purchases(slug) }
             val body =
                 JsonObject(
                     mapOf(
@@ -240,6 +259,19 @@ private fun Route.adRoutes(
                         "views" to JsonPrimitive(days.sumOf { it.views }),
                         "clicks" to JsonPrimitive(days.sumOf { it.clicks }),
                         "revenue" to JsonPrimitive("0.00"),
+                        "purchases" to JsonPrimitive(bought.sumOf { it.count }),
+                        "purchaseDays" to
+                            JsonArray(
+                                bought.map {
+                                    JsonObject(
+                                        mapOf(
+                                            "day" to JsonPrimitive(it.day),
+                                            "product" to JsonPrimitive(it.product),
+                                            "count" to JsonPrimitive(it.count),
+                                        ),
+                                    )
+                                },
+                            ),
                         "days" to
                             JsonArray(
                                 days.map {
@@ -276,6 +308,24 @@ private fun parseAdEvents(text: String): Pair<String, List<AdEventReport>> {
             val kind = (event["kind"] as? JsonPrimitive)?.content ?: bad()
             if (number !in 0..MAX_EVENT_NUMBER || placement !in setOf("banner", "interstitial") || kind !in setOf("view", "click")) bad()
             AdEventReport(number, placement, kind == "click")
+        }
+}
+
+/** The play session and (number, product) pairs of a purchase report, or a 400 problem. */
+private fun parsePurchases(text: String): Pair<String, List<Pair<Int, String>>> {
+    fun bad(): Nothing = throw ArcadeProblem(HttpStatusCode.BadRequest, "Send {\"session\": id, \"events\": [{\"n\", \"product\"}]}.")
+    val root = runCatching { Json.parseToJsonElement(text).jsonObject }.getOrNull() ?: bad()
+    val session = (root["session"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: bad()
+    if (!session.matches(SESSION_ID)) bad()
+    val events = (root["events"] as? JsonArray) ?: bad()
+    if (events.size > MAX_AD_EVENTS) bad()
+    return session to
+        events.map { element ->
+            val event = element as? JsonObject ?: bad()
+            val number = (event["n"] as? JsonPrimitive)?.takeUnless { it.isString }?.intOrNull ?: bad()
+            val product = (event["product"] as? JsonPrimitive)?.takeIf { it.isString }?.content?.trim() ?: bad()
+            if (number !in 0..MAX_EVENT_NUMBER || product.isEmpty() || product.length > 60) bad()
+            number to product
         }
 }
 

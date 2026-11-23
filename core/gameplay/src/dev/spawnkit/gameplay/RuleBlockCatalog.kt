@@ -448,6 +448,35 @@ public object RuleBlockCatalog {
                 },
                 { mapOf("tag" to it.tag, "place" to picked(it.place), "direction" to (it.direction?.name ?: NONE), "speed" to it.speed) },
             ),
+            actionSpec<Action.TestPurchase>(
+                "TestPurchase",
+                AuthoringInfo(
+                    "Test purchase",
+                    "Offers an item for sale. Players see \"TEST PURCHASE: no money is charged\" and choose Buy or Cancel; buying adds the amount to a number, such as coins or lives.",
+                    NUMBERS,
+                ),
+                listOf(
+                    Parameter(
+                        "product",
+                        "Product",
+                        "What is sold, as players see it.",
+                        ParameterType.Value(ValueKind.Text(60)),
+                        default = "100 coins",
+                    ),
+                    Parameter(
+                        "price",
+                        "Price in cents",
+                        "Shown price in cents, for example 99 for $0.99. No money is charged.",
+                        ParameterType.Value(ValueKind.WholeNumber(0, 99_999, unit = "cents")),
+                        default = 99L,
+                    ),
+                    targetParameter(),
+                    valueParameter("Amount added to the number when bought.", 100L, -MAX_VALUE, id = "amount", name = "Amount"),
+                ),
+                listOf("When the coin pack is tapped, sell 100 coins for $0.99", "Sell an extra life for $0.49"),
+                { Action.TestPurchase(it.text("product"), it.whole("price"), it.target(), it.whole("amount")) },
+                { mapOf("product" to it.product, "price" to it.priceCents, TARGET to picked(it.target), "amount" to it.amount) },
+            ),
             actionSpec<Action.GoToScene>(
                 "GoToScene",
                 AuthoringInfo(
@@ -544,6 +573,7 @@ public object RuleBlockCatalog {
             is Action.Spawn -> "Spawn"
             is Action.Jump -> "Jump"
             is Action.SetSpeed -> "SetSpeed"
+            is Action.TestPurchase -> "TestPurchase"
             is Action.GoToScene -> "GoToScene"
         }
 

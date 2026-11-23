@@ -16,6 +16,7 @@ import dev.spawnkit.player.AdEvent
 import dev.spawnkit.player.AdReporter
 import dev.spawnkit.player.GamePlayer
 import dev.spawnkit.player.PlayerMessage
+import dev.spawnkit.player.PurchaseReporter
 import kotlinx.coroutines.delay
 import kotlin.js.ExperimentalWasmJsInterop
 
@@ -71,7 +72,7 @@ private fun WebPlayer() {
     when (val current = load) {
         Load.Loading -> PlayerMessage("Loading game…")
         is Load.Failed -> PlayerMessage(current.title, listOf(current.detail))
-        is Load.Ready -> GamePlayer(current.game, touchControls = hasTouchScreen(), adReporter = reporter)
+        is Load.Ready -> GamePlayer(current.game, touchControls = hasTouchScreen(), adReporter = reporter, purchaseReporter = reporter)
     }
 }
 
@@ -82,9 +83,13 @@ private fun WebPlayer() {
  */
 private class ArcadeAdReporter(
     private val slug: String,
-) : AdReporter {
+) : AdReporter,
+    PurchaseReporter {
     private val session = randomSession()
     private val pending = mutableListOf<String>()
+    private val bought = mutableListOf<String>()
+
+    // One counter for ads and purchases, so the server counts each event once.
     private var next = 1
 
     override fun report(event: AdEvent) {
@@ -92,11 +97,24 @@ private class ArcadeAdReporter(
         if (pending.size >= BATCH) flush()
     }
 
+    override fun purchased(
+        product: String,
+        priceCents: Long,
+    ) {
+        val name = product.replace("\\", "\\\\").replace("\"", "\\\"")
+        bought += """{"n":${next++},"product":"$name"}"""
+        flush()
+    }
+
     fun flush() {
-        if (pending.isEmpty()) return
-        val body = """{"session":"$session","events":[${pending.joinToString(",")}]}"""
-        pending.clear()
-        postJson("/api/games/$slug/ad-events", body)
+        if (pending.isNotEmpty()) {
+            postJson("/api/games/$slug/ad-events", """{"session":"$session","events":[${pending.joinToString(",")}]}""")
+            pending.clear()
+        }
+        if (bought.isNotEmpty()) {
+            postJson("/api/games/$slug/purchase-events", """{"session":"$session","events":[${bought.joinToString(",")}]}""")
+            bought.clear()
+        }
     }
 
     private companion object {

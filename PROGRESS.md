@@ -1,6 +1,22 @@
 # SpawnKit progress
 
-## Current checkpoint — C12a test ads with real counts (2026-11-23)
+## Current checkpoint — C12b test purchases (2026-11-23)
+
+- **Branch.** `feat/77-test-purchases`, stacked on C12a (`feat/77-test-ads`, PR #101). With C12a this completes
+  [#77](https://github.com/aioanei/spawnkit/issues/77). Open stack, in merge order: #99 (C15a), #100 (C15b), #101
+  (C12a), then this branch.
+- **Added.**
+  - The Test purchase block, with its `purchase` effect and `StandardEngine.grant`.
+  - The labelled purchase dialog, which pauses play.
+  - Web-player reporting with event numbers shared with ads.
+  - The server's purchase counts (database schema 3).
+  - Purchases in Ad statistics. [Gameplay](docs/gameplay.md#test-purchases-c12b).
+- **Evidence.** New tests: `TestPurchaseTest` 2, `TestPurchasesTest` 2, server purchase counting, statistics UI and
+  parity. Gates as recorded in the PR.
+- **Next.** C17 complete-game templates ([#91](https://github.com/aioanei/spawnkit/issues/91)), then C16, C13, C11c,
+  C19 and C8. C17 can now use physics, home screen kits, images, test ads and test purchases.
+
+## Previous checkpoint — C12a test ads with real counts (2026-11-23)
 
 - **Branch.** `feat/77-test-ads`, stacked on C15b (`feat/89-images`, PR #100), which is stacked on C15a (PR #99).
   [Plan](docs/plans/2026-11-23-c12a-test-ads.md), the first half of [#77](https://github.com/aioanei/spawnkit/issues/77).

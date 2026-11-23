@@ -559,6 +559,7 @@ public class Gameplay(
                 DecimalValue(position(it, (it.arguments[0] as EntityValue).entity).second)
             }.effect(RuleBlocks.GO_TO_SCENE, TextType)
             .effect(RuleBlocks.SPAWN, TextType)
+            .effect(RuleBlocks.PURCHASE, TextType)
 
     private companion object {
         const val TICKS = 60.0

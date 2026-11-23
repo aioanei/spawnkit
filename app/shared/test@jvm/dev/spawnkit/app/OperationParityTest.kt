@@ -421,6 +421,27 @@ class OperationParityTest {
                     },
                     { target("Coin") + mapOf("rule" to 1L, "block" to Picked("LeftArea", mapOf("width" to 40.0, "height" to 24.0))) },
                 ),
+            "TestPurchase" to
+                Case(
+                    { coinRules(tapped) },
+                    {
+                        tap("panel:Rules")
+                        tap("rule:0:add-do")
+                        tap("kind:TestPurchase")
+                        tap("block-done")
+                    },
+                    {
+                        target("Coin") +
+                            mapOf(
+                                "rule" to 1L,
+                                "block" to
+                                    Picked(
+                                        "TestPurchase",
+                                        mapOf("product" to "100 coins", "price" to 99L, "target" to Picked("self"), "amount" to 100L),
+                                    ),
+                            )
+                    },
+                ),
             "OnGround" to
                 Case(
                     { coinRules(tapped) },

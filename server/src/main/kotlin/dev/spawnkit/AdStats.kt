@@ -3,6 +3,7 @@ package dev.spawnkit
 import dev.spawnkit.data.AdCounts
 import dev.spawnkit.data.AdEventsSeen
 import dev.spawnkit.data.Db
+import dev.spawnkit.data.PurchaseCounts
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
@@ -17,6 +18,13 @@ internal data class AdEventReport(
     val number: Int,
     val placement: String,
     val click: Boolean,
+)
+
+/** Test purchases of one product of one game on one UTC day. */
+internal data class PurchaseDay(
+    val day: String,
+    val product: String,
+    val count: Long,
 )
 
 /** Views and clicks of one game on one UTC day. */
@@ -82,6 +90,64 @@ internal class AdStats(
             }
             accepted
         }
+
+    /**
+     * Counts the new test purchases among [purchases] (event number and product) of play [session] for game [slug].
+     * Purchases share event numbers with ad events, so each is counted once. Returns how many were new.
+     */
+    fun recordPurchases(
+        slug: String,
+        session: String,
+        purchases: List<Pair<Int, String>>,
+    ): Int =
+        db.tx {
+            val day = today()
+            var accepted = 0
+            for ((number, product) in purchases.distinctBy { it.first }) {
+                val seen =
+                    AdEventsSeen
+                        .selectAll()
+                        .where { (AdEventsSeen.game eq slug) and (AdEventsSeen.session eq session) and (AdEventsSeen.number eq number) }
+                        .any()
+                if (seen) continue
+                AdEventsSeen.insert {
+                    it[game] = slug
+                    it[AdEventsSeen.session] = session
+                    it[AdEventsSeen.number] = number
+                }
+                val match = (PurchaseCounts.game eq slug) and (PurchaseCounts.day eq day) and (PurchaseCounts.product eq product)
+                val row = PurchaseCounts.selectAll().where { match }.singleOrNull()
+                if (row == null) {
+                    PurchaseCounts.insert {
+                        it[game] = slug
+                        it[PurchaseCounts.day] = day
+                        it[PurchaseCounts.product] = product
+                        it[count] = 1
+                    }
+                } else {
+                    PurchaseCounts.update({ match }) { it[count] = row[PurchaseCounts.count] + 1 }
+                }
+                accepted++
+            }
+            accepted
+        }
+
+    /** Test purchases of [slug] per UTC day and product, newest day first. */
+    fun purchases(slug: String): List<PurchaseDay> =
+        db.tx {
+            PurchaseCounts
+                .selectAll()
+                .where { PurchaseCounts.game eq slug }
+                .orderBy(PurchaseCounts.day to SortOrder.DESC, PurchaseCounts.product to SortOrder.ASC)
+                .map { PurchaseDay(it[PurchaseCounts.day], it[PurchaseCounts.product], it[PurchaseCounts.count]) }
+        }
+
+    private fun today(): String =
+        Instant
+            .ofEpochMilli(clock())
+            .atZone(ZoneOffset.UTC)
+            .toLocalDate()
+            .toString()
 
     /** Views and clicks of [slug] per UTC day, newest first. */
     fun daily(slug: String): List<AdDay> =

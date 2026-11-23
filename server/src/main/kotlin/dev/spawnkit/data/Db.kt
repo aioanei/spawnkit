@@ -131,6 +131,15 @@ internal object AdCounts : Table("ad_counts") {
     override val primaryKey = PrimaryKey(game, day)
 }
 
+/** Test purchases per game, UTC day and product (C12). No money is ever charged. */
+internal object PurchaseCounts : Table("purchase_counts") {
+    val game = varchar("game_slug", 36).references(Games.slug, onDelete = ReferenceOption.CASCADE)
+    val day = varchar("day", 10)
+    val product = varchar("product", 60)
+    val count = long("count").default(0)
+    override val primaryKey = PrimaryKey(game, day, product)
+}
+
 /**
  * The server's SQLite database (ADR-0010). [open] creates it on first use and applies the migrations in order, in one
  * transaction. A database written by a newer server is refused rather than changed.
@@ -146,12 +155,13 @@ internal class Db private constructor(
 
     companion object {
         /** The schema this server writes. Add a migration below when it changes. */
-        const val SCHEMA_VERSION: Int = 2
+        const val SCHEMA_VERSION: Int = 3
 
         private val migrations: Map<Int, JdbcTransaction.() -> Unit> =
             mapOf(
                 1 to { SchemaUtils.create(Accounts, Identities, EmailCodes, Sessions, Games, Projects, Likes, Plays, AiSpend) },
                 2 to { SchemaUtils.create(AdEventsSeen, AdCounts) },
+                3 to { SchemaUtils.create(PurchaseCounts) },
             )
 
         /** Opens (creating if needed) the database file at [file]. */
