@@ -56,7 +56,8 @@ class FollowTest {
 
     private fun SceneWorld.tick(times: Int) = apply { repeat(times) { world.step() } }
 
-    private fun SceneWorld.at(tag: String): Transform2D = world.get(engine.gameplay.tagged(world, tag).single(), engine.graphics.transform)!!
+    private fun SceneWorld.at(tag: String): Transform2D =
+        world.get(engine.gameplay.tagged(world, tag).single(), engine.graphics.transform)!!
 
     private fun assertNear(
         expected: Double,

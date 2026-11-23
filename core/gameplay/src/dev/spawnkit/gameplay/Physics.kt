@@ -254,9 +254,24 @@ internal class PhysicsSystem(
             val hits = near.filter { own.overlaps(it.bounds) }
             if (hits.isNotEmpty()) {
                 if (horizontal) {
-                    if (each > 0.0) own.shift(hits.minOf { it.bounds.left } - own.right, 0.0) else own.shift(hits.maxOf { it.bounds.right } - own.left, 0.0)
+                    if (each >
+                        0.0
+                    ) {
+                        own.shift(hits.minOf { it.bounds.left } - own.right, 0.0)
+                    } else {
+                        own.shift(hits.maxOf { it.bounds.right } - own.left, 0.0)
+                    }
                 } else {
-                    if (each > 0.0) own.shift(0.0, hits.minOf { it.bounds.top } - own.bottom) else own.shift(0.0, hits.maxOf { it.bounds.bottom } - own.top)
+                    if (each >
+                        0.0
+                    ) {
+                        own.shift(0.0, hits.minOf { it.bounds.top } - own.bottom)
+                    } else {
+                        own.shift(
+                            0.0,
+                            hits.maxOf { it.bounds.bottom } - own.top,
+                        )
+                    }
                 }
                 return true
             }

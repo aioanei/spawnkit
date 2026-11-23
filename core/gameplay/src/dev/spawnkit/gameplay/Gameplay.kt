@@ -301,7 +301,10 @@ public class Gameplay(
             property(
                 "down",
                 ValueKind.YesNo,
-                AuthoringInfo("Follow up and down", "Moves up and down with the object. Turn it off for a level that only scrolls sideways."),
+                AuthoringInfo(
+                    "Follow up and down",
+                    "Moves up and down with the object. Turn it off for a level that only scrolls sideways.",
+                ),
                 true,
                 { it.down },
                 { f, v -> f.copy(down = v) },

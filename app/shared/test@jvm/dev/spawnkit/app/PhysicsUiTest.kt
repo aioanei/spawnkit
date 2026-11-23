@@ -83,6 +83,7 @@ class PhysicsUiTest {
             val world = session.scene.world
             val engine = state.engine
             val hero = assertNotNull(session.scene.entity(player))
+
             fun y() = assertNotNull(world.get(hero, engine.graphics.transform)).y
             val floor = assertNotNull(engine.gameplay.bounds(world, assertNotNull(session.scene.entity(platform))))
             val resting = y()

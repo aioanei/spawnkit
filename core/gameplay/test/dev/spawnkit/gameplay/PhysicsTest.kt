@@ -142,7 +142,13 @@ class PhysicsTest {
     @Test
     fun aBodyWalksAlongTheGroundWithMoveBlocks() {
         ground()
-        add("Player", 0.0, 4.0, extra = listOf(body()), rules = listOf(Rule(Condition.Always, actions = listOf(Action.Move(Direction.Right, 3.0)))))
+        add(
+            "Player",
+            0.0,
+            4.0,
+            extra = listOf(body()),
+            rules = listOf(Rule(Condition.Always, actions = listOf(Action.Move(Direction.Right, 3.0)))),
+        )
         val play = play().tick(60)
 
         assertNear(3.0, play.x("player"), "the floor does not slow walking")
@@ -154,7 +160,13 @@ class PhysicsTest {
     fun aMoveBlockCannotWalkABodyThroughAWall() {
         ground()
         add("Wall", 3.0, 3.0, height = 2.0, extra = listOf(solid))
-        add("Player", 0.0, 4.0, extra = listOf(body()), rules = listOf(Rule(Condition.Always, actions = listOf(Action.Move(Direction.Right, 6.0)))))
+        add(
+            "Player",
+            0.0,
+            4.0,
+            extra = listOf(body()),
+            rules = listOf(Rule(Condition.Always, actions = listOf(Action.Move(Direction.Right, 6.0)))),
+        )
         val play = play().tick(60)
 
         assertNear(2.0, play.x("player"), "pushed back out of the wall")

@@ -80,7 +80,14 @@ class PhysicsBlocksTest {
     @Test
     fun jumpWorksOnlyFromTheGround() {
         ground()
-        add("Player", 0.0, 0.0, 1.0, listOf(ComponentDoc("gameplay:body")), listOf(Rule(Condition.Always, actions = listOf(Action.Jump(15.0)))))
+        add(
+            "Player",
+            0.0,
+            0.0,
+            1.0,
+            listOf(ComponentDoc("gameplay:body")),
+            listOf(Rule(Condition.Always, actions = listOf(Action.Jump(15.0)))),
+        )
         val play = play()
 
         var landed = 0
