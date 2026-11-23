@@ -29,7 +29,9 @@ class ImagesTest {
     private fun rejection(operation: EditOperation): String = assertIs<OperationResult.Rejected>(editor.apply(operation)).message
 
     private fun sprite(asset: String): OperationResult =
-        editor.apply(EditOperation.AddObject(scene, "Picture", components = listOf(ComponentDoc("graphics:sprite", mapOf("asset" to asset)))))
+        editor.apply(
+            EditOperation.AddObject(scene, "Picture", components = listOf(ComponentDoc("graphics:sprite", mapOf("asset" to asset)))),
+        )
 
     @Test
     fun sha256MatchesTheStandardVectors() {
@@ -45,9 +47,16 @@ class ImagesTest {
         assertEquals(4, info.width)
         assertEquals(3, info.height)
 
-        val notPng = assertFailsWith<IllegalArgumentException> { ProjectImages.check("GIF89a and some more bytes here....".encodeToByteArray()) }
+        val notPng =
+            assertFailsWith<IllegalArgumentException> { ProjectImages.check("GIF89a and some more bytes here....".encodeToByteArray()) }
         assertTrue(notPng.message!!.contains("Only PNG"))
-        val huge = TestPng.make(1, 1).copyOf().also { it[16] = 0; it[17] = 0; it[18] = 0x10; it[19] = 0 }
+        val huge =
+            TestPng.make(1, 1).copyOf().also {
+                it[16] = 0
+                it[17] = 0
+                it[18] = 0x10
+                it[19] = 0
+            }
         assertTrue(assertFailsWith<IllegalArgumentException> { ProjectImages.check(huge) }.message!!.contains("2048"))
         val big = ByteArray(ProjectImages.MAX_IMAGE_BYTES + 1)
         assertTrue(assertFailsWith<IllegalArgumentException> { ProjectImages.check(big) }.message!!.contains("512 KB"))
@@ -99,7 +108,8 @@ class ImagesTest {
     @Test
     fun imageOperationsAreInTheCatalog() {
         val catalog = EditingOperations.catalog
-        val added = assertIs<BuildResult.Ready>(catalog.build("add_image", mapOf("name" to "Hero", "data" to logo), editor.catalogContext()))
+        val added =
+            assertIs<BuildResult.Ready>(catalog.build("add_image", mapOf("name" to "Hero", "data" to logo), editor.catalogContext()))
         val id = assertIs<OperationResult.Applied>(editor.apply(added.operation)).createdIds.single()
         val renamed = catalog.build("rename_image", mapOf("image" to id, "name" to "Knight"), editor.catalogContext())
         assertIs<OperationResult.Applied>(editor.apply(assertIs<BuildResult.Ready>(renamed).operation))

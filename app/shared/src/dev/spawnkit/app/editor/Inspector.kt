@@ -286,7 +286,12 @@ private fun PropertyControl(
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         FilterChip(value == "", { set("") }, { Text("None") }, Modifier.testTag("image:$key:none"))
                         for (image in state.project.images) {
-                            FilterChip(value == image.id, { set(image.id) }, { Text(image.name) }, Modifier.testTag("image:$key:${image.name}"))
+                            FilterChip(
+                                value == image.id,
+                                { set(image.id) },
+                                { Text(image.name) },
+                                Modifier.testTag("image:$key:${image.name}"),
+                            )
                         }
                     }
                     if (state.project.images.isEmpty()) {

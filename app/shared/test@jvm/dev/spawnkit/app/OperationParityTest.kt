@@ -1,13 +1,8 @@
 package dev.spawnkit.app
 
-import dev.spawnkit.editing.ComponentDoc
-import dev.spawnkit.editing.ProjectImages
-import dev.spawnkit.app.images.PickedImage
-import dev.spawnkit.app.images.LocalImagePicker
-import dev.spawnkit.app.images.ImagePicker
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithTag
@@ -19,15 +14,20 @@ import androidx.compose.ui.test.runDesktopComposeUiTest
 import dev.spawnkit.app.editor.DefaultPresets
 import dev.spawnkit.app.editor.EditorScreen
 import dev.spawnkit.app.editor.EditorState
+import dev.spawnkit.app.images.ImagePicker
+import dev.spawnkit.app.images.LocalImagePicker
+import dev.spawnkit.app.images.PickedImage
 import dev.spawnkit.app.persistence.DesktopDraftStore
 import dev.spawnkit.app.persistence.ProjectFile
 import dev.spawnkit.app.persistence.ProjectFilePicker
 import dev.spawnkit.app.persistence.ProjectFiles
 import dev.spawnkit.app.persistence.ProjectSession
+import dev.spawnkit.editing.ComponentDoc
 import dev.spawnkit.editing.EditOperation
 import dev.spawnkit.editing.OperationResult
 import dev.spawnkit.editing.Picked
 import dev.spawnkit.editing.Project
+import dev.spawnkit.editing.ProjectImages
 import dev.spawnkit.editing.buildFromJson
 import dev.spawnkit.editing.capabilityProblems
 import dev.spawnkit.editing.encodeArguments

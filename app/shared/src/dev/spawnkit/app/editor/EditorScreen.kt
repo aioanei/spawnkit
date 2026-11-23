@@ -1,9 +1,5 @@
 package dev.spawnkit.app.editor
 
-import dev.spawnkit.editing.ImageAsset
-import dev.spawnkit.app.images.rememberImagePicker
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.AlertDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
@@ -27,12 +23,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -71,12 +69,14 @@ import dev.spawnkit.app.assistant.AssistantPanel
 import dev.spawnkit.app.assistant.AssistantState
 import dev.spawnkit.app.assistant.SecretStore
 import dev.spawnkit.app.assistant.rememberSecretStore
+import dev.spawnkit.app.images.rememberImagePicker
 import dev.spawnkit.app.persistence.ProjectDialogs
 import dev.spawnkit.app.persistence.ProjectMenu
 import dev.spawnkit.app.persistence.ProjectSession
 import dev.spawnkit.app.release.ReleaseManager
 import dev.spawnkit.app.release.ReleasePlatform
 import dev.spawnkit.app.release.rememberReleasePlatform
+import dev.spawnkit.editing.ImageAsset
 import dev.spawnkit.editing.ObjectDoc
 
 /** Tabs of the expanded layout's right panel. */
@@ -429,7 +429,13 @@ private fun RenameImage(
         onDismissRequest = close,
         title = { Text("Name this image") },
         text = {
-            OutlinedTextField(name, { name = it.take(80) }, Modifier.testTag("image-name"), singleLine = true, label = { Text("Image name") })
+            OutlinedTextField(
+                name,
+                { name = it.take(80) },
+                Modifier.testTag("image-name"),
+                singleLine = true,
+                label = { Text("Image name") },
+            )
         },
         confirmButton = {
             Button(

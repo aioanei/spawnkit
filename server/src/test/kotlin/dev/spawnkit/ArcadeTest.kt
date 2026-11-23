@@ -3,8 +3,10 @@ package dev.spawnkit
 import dev.spawnkit.editing.ComponentDoc
 import dev.spawnkit.editing.GamePackage
 import dev.spawnkit.editing.GamePackageCodec
+import dev.spawnkit.editing.ImageAsset
 import dev.spawnkit.editing.ObjectDoc
 import dev.spawnkit.editing.Project
+import dev.spawnkit.editing.ProjectImages
 import dev.spawnkit.editing.SceneDoc
 import io.ktor.client.request.get
 import io.ktor.client.request.post
@@ -72,6 +74,36 @@ class ArcadeTest {
                 )
                 assertEquals(HttpStatusCode.NotFound, client.get("${url}unknown").status)
                 assertEquals(HttpStatusCode.NotFound, client.get("/play/missing/index.html").status)
+            }
+        }
+
+    @Test
+    fun imagesTravelThroughTheArcadeToThePlayer() =
+        withStore { directory ->
+            val png =
+                java.io
+                    .ByteArrayOutputStream()
+                    .also { out ->
+                        val image = java.awt.image.BufferedImage(64, 32, java.awt.image.BufferedImage.TYPE_INT_ARGB)
+                        for (x in 0 until 64) image.setRGB(x, x % 32, 0xFF2196F3.toInt())
+                        javax.imageio.ImageIO.write(image, "png", out)
+                    }.toByteArray()
+            val data = ProjectImages.encode(png)
+            val logo = ImageAsset("img-9", "Logo", ProjectImages.check(png).hash, data)
+            val project = Project.blank("Logo Game").copy(images = listOf(logo), nextId = 10)
+            val text = GamePackageCodec.encode(GamePackage.of(project))
+            testApplication {
+                application { arcade(ArcadeStore(directory), playerFixture()) }
+                val published = client.publish(text)
+                assertEquals(HttpStatusCode.Created, published.status)
+                val slug =
+                    Json
+                        .parseToJsonElement(published.bodyAsText())
+                        .jsonObject
+                        .getValue("slug")
+                        .jsonPrimitive.content
+                val played = GamePackageCodec.decode(client.get("/play/$slug/game.spawnkit.json").bodyAsText())
+                assertEquals(listOf(logo), played.project.images, "the web player receives the picture unchanged")
             }
         }
 

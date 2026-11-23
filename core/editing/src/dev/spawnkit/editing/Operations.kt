@@ -241,7 +241,11 @@ internal class OperationApplier(
                 val image = project.image(operation.imageId) ?: reject("That image no longer exists")
                 val users = imageUsers(project, image.id)
                 if (users.isNotEmpty()) {
-                    reject("${image.name} is used by ${users.take(3).joinToString()}${if (users.size > 3) " and others" else ""}; change those first")
+                    reject(
+                        "${image.name} is used by ${users.take(
+                            3,
+                        ).joinToString()}${if (users.size > 3) " and others" else ""}; change those first",
+                    )
                 }
                 project.copy(images = project.images.filter { it.id != image.id })
             }
@@ -435,7 +439,9 @@ internal class OperationApplier(
         val property = descriptor.property(propertyId) ?: reject("${descriptor.component.authoring.name} has no '$propertyId'")
         val checked = checkKind(property.kind, property.authoring.name, value)
         val kind = property.kind
-        if (project != null && kind is ValueKind.Text && kind.asset == ProjectImages.ASSET_KIND && checked != "" && project.image(checked as String) == null) {
+        if (project != null && kind is ValueKind.Text && kind.asset == ProjectImages.ASSET_KIND && checked != "" &&
+            project.image(checked as String) == null
+        ) {
             reject("${property.authoring.name}: there is no image '$checked'. Import it first")
         }
         return checked
@@ -447,15 +453,16 @@ internal class OperationApplier(
         imageId: String,
     ): List<String> =
         project.scenes.flatMap { scene ->
-            scene.objects.filter { obj ->
-                obj.components.any { doc ->
-                    val descriptor = runtime.catalog.firstOrNull { it.component.id == doc.componentId } ?: return@any false
-                    descriptor.properties.any { property ->
-                        val kind = property.kind
-                        kind is ValueKind.Text && kind.asset == ProjectImages.ASSET_KIND && doc.values[property.id] == imageId
+            scene.objects
+                .filter { obj ->
+                    obj.components.any { doc ->
+                        val descriptor = runtime.catalog.firstOrNull { it.component.id == doc.componentId } ?: return@any false
+                        descriptor.properties.any { property ->
+                            val kind = property.kind
+                            kind is ValueKind.Text && kind.asset == ProjectImages.ASSET_KIND && doc.values[property.id] == imageId
+                        }
                     }
-                }
-            }.map { it.name }
+                }.map { it.name }
         }
 
     private fun <V : Any> checkKind(

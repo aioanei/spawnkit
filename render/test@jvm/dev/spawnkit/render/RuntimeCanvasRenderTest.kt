@@ -69,7 +69,11 @@ class RuntimeCanvasRenderTest {
         val image = java.awt.image.BufferedImage(2, 1, java.awt.image.BufferedImage.TYPE_INT_ARGB)
         image.setRGB(0, 0, 0xFFFF0000.toInt())
         image.setRGB(1, 0, 0xFF0000FF.toInt())
-        val bytes = java.io.ByteArrayOutputStream().also { javax.imageio.ImageIO.write(image, "png", it) }.toByteArray()
+        val bytes =
+            java.io
+                .ByteArrayOutputStream()
+                .also { javax.imageio.ImageIO.write(image, "png", it) }
+                .toByteArray()
         return bytes.decodeToImageBitmap()
     }
 
