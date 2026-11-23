@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -57,6 +58,7 @@ fun PlaySurface(
     pixelsPerUnit: Double,
     touchControls: Boolean,
     focus: FocusRequester? = null,
+    images: Map<String, ImageBitmap> = emptyMap(),
 ) {
     PlayLoop(session)
     // Reading frame subscribes to every presented frame.
@@ -103,6 +105,7 @@ fun PlaySurface(
                 },
             camera = camera,
             pixelsPerUnit = pixelsPerUnit.toFloat(),
+            images = images,
         )
         if (touchControls) {
             TouchControls(session, Modifier.align(Alignment.BottomCenter))

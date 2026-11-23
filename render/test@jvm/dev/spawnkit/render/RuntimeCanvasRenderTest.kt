@@ -7,10 +7,12 @@ import androidx.compose.ui.unit.Density
 import dev.spawnkit.graphics.Camera2D
 import dev.spawnkit.graphics.Graphics2D
 import dev.spawnkit.graphics.Shape2D
+import dev.spawnkit.graphics.Sprite2D
 import dev.spawnkit.graphics.Text2D
 import dev.spawnkit.graphics.Transform2D
 import dev.spawnkit.graphics.renderList
 import dev.spawnkit.runtime.RuntimeBuilder
+import org.jetbrains.compose.resources.decodeToImageBitmap
 import org.jetbrains.skia.Bitmap
 import org.jetbrains.skia.EncodedImageFormat
 import java.io.File
@@ -60,6 +62,40 @@ class RuntimeCanvasRenderTest {
         assertEquals(0xFFFFC107.toInt(), bitmap.getColor(440, 100))
         val out = File("build/screenshots").apply { mkdirs() }.resolve("runtime-canvas.png")
         out.writeBytes(checkNotNull(image.encodeToData(EncodedImageFormat.PNG)).bytes)
+    }
+
+    /** A 2 × 1 PNG: red on the left, blue on the right, decoded the way players decode project images. */
+    private fun redBlue(): androidx.compose.ui.graphics.ImageBitmap {
+        val image = java.awt.image.BufferedImage(2, 1, java.awt.image.BufferedImage.TYPE_INT_ARGB)
+        image.setRGB(0, 0, 0xFFFF0000.toInt())
+        image.setRGB(1, 0, 0xFF0000FF.toInt())
+        val bytes = java.io.ByteArrayOutputStream().also { javax.imageio.ImageIO.write(image, "png", it) }.toByteArray()
+        return bytes.decodeToImageBitmap()
+    }
+
+    private fun spriteColorLeftOfCentre(pixelated: Boolean): Int {
+        val builder = RuntimeBuilder()
+        val graphics = Graphics2D(builder)
+        val world = builder.build().createWorld()
+        val picture = world.spawn()
+        world.set(picture, graphics.transform, Transform2D())
+        world.set(picture, graphics.sprite, Sprite2D("img-1", width = 4.0, height = 2.0, pixelated = pixelated))
+        val frame = graphics.renderList(world)
+        val scene =
+            ImageComposeScene(width = 640, height = 360, density = Density(1f)) {
+                RuntimeCanvas(frame, Modifier.fillMaxSize(), pixelsPerUnit = 40f, images = mapOf("img-1" to redBlue()))
+            }
+        val bitmap = Bitmap.makeFromImage(scene.render())
+        scene.close()
+        // The sprite spans pixels 240..400 across; its two source pixels meet at x = 320.
+        assertEquals(0xFF0000FF.toInt(), bitmap.getColor(395, 180), "the right edge shows the blue pixel")
+        return bitmap.getColor(310, 180)
+    }
+
+    @Test
+    fun spritesDrawProjectImagesAndPixelatedOnesStayCrisp() {
+        assertEquals(0xFFFF0000.toInt(), spriteColorLeftOfCentre(pixelated = true), "pixel art keeps its hard edge")
+        assertTrue(spriteColorLeftOfCentre(pixelated = false) != 0xFFFF0000.toInt(), "smoothed images blend near the edge")
     }
 
     @Test

@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import dev.spawnkit.graphics.ViewTransform
 import dev.spawnkit.player.PlaySurface
 import dev.spawnkit.player.handlePlayKey
+import dev.spawnkit.player.rememberProjectImages
 import dev.spawnkit.render.CanvasStyle
 import dev.spawnkit.render.RuntimeCanvas
 
@@ -92,8 +93,9 @@ private fun ViewportContent(
     val ppu by rememberUpdatedState(pixelsPerUnit)
     val selectionPx = with(LocalDensity.current) { 2.5.dp.toPx() }
     val session = state.play
+    val images = rememberProjectImages(state.project.images)
     if (session != null) {
-        PlaySurface(session, state.engine.graphics, state.camera, pixelsPerUnit, touchControls, focus)
+        PlaySurface(session, state.engine.graphics, state.camera, pixelsPerUnit, touchControls, focus, images)
         return
     }
     // Rebuilt for every project revision, scene change and drag step: preview worlds are cheap and never shared.
@@ -185,6 +187,7 @@ private fun ViewportContent(
             Modifier.fillMaxSize(),
             camera = state.camera,
             pixelsPerUnit = pixelsPerUnit.toFloat(),
+            images = images,
             selection = setOfNotNull(selected),
             style = CanvasStyle(showGrid = true, selectionWidthPx = selectionPx),
         )

@@ -50,6 +50,7 @@ fun GamePlayer(
     val session =
         remember(pkg) { engine.playSession(pkg.project, pkg.startScene) }
     val focus = remember { FocusRequester() }
+    val images = rememberProjectImages(pkg.project.images)
     val pixelsPerUnit = with(LocalDensity.current) { PLAYER_UNIT_DP.dp.toPx().toDouble() }
     Box(
         modifier
@@ -60,7 +61,7 @@ fun GamePlayer(
             .focusable()
             .onKeyEvent { session.handlePlayKey(it) },
     ) {
-        PlaySurface(session, engine.graphics, CameraView(zoom = 1.0), pixelsPerUnit, touchControls, focus)
+        PlaySurface(session, engine.graphics, CameraView(zoom = 1.0), pixelsPerUnit, touchControls, focus, images)
         RuleProblemBanner(session, engine, pkg, Modifier.align(Alignment.TopCenter))
     }
     LaunchedEffect(session) { focus.requestFocus() }
