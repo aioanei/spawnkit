@@ -25,8 +25,9 @@ class PlaySession(
     scene: SceneWorld,
     private val actions: Map<String, InputAction>,
     startSceneId: String? = null,
-    private val sceneRequest: (World) -> String? = { null },
+    private val sceneRequest: (world: World, sceneId: String?) -> String? = { _, _ -> null },
     private val buildScene: (String) -> SceneWorld? = { null },
+    private val onSceneChange: (from: World, to: World) -> Unit = { _, _ -> },
 ) {
     /** The world being played; replaced when the game goes to another scene. */
     var scene by mutableStateOf(scene)
@@ -97,12 +98,13 @@ class PlaySession(
      * Pointers pressed on the old scene are dropped, so a held finger does not tap the new scene.
      */
     fun afterTick() {
-        val requested = sceneRequest(scene.world) ?: return
+        val requested = sceneRequest(scene.world, sceneId) ?: return
         val next = buildScene(requested)
         if (next == null) {
             message = "A rule asked for a scene that no longer exists."
             return
         }
+        onSceneChange(scene.world, next.world)
         scene = next
         sceneId = requested
         message = null
@@ -123,15 +125,21 @@ class PlaySession(
 
 /**
  * A play session of [project] starting at scene [sceneId], which follows "Go to scene" blocks to fresh worlds of the
- * same project snapshot. The builder's Play and exported players both use it.
+ * same project snapshot, carrying numbers marked "Keep across scenes" and making the copies "Spawn a copy" blocks ask
+ * for (C14). Template objects are left out until spawned. The builder's Play and exported players both use it.
  */
 fun StandardEngine.playSession(
     project: Project,
     sceneId: String,
-): PlaySession =
-    PlaySession(
-        buildSceneWorld(runtime, project, sceneId, programs),
+): PlaySession {
+    val kept = mutableMapOf<String, Long>()
+    val played = playProject(project)
+    return PlaySession(
+        buildSceneWorld(runtime, played, sceneId, programs),
         actions,
         sceneId,
-        ::takeSceneRequest,
-    ) { id -> project.scene(id)?.let { buildSceneWorld(runtime, project, it.id, programs) } }
+        sceneRequest = { world, current -> handleRequests(world, project, current ?: sceneId) },
+        buildScene = { id -> played.scene(id)?.let { buildSceneWorld(runtime, played, it.id, programs) } },
+        onSceneChange = { from, to -> carryKeptNumbers(from, to, kept) },
+    )
+}

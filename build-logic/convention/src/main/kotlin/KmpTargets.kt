@@ -18,7 +18,12 @@ internal fun Project.configureSpawnkitTargets(
     nodeTests: Boolean,
 ) {
     configureKotlinToolchainLayout(kmp)
-    kmp.jvm()
+    // Match the Kotlin Toolchain's release=11 independently of the JDK running Gradle (for example an IDE's JDK 25).
+    kmp.jvm {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_11)
+        }
+    }
     kmp.iosArm64()
     kmp.iosSimulatorArm64()
     // Headless play tests simulate tens of seconds of game time; Mocha's 2 s default fails them on a busy machine.

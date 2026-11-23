@@ -76,6 +76,13 @@ C7c adds the assistant UI in `app/shared` (`AssistantState`, `AssistantPanel`): 
 a labelled keyless scripted demo (`DemoModel`), and keys in a platform `SecretStore` (Android Keystore, Windows DPAPI,
 macOS keychain, Linux Secret Service). Publishing to the Arcade asks for confirmation.
 
+C14a adds [kept numbers, randomness, income and spawning](gameplay.md#game-wide-values-randomness-economy-and-spawning-c14a).
+`StandardEngine.playProject` leaves authored templates out of play. After each tick, `handleRequests` instantiates
+copies through `core/editing` with their hierarchy, authored identity and independent programs. The shared player
+also carries kept numbers by tag between fresh scene worlds; its memory belongs to one play session. These are open
+component properties and catalog blocks, so existing project files require no schema migration. Physics and camera
+follow remain C14b.
+
 This is still a subset of R4–R5. Per-resource storage, dependency locks, broader extension proof, complete language
 authoring and the novice usability studies remain acceptance gates in the revised plan.
 

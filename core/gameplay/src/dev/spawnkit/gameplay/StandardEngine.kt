@@ -2,13 +2,17 @@ package dev.spawnkit.gameplay
 
 import dev.spawnkit.editing.EditingOperations
 import dev.spawnkit.editing.OperationCatalog
+import dev.spawnkit.editing.Project
+import dev.spawnkit.editing.instantiateObject
 import dev.spawnkit.graphics.Graphics2D
+import dev.spawnkit.graphics.Transform2D
 import dev.spawnkit.program.ProgramFeature
 import dev.spawnkit.program.ProgramHost
 import dev.spawnkit.program.ProgramHostBuilder
 import dev.spawnkit.program.ProgramLimits
 import dev.spawnkit.program.TextValue
 import dev.spawnkit.runtime.AuthoringInfo
+import dev.spawnkit.runtime.EntityHandle
 import dev.spawnkit.runtime.InputAction
 import dev.spawnkit.runtime.Runtime
 import dev.spawnkit.runtime.RuntimeBuilder
@@ -72,25 +76,119 @@ public class StandardEngine(
     public val operations: OperationCatalog = EditingOperations.catalog + RuleOperations.catalog
 
     /**
-     * The scene a "Go to scene" block asked for during the last ticks of [world], or `null`. Delivered requests are
-     * acknowledged, so each is returned once. When several rules ask, the last request wins. Players call this after
-     * each tick and switch to a fresh world of that scene.
+     * The scene a "Go to scene" block asked for during the last ticks of [world], or `null`; see [takeRequests]. Spawn
+     * requests taken here are dropped, so players that support spawning call [handleRequests] instead.
      */
-    public fun takeSceneRequest(world: World): String? {
-        var requested: String? = null
+    public fun takeSceneRequest(world: World): String? = takeRequests(world).scene
+
+    /**
+     * What the rules asked for during the last ticks of [world]: a scene change (the last request wins) and copies to
+     * spawn, in order. Delivered requests are acknowledged, so each is returned once.
+     */
+    public fun takeRequests(world: World): EngineRequests {
+        var scene: String? = null
+        val spawns = mutableListOf<SpawnRequest>()
         for (entity in world.entities(programs.behavior)) {
             val instance = world.get(entity, programs.behavior) ?: continue
             val pending = instance.pendingEffects
             if (pending.isEmpty()) continue
-            pending.lastOrNull { it.effect == RuleBlocks.GO_TO_SCENE }?.let { requested = (it.payload as TextValue).value }
+            for (effect in pending) {
+                val payload = (effect.payload as? TextValue)?.value ?: continue
+                when (effect.effect) {
+                    RuleBlocks.GO_TO_SCENE -> scene = payload
+                    RuleBlocks.SPAWN -> SpawnRequest.parse(payload)?.let(spawns::add)
+                }
+            }
             instance.acknowledgeEffects(pending.last().id)
         }
-        return requested
+        return EngineRequests(scene, spawns)
     }
+
+    /** [project] as it is played: objects marked Template are left out until a rule spawns a copy. */
+    public fun playProject(project: Project): Project = project.withoutTemplates()
+
+    /**
+     * Makes the copy [request] asks for in [world], from the authored object of scene [sceneId] in [project] with that
+     * tag (a template first). The copy runs its own rules. Returns it, or `null` when no object has the tag or the
+     * complete copy would exceed [MAX_OBJECTS] objects.
+     */
+    public fun spawn(
+        world: World,
+        project: Project,
+        sceneId: String,
+        request: SpawnRequest,
+    ): EntityHandle? {
+        val scene = project.scene(sceneId) ?: return null
+        val tag = request.tag.trim().lowercase()
+        val source =
+            scene.objects
+                .filter { it.tagName() == tag }
+                .sortedBy { !it.isTemplate() }
+                .firstOrNull() ?: return null
+        if (world.entityCount + scene.subtree(source.id).size > MAX_OBJECTS) return null
+        val copy = instantiateObject(runtime, world, project, sceneId, source.id, programs)?.entity(source.id) ?: return null
+        world.remove(copy, gameplay.template)
+        val at = world.get(copy, graphics.transform) ?: Transform2D()
+        world.set(copy, graphics.transform, at.copy(x = request.x, y = request.y))
+        if (request.vx != 0.0 || request.vy != 0.0) world.set(copy, gameplay.motion, Motion(request.vx, request.vy))
+        return copy
+    }
+
+    /**
+     * What players do after each tick of [world], playing scene [sceneId] of [project]: makes the requested copies,
+     * then returns the scene a rule asked for, or `null`.
+     */
+    public fun handleRequests(
+        world: World,
+        project: Project,
+        sceneId: String,
+    ): String? {
+        val requests = takeRequests(world)
+        requests.spawns.forEach { spawn(world, project, sceneId, it) }
+        return requests.scene
+    }
+
+    /**
+     * Carries game-wide values from [from] to [to] when the game changes scene. Every kept number in [from] is recorded
+     * in [memory] by tag (the first object with a tag wins, ignoring case and spaces); then every kept number in [to]
+     * whose tag is in [memory] takes that value. [memory] lives for the whole play, so a value survives a scene that
+     * has no object for it.
+     */
+    public fun carryKeptNumbers(
+        from: World,
+        to: World,
+        memory: MutableMap<String, Long>,
+    ) {
+        val seen = mutableSetOf<String>()
+        for (entity in from.entities(gameplay.number)) {
+            val number = from.get(entity, gameplay.number)?.takeIf { it.keep } ?: continue
+            val key = keptKey(from, entity) ?: continue
+            if (seen.add(key)) memory[key] = number.value
+        }
+        for (entity in to.entities(gameplay.number)) {
+            val number = to.get(entity, gameplay.number)?.takeIf { it.keep } ?: continue
+            val value = keptKey(to, entity)?.let(memory::get) ?: continue
+            to.set(entity, gameplay.number, number.copy(value = value))
+        }
+    }
+
+    private fun keptKey(
+        world: World,
+        entity: EntityHandle,
+    ): String? =
+        world
+            .get(entity, gameplay.tag)
+            ?.name
+            ?.trim()
+            ?.lowercase()
+            ?.takeIf { it.isNotEmpty() }
 
     /** Engine defaults. */
     public companion object {
         /** Seed used when a game does not choose one. */
         public const val DEFAULT_SEED: Long = 1L
+
+        /** Most objects a play world holds; spawning stops there, so a runaway spawner cannot exhaust memory. */
+        public const val MAX_OBJECTS: Int = 2_000
     }
 }

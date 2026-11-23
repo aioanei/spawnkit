@@ -69,6 +69,42 @@ public enum class Direction(
     Down("y", true, "down"),
 }
 
+/** Where "Spawn a copy" puts the copy. */
+public sealed interface SpawnPlace {
+    /** Where this object is. */
+    public data object Self : SpawnPlace
+
+    /** Where the first object tagged [tag] is. */
+    public data class Tagged(
+        /** Tag of the object. */
+        public val tag: String,
+    ) : SpawnPlace
+
+    /** A fixed point in world units. */
+    public data class Position(
+        /** X. */
+        public val x: Double,
+        /** Y (down is positive). */
+        public val y: Double,
+    ) : SpawnPlace
+
+    /** A random whole-number point in a box, from the seeded generator, so a game spawns the same way each time. */
+    public data class RandomArea(
+        /** Smallest x. */
+        public val minX: Long,
+        /** Largest x. */
+        public val maxX: Long,
+        /** Smallest y. */
+        public val minY: Long,
+        /** Largest y. */
+        public val maxY: Long,
+    ) : SpawnPlace {
+        init {
+            require(minX <= maxX && minY <= maxY) { "The smallest position must not be larger than the largest" }
+        }
+    }
+}
+
 /** A "When" or "And if" block: something that is true or false on each tick. */
 public sealed interface Condition {
     /** Every tick. */
@@ -118,6 +154,24 @@ public sealed interface Condition {
         public val value: Long,
     ) : Condition
 
+    /**
+     * This object is wholly outside the play area: a [width] × [height] box centred on the first active camera (or on
+     * the scene's origin without one), shrunk by its zoom. The box is the same on every screen, so play stays the same
+     * everywhere.
+     */
+    public data class LeftArea(
+        /** Width of the play area in world units. */
+        public val width: Double = 40.0,
+        /** Height of the play area in world units. */
+        public val height: Double = 24.0,
+    ) : Condition {
+        init {
+            require(width.isFinite() && height.isFinite() && width > 0.0 && height > 0.0 && width <= MAX_AREA && height <= MAX_AREA) {
+                "Choose a play area from 1 to ${MAX_AREA.toLong()} units"
+            }
+        }
+    }
+
     /** The number of objects tagged [tag] compares to [value]. */
     public data class CountIs(
         /** Tag to count. */
@@ -159,6 +213,28 @@ public sealed interface Action {
         public val to: Long,
     ) : Action
 
+    /** Sets the [target]'s number to a random whole number from [min] to [max], from the seeded generator. */
+    public data class SetRandomNumber(
+        /** Object holding the number. */
+        public val target: Target,
+        /** Smallest possible number. */
+        public val min: Long,
+        /** Largest possible number. */
+        public val max: Long,
+    ) : Action {
+        init {
+            require(min <= max) { "The smallest number must not be larger than the largest" }
+        }
+    }
+
+    /** Adds [from]'s number to the [target]'s number, for income such as "add Income to Coins every second". */
+    public data class AddNumber(
+        /** Object whose number grows. */
+        public val target: Target,
+        /** Object whose number is added. */
+        public val from: Target,
+    ) : Action
+
     /** Sets the [target]'s text to [text]. */
     public data class SetText(
         /** Object with text. */
@@ -177,6 +253,25 @@ public sealed interface Action {
 
     /** Removes this object (and its children) at the end of the tick. */
     public data object RemoveSelf : Action
+
+    /**
+     * Makes a copy of the object tagged [tag] (preferably a template) at [place] after the tick. The copy runs its own
+     * rules; with a [direction] it keeps moving that way at [speed] units per second.
+     */
+    public data class Spawn(
+        /** Tag of the object to copy. */
+        public val tag: String,
+        /** Where the copy appears. */
+        public val place: SpawnPlace = SpawnPlace.Self,
+        /** Direction the copy keeps moving in, or `null` to stay put. */
+        public val direction: Direction? = null,
+        /** Units per second, from 0 to 1000. */
+        public val speed: Double = 0.0,
+    ) : Action {
+        init {
+            require(speed.isFinite() && speed >= 0.0 && speed <= MAX_SPEED) { "Choose a speed from 0 to $MAX_SPEED" }
+        }
+    }
 
     /** Switches the game to scene [sceneId] at the end of the tick; the new scene starts fresh. */
     public data class GoToScene(
@@ -291,6 +386,7 @@ public object RuleBlocks {
             is Condition.KeyPressed -> "Pressed ${actionName(condition.action)}"
             is Condition.NumberIs -> "${possessive(condition.target)} number ${condition.comparison.symbol} ${condition.value}"
             is Condition.CountIs -> "Count of ${condition.tag} ${condition.comparison.symbol} ${condition.value}"
+            is Condition.LeftArea -> "Left the play area (${number(condition.width)} × ${number(condition.height)})"
         }
 
     /**
@@ -314,6 +410,14 @@ public object RuleBlocks {
                 "Set ${possessive(action.target)} number to ${action.to}"
             }
 
+            is Action.SetRandomNumber -> {
+                "Set ${possessive(action.target)} number to a random number from ${action.min} to ${action.max}"
+            }
+
+            is Action.AddNumber -> {
+                "Add ${possessive(action.from)} number to ${name(action.target)}"
+            }
+
             is Action.SetText -> {
                 "Set ${possessive(action.target)} text to \"${action.text}\""
             }
@@ -324,6 +428,23 @@ public object RuleBlocks {
 
             Action.RemoveSelf -> {
                 "Remove this object"
+            }
+
+            is Action.Spawn -> {
+                val at =
+                    when (val place = action.place) {
+                        SpawnPlace.Self -> "this object"
+                        is SpawnPlace.Tagged -> place.tag
+                        is SpawnPlace.Position -> "(${number(place.x)}, ${number(place.y)})"
+                        is SpawnPlace.RandomArea -> "a random spot"
+                    }
+                val moving =
+                    action.direction?.takeIf { action.speed > 0.0 }?.let {
+                        ", moving ${it.label} at ${number(
+                            action.speed,
+                        )} per second"
+                    }
+                "Spawn a copy of ${action.tag} at $at${moving.orEmpty()}"
             }
 
             is Action.GoToScene -> {
@@ -390,6 +511,10 @@ public object RuleBlocks {
             is Condition.CountIs -> {
                 Expr.Binary(condition.comparison.op, call("countTagged", s, text(condition.tag, s)), int(condition.value, s), s)
             }
+
+            is Condition.LeftArea -> {
+                call("leftArea", s, Expr.Literal(DecimalValue(condition.width), s), Expr.Literal(DecimalValue(condition.height), s))
+            }
         }
 
     private fun action(
@@ -423,6 +548,19 @@ public object RuleBlocks {
                 Stmt.SetProperty(target(action.target, s), NUMBER, int(action.to, s), s)
             }
 
+            is Action.SetRandomNumber -> {
+                Stmt.SetProperty(target(action.target, s), NUMBER, call("random", s, int(action.min, s), int(action.max, s)), s)
+            }
+
+            is Action.AddNumber -> {
+                Stmt.SetProperty(
+                    target(action.target, s),
+                    NUMBER,
+                    Expr.Binary(BinaryOp.Add, number(action.target, s), number(action.from, s), s),
+                    s,
+                )
+            }
+
             is Action.SetText -> {
                 Stmt.SetProperty(target(action.target, s), TEXT, text(action.text, s), s)
             }
@@ -438,6 +576,12 @@ public object RuleBlocks {
 
             Action.RemoveSelf -> {
                 Stmt.Destroy(Expr.Self(s), s)
+            }
+
+            is Action.Spawn -> {
+                val (x, y) = spawnPosition(action.place, s)
+                val parts = listOf(text(SpawnRequest.header(action) + "\n", s), x, text("\n", s), y)
+                Stmt.RequestEffect(SPAWN, parts.reduce { left, right -> Expr.Binary(BinaryOp.Add, left, right, s) }, s)
             }
 
             is Action.GoToScene -> {
@@ -461,13 +605,38 @@ public object RuleBlocks {
     private fun recogniseCondition(expr: Expr): Condition? =
         runCatching {
             when {
-                expr is Expr.Literal && expr.value == BoolValue(true) -> Condition.Always
-                expr.isCall("tapped") -> Condition.Tapped
-                expr.isCall("touching") -> Condition.Touching(expr.textArgument())
-                expr.isCall("isDown") -> Condition.KeyHeld(expr.textArgument())
-                expr.isCall("wasPressed") -> Condition.KeyPressed(expr.textArgument())
-                expr is Expr.Binary -> recogniseComparison(expr)
-                else -> null
+                expr is Expr.Literal && expr.value == BoolValue(true) -> {
+                    Condition.Always
+                }
+
+                expr.isCall("tapped") -> {
+                    Condition.Tapped
+                }
+
+                expr.isCall("touching") -> {
+                    Condition.Touching(expr.textArgument())
+                }
+
+                expr.isCall("isDown") -> {
+                    Condition.KeyHeld(expr.textArgument())
+                }
+
+                expr.isCall("wasPressed") -> {
+                    Condition.KeyPressed(expr.textArgument())
+                }
+
+                expr.isCall("leftArea") -> {
+                    val (width, height) = (expr as Expr.CallHost).arguments.map { ((it as Expr.Literal).value as DecimalValue).value }
+                    Condition.LeftArea(width, height)
+                }
+
+                expr is Expr.Binary -> {
+                    recogniseComparison(expr)
+                }
+
+                else -> {
+                    null
+                }
             }
         }.getOrNull()
 
@@ -506,6 +675,12 @@ public object RuleBlocks {
                     Action.RemoveSelf
                 }
 
+                stmt is Stmt.RequestEffect && stmt.effect == SPAWN -> {
+                    var first = stmt.payload
+                    while (first is Expr.Binary) first = first.left
+                    SpawnRequest.action(((first as Expr.Literal).value as TextValue).value.removeSuffix("\n"))
+                }
+
                 stmt is Stmt.RequestEffect && stmt.effect == GO_TO_SCENE -> {
                     Action.GoToScene(((stmt.payload as Expr.Literal).value as TextValue).value)
                 }
@@ -514,9 +689,26 @@ public object RuleBlocks {
                     val target = recogniseTarget(stmt.entity) ?: return@runCatching null
                     val value = stmt.value
                     when {
-                        value is Expr.Literal -> Action.SetNumber(target, (value.value as IntegerValue).value)
-                        value is Expr.Binary -> Action.ChangeNumber(target, ((value.right as Expr.Literal).value as IntegerValue).value)
-                        else -> null
+                        value is Expr.Literal -> {
+                            Action.SetNumber(target, (value.value as IntegerValue).value)
+                        }
+
+                        value.isCall("random") -> {
+                            val (min, max) = (value as Expr.CallHost).arguments.map { ((it as Expr.Literal).value as IntegerValue).value }
+                            Action.SetRandomNumber(target, min, max)
+                        }
+
+                        value is Expr.Binary && value.right is Expr.GetProperty -> {
+                            Action.AddNumber(target, recogniseTarget((value.right as Expr.GetProperty).entity) ?: return@runCatching null)
+                        }
+
+                        value is Expr.Binary -> {
+                            Action.ChangeNumber(target, ((value.right as Expr.Literal).value as IntegerValue).value)
+                        }
+
+                        else -> {
+                            null
+                        }
                     }
                 }
 
@@ -577,6 +769,37 @@ public object RuleBlocks {
 
     private fun tick(s: SourceRef) = call("tick", s)
 
+    /** The x and y of a spawn place, as text expressions joined into the effect payload. */
+    private fun spawnPosition(
+        place: SpawnPlace,
+        s: SourceRef,
+    ): Pair<Expr, Expr> {
+        fun decimal(expr: Expr) = call("decimalText", s, expr)
+
+        fun whole(
+            min: Long,
+            max: Long,
+        ) = call("textOf", s, call("random", s, int(min, s), int(max, s)))
+        return when (place) {
+            SpawnPlace.Self -> {
+                decimal(call("worldX", s, Expr.Self(s))) to decimal(call("worldY", s, Expr.Self(s)))
+            }
+
+            is SpawnPlace.Tagged -> {
+                val other = call("firstTagged", s, text(place.tag, s))
+                decimal(call("worldX", s, other)) to decimal(call("worldY", s, other))
+            }
+
+            is SpawnPlace.Position -> {
+                decimal(Expr.Literal(DecimalValue(place.x), s)) to decimal(Expr.Literal(DecimalValue(place.y), s))
+            }
+
+            is SpawnPlace.RandomArea -> {
+                whole(place.minX, place.maxX) to whole(place.minY, place.maxY)
+            }
+        }
+    }
+
     private fun call(
         name: String,
         s: SourceRef,
@@ -623,8 +846,12 @@ public object RuleBlocks {
 
     /** Effect a "Go to scene" block requests; its payload is the scene ID. Players act on it after the tick. */
     public const val GO_TO_SCENE: String = "goToScene"
+
+    /** Effect a "Spawn a copy" block requests; see [SpawnRequest]. Players act on it after the tick. */
+    public const val SPAWN: String = "spawn"
 }
 
 private const val TICKS_PER_SECOND = 60L
 private const val MAX_SECONDS = 86_400L
 private const val MAX_SPEED = 1_000.0
+private const val MAX_AREA = 100_000.0

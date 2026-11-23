@@ -30,8 +30,12 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
 - **Done:** C7c, the assistant UI; C9, title screens (scene list, Go to scene, Add title screen); C10, preset games
   (New game picker with Coin Dash, Tap Targets and Maze Run); C10b, brain-rot presets Aura Farmer and NPC Dodge, and How
   it works guidance in every preset.
-- **Now:** C11 accounts with the hosted AI proxy. Then C14 game-wide values, spawning and randomness; C12 test ads
-  and test purchases; C13 AI-first building of complete games; and C8 last (owner decisions 2026-11-22 and 23, [design](docs/design/2026-11-22-title-screens-presets-accounts-ads.md),
+- **Done:** C11a accounts server and hosted AI proxy (PR #94), and C11b sign-in, hosted AI access and My games in the
+  builder (PR #95). Hosted AI still needs a configured server key; Google sign-in, sync and deployment are C11c.
+- **Done:** C14a kept numbers, spawning, randomness and income, with catalog parity, phone/desktop builder tests and
+  Android emulator evidence. C14 is not complete: physics and camera follow remain C14b.
+- **Now:** C14b platform physics and camera follow. Then C15 home screen kit, C12 test ads and purchases, C17 complete templates, C16 Character Forge, C13
+  AI-first building, C11c and C8 (owner decisions 2026-11-22 and 23, [design](docs/design/2026-11-22-title-screens-presets-accounts-ads.md),
   [ADR-0010](docs/adr/0010-accounts-on-ktor.md), [ADR-0011](docs/adr/0011-hosted-ai-model-proxy.md)), in the
   [contest delivery track](docs/plans/2026-11-20-engine-foundation-revision.md#contest-delivery-track). Track K
   continues alongside. Check the latest checkpoint in `PROGRESS.md` before continuing.
@@ -79,7 +83,7 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
 | `core/runtime` | KMP, all targets | provisional headless world/component/scheduler and explicit checkpoint/replay APIs; no legacy model dependency |
 | `core/program` | KMP, all targets | portable program executor: typed programs, type checking, resumable bytecode VM, atomic segments, checkpointed waits |
 | `core/graphics` | KMP, all targets | general 2D presentation: transform, shape, sprite, text and camera components with descriptors; render lists, hit testing, view transforms |
-| `core/gameplay` | KMP, all targets | tags, numbers, seeded random, touching/tapping and rule functions; friendly rule blocks (`RuleBlocks`) with their catalog (`RuleBlockCatalog`) and `RuleOperations`; `StandardEngine` installs presentation, gameplay, input actions and rules, and exposes the operation catalog; depends on `core/editing` |
+| `core/gameplay` | KMP, all targets | tags, numbers (kept across scenes), seeded random, touching/tapping, templates, spawning and steady movement, and rule functions; friendly rule blocks (`RuleBlocks`) with their catalog (`RuleBlockCatalog`) and `RuleOperations`; `StandardEngine` installs presentation, gameplay, input actions and rules, and exposes the operation catalog; depends on `core/editing` |
 | `samples/runtimeProbe` | KMP, all targets | separately compiled public-API consumer and cross-target extension evidence |
 | `benchmarks/runtimeStorage` | KMP executable (jvm, js, wasmJs, mingwX64, linuxX64) | unshipped runtime storage benchmark harness; public `World` API only |
 | `core/validation` | KMP, all targets | integrity checks, reachability solver, playtest, economy check |

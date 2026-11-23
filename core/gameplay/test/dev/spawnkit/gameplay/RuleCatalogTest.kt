@@ -31,10 +31,12 @@ class RuleCatalogTest {
             Condition.KeyPressed(StandardActions.JUMP),
             Condition.NumberIs(Target.Tagged("score"), Comparison.AtLeast, 10),
             Condition.CountIs("coin", Comparison.Equal, 0),
+            Condition.LeftArea(30.0, 20.0),
         ).onEach {
             when (it) {
                 Condition.Always, Condition.GameStarts, is Condition.EverySeconds, is Condition.Touching, Condition.Tapped,
                 is Condition.KeyHeld, is Condition.KeyPressed, is Condition.NumberIs, is Condition.CountIs,
+                is Condition.LeftArea,
                 -> Unit
             }
         }
@@ -48,10 +50,14 @@ class RuleCatalogTest {
             Action.ShowNumber(Target.Self, "Lives: "),
             Action.RemoveSelf,
             Action.GoToScene("scene-2"),
+            Action.SetRandomNumber(Target.Self, 1, 6),
+            Action.AddNumber(Target.Tagged("coins"), Target.Tagged("income")),
+            Action.Spawn("enemy", SpawnPlace.RandomArea(-5, 5, 0, 0), Direction.Down, 3.0),
         ).onEach {
             when (it) {
                 is Action.Move, is Action.ChangeNumber, is Action.SetNumber, is Action.SetText, is Action.ShowNumber,
-                Action.RemoveSelf, is Action.GoToScene,
+                Action.RemoveSelf, is Action.GoToScene, is Action.SetRandomNumber, is Action.AddNumber,
+                is Action.Spawn,
                 -> Unit
             }
         }

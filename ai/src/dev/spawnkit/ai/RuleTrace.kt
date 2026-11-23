@@ -170,7 +170,8 @@ public class RuleTrace(
                         }
                     },
             )
-        val built = buildSceneWorld(engine.runtime, copy, sceneId, engine.programs)
+        // Play as players do: templates stay out until a rule spawns a copy, which runs its (traced) rules too.
+        val built = buildSceneWorld(engine.runtime, engine.playProject(copy), sceneId, engine.programs)
         val world = built.world
         val counts = LongArray(probes.size)
         val first = arrayOfNulls<Long>(probes.size)
@@ -180,6 +181,7 @@ public class RuleTrace(
             val down = input.filter { time >= it.fromSecond && time < it.toSecond }.mapNotNull { engine.actions[it.action] }.toSet()
             world.submitInput(InputFrame(down = down))
             world.step()
+            engine.handleRequests(world, copy, sceneId)
             probes.forEachIndexed { i, probe ->
                 val value = built.entity(probe.tag)?.let { world.get(it, engine.gameplay.number)?.value } ?: 0L
                 if (value > counts[i]) {

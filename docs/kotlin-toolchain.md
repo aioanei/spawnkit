@@ -56,6 +56,8 @@ which have the environment requirements described below.
   Compose in `toolchain/` templates, serialization in `core/model/module.yaml`, Ktor in `server/module.yaml`, and the
   Android target SDK in `app/androidApp/module.yaml`. Keep them in step with the catalog until Gradle is removed; a
   version bump PR must change both.
+- Shared JVM modules target Java 11 in both builds. Gradle's convention pins the JVM bytecode target as well as the
+  Android target, so running Gradle from an IDE's newer JDK cannot produce classes that fail in Java 21 test hosts.
 
 ## Verified compatibility (Windows 11 host, 2026-11-20)
 

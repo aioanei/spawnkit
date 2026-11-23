@@ -10,6 +10,7 @@ import dev.spawnkit.runtime.ComponentSeed
 import dev.spawnkit.runtime.EntityHandle
 import dev.spawnkit.runtime.PropertyDescriptor
 import dev.spawnkit.runtime.Runtime
+import dev.spawnkit.runtime.SceneInstance
 import dev.spawnkit.runtime.SceneTemplate
 import dev.spawnkit.runtime.TemplateObject
 import dev.spawnkit.runtime.World
@@ -142,7 +143,7 @@ public class SceneWorld internal constructor(
     /** The entity created for authoring object [objectId], or `null`. */
     public fun entity(objectId: String): EntityHandle? = entities[objectId]
 
-    /** The authoring object an entity was created from, or `null` for entities created later (for example spawned during play). */
+    /** The authoring object an entity was created from, including spawned copies, or `null` without an authored identity. */
     public fun objectId(entity: EntityHandle): String? = if (world.isAlive(entity)) world.identity(entity)?.objectId else null
 }
 
@@ -177,6 +178,38 @@ public fun buildSceneWorld(
         }
     }
     return SceneWorld(world, entities, diagnostics)
+}
+
+/**
+ * Builds object [objectId] of scene [sceneId], with everything inside it, into the running [world] as a new copy, with
+ * its rules attached through [programs] (rules with problems are skipped, as in [buildSceneWorld]). Returns the new
+ * instance, or `null` when the object does not exist. Call it between ticks; spawning during play uses it.
+ */
+public fun instantiateObject(
+    runtime: Runtime,
+    world: World,
+    project: Project,
+    sceneId: String,
+    objectId: String,
+    programs: ProgramFeature? = null,
+): SceneInstance? {
+    val scene = project.scene(sceneId) ?: return null
+    if (scene.find(objectId) == null) return null
+    val subtree = scene.subtree(objectId).toSet()
+    val docs = scene.objects.filter { it.id in subtree }
+    val objects =
+        docs.map { obj ->
+            TemplateObject(obj.id, obj.parent?.takeIf { obj.id != objectId }, obj.components.map { seedFor(runtime, it) })
+        }
+    val instance = world.instantiate(SceneTemplate("copy.$objectId", objects))
+    if (programs != null) {
+        for (obj in docs) {
+            if (obj.rules.isEmpty()) continue
+            val prepared = prepareRules(programs, obj) as? PrepareResult.Ready ?: continue
+            world.set(checkNotNull(instance.entity(obj.id)), programs.behavior, programs.instantiate(prepared.program))
+        }
+    }
+    return instance
 }
 
 /**
