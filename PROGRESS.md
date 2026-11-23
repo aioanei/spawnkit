@@ -1,6 +1,21 @@
 # SpawnKit progress
 
-## Current checkpoint — C11b accounts and hosted AI in the builder (2026-11-23)
+## Current checkpoint — C14a game values and spawning (2026-11-23)
+
+- **Branch.** `feat/88-game-blocks`, with `main` merged after C11b. PR #95 was merged with the owner's explicit
+  consent. [Plan](docs/plans/2026-11-23-c14a-game-values-spawning.md), part of [#88](https://github.com/aioanei/spawnkit/issues/88).
+- **Added.** Kept numbers carried between scenes by tag; seeded random-number and income blocks; authored templates
+  and moving copies with children and independent rules; a deterministic Leaves the play area condition. Player and
+  headless rule traces handle copies. The 2,000-object cap checks a whole subtree before creating it.
+- **Builder.** Generated controls and agent tools share the catalog. Parity cases cover the four blocks, kept numbers,
+  templates and steady movement. `SpawningUiTest` builds and plays a spawner with taps in phone and desktop layouts.
+- **Validation in progress.** Formatting, final combined-version tests and Android emulator evidence are being
+  completed. A full Gradle run exposed shared JVM output following the daemon's JDK 25 while Compose tests use JDK 21;
+  the convention now explicitly targets Java 11, matching the Kotlin Toolchain's release setting.
+- **Remaining.** C14b platform physics and camera follow still belong to #88. Then follow the contest track's order:
+  C15, C12, C17, C16, C13, C11c and C8. No hosted model was called during this work.
+
+## Previous checkpoint — C11b accounts and hosted AI in the builder (2026-11-23)
 
 - **Branch.** `feat/76-accounts-builder`, stacked on C11a (PR #94). Plan:
   [C11b](docs/plans/2026-11-23-c11b-accounts-builder.md). Step 0 is done: #86, #87 and #93 are merged, and issues

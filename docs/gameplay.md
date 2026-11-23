@@ -77,12 +77,13 @@ to agents. A `Rule` is a When block, optional And-if blocks and Do blocks; it is
 
 - **The block.** `Action.GoToScene(sceneId)` compiles to a program effect request named `goToScene`, with the scene
   ID as its payload. It is checked every tick like any rule.
-- **Switching.** After each tick, `StandardEngine.takeSceneRequest(world)` returns the last request once.
+- **Switching.** After each tick, `StandardEngine.handleRequests(world, project, sceneId)` makes requested copies and
+  returns the last scene request once.
   `PlaySession` (`player/playerKit`, created with `StandardEngine.playSession`) then switches to a fresh world of that
   scene. Builder Play, exported players and the web player all behave this way.
   - Going to the scene that is already playing restarts it.
   - Pointers pressed on the old scene are dropped.
-  - Numbers do not carry across scenes yet.
+  - Numbers marked **Keep across scenes** carry over by tag (C14a).
 - **Missing scenes.**
   - Rule edits cannot add a "Go to scene" for a missing scene.
   - A target removed later is a rule problem on the block ("that scene was removed").
@@ -111,13 +112,15 @@ catalog, so the block dialog and the agent tools include them:
   play. "Spawn a copy of ⟨tag⟩ at ⟨this object / an object with a tag / a point / a random spot⟩, moving ⟨direction⟩
   at ⟨speed⟩" asks for a copy; after the tick, players build it from the authored object, with its own rules, just as
   they handle "Go to scene". Copies that move get **Steady movement** (`gameplay:motion`), which the engine applies each
-  tick after rules. A world stops spawning at 2,000 objects.
+  tick after rules. A world stops spawning at 2,000 objects, including every child in a copy; a copy that does not fit
+  is skipped as a whole.
 - **Leaves the play area** is true when an object is wholly outside a box (40 × 24 units by default) around the first
   active camera, divided by its zoom. The box is the same on every screen, so play stays deterministic.
 
-Evidence: `KeptNumbersTest` 4, `NumberBlocksTest` 4, `SpawnTest` 6 and `PlayAreaTest` 3 on every core target;
-`PlaySessionScenesTest` +2; `OperationParityTest` adds each new block by hand and by the agent tool with the same
-result.
+Evidence: `KeptNumbersTest` 4, `NumberBlocksTest` 4, `SpawnTest` 7 and `PlayAreaTest` 3 on every core target;
+`PlaySessionScenesTest` +2; `OperationParityTest` adds each new block and changes kept numbers, templates and steady
+movement by hand and by the agent tool with the same result. `SpawningUiTest` builds a template, its cleanup rule
+and a moving-copy rule with taps on phone and desktop, then plays them.
 
 ## Catalog and rule operations (C7a)
 

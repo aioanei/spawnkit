@@ -30,8 +30,11 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
 - **Done:** C7c, the assistant UI; C9, title screens (scene list, Go to scene, Add title screen); C10, preset games
   (New game picker with Coin Dash, Tap Targets and Maze Run); C10b, brain-rot presets Aura Farmer and NPC Dodge, and How
   it works guidance in every preset.
-- **Now:** C11 accounts with the hosted AI proxy. Then C14 game-wide values, spawning and randomness; C12 test ads
-  and test purchases; C13 AI-first building of complete games; and C8 last (owner decisions 2026-11-22 and 23, [design](docs/design/2026-11-22-title-screens-presets-accounts-ads.md),
+- **Done:** C11a accounts server and hosted AI proxy (PR #94), and C11b sign-in, hosted AI access and My games in the
+  builder (PR #95). Hosted AI still needs a configured server key; Google sign-in, sync and deployment are C11c.
+- **Now:** C14 game blocks: C14a kept numbers, spawning, randomness and income, then C14b platform physics and camera
+  follow. Then C15 home screen kit, C12 test ads and purchases, C17 complete templates, C16 Character Forge, C13
+  AI-first building, C11c and C8 (owner decisions 2026-11-22 and 23, [design](docs/design/2026-11-22-title-screens-presets-accounts-ads.md),
   [ADR-0010](docs/adr/0010-accounts-on-ktor.md), [ADR-0011](docs/adr/0011-hosted-ai-model-proxy.md)), in the
   [contest delivery track](docs/plans/2026-11-20-engine-foundation-revision.md#contest-delivery-track). Track K
   continues alongside. Check the latest checkpoint in `PROGRESS.md` before continuing.

@@ -95,7 +95,11 @@ public object RuleBlockCatalog {
             "kind",
             listOf(
                 Variant(SELF, AuthoringInfo("This object", "Where the object with the rule is.")),
-                Variant(TAGGED, AuthoringInfo("Object with a tag", "Where the first object with the tag is."), listOf(tagParameter("Tag of the object."))),
+                Variant(
+                    TAGGED,
+                    AuthoringInfo("Object with a tag", "Where the first object with the tag is."),
+                    listOf(tagParameter("Tag of the object.")),
+                ),
                 Variant(
                     POSITION,
                     AuthoringInfo("A point", "A fixed point in the scene."),
@@ -214,7 +218,13 @@ public object RuleBlockCatalog {
         id: String,
         name: String,
         default: Double,
-    ) = Parameter(id, name, "$name of the play area in world units.", ParameterType.Value(ValueKind.Decimal(1.0, MAX_COORDINATE)), default = default)
+    ) = Parameter(
+        id,
+        name,
+        "$name of the play area in world units.",
+        ParameterType.Value(ValueKind.Decimal(1.0, MAX_COORDINATE)),
+        default = default,
+    )
 
     /** Every action block, in palette order. */
     public val actions: List<BlockSpec<Action>> =
@@ -358,7 +368,9 @@ public object RuleBlockCatalog {
                         "Keeps moving",
                         "Direction the copy keeps moving in, or None.",
                         ParameterType.Value(
-                            ValueKind.Choice(listOf(ChoiceOption(NONE, "None")) + Direction.entries.map { ChoiceOption(it.name, it.label) }),
+                            ValueKind.Choice(
+                                listOf(ChoiceOption(NONE, "None")) + Direction.entries.map { ChoiceOption(it.name, it.label) },
+                            ),
                         ),
                         default = NONE,
                     ),
@@ -370,7 +382,10 @@ public object RuleBlockCatalog {
                         default = 0.0,
                     ),
                 ),
-                listOf("Every 2 seconds, spawn an enemy at a random spot moving down", "When Jump is pressed, spawn a shot at the ship moving up"),
+                listOf(
+                    "Every 2 seconds, spawn an enemy at a random spot moving down",
+                    "When Jump is pressed, spawn a shot at the ship moving up",
+                ),
                 {
                     val direction = it.text("direction").takeIf { d -> d != NONE }?.let(Direction::valueOf)
                     Action.Spawn(it.text("tag"), it.place(), direction, it.getValue("speed") as Double)
@@ -503,20 +518,55 @@ public object RuleBlockCatalog {
     /** The arguments of [place] as the catalog's `place` parameter. */
     public fun picked(place: SpawnPlace): Picked =
         when (place) {
-            SpawnPlace.Self -> Picked(SELF)
-            is SpawnPlace.Tagged -> Picked(TAGGED, mapOf("tag" to place.tag))
-            is SpawnPlace.Position -> Picked(POSITION, mapOf("x" to place.x, "y" to place.y))
-            is SpawnPlace.RandomArea -> Picked(RANDOM, mapOf("min_x" to place.minX, "max_x" to place.maxX, "min_y" to place.minY, "max_y" to place.maxY))
+            SpawnPlace.Self -> {
+                Picked(SELF)
+            }
+
+            is SpawnPlace.Tagged -> {
+                Picked(TAGGED, mapOf("tag" to place.tag))
+            }
+
+            is SpawnPlace.Position -> {
+                Picked(POSITION, mapOf("x" to place.x, "y" to place.y))
+            }
+
+            is SpawnPlace.RandomArea -> {
+                Picked(
+                    RANDOM,
+                    mapOf(
+                        "min_x" to place.minX,
+                        "max_x" to place.maxX,
+                        "min_y" to place.minY,
+                        "max_y" to place.maxY,
+                    ),
+                )
+            }
         }
 
     private fun Map<String, Any?>.place(): SpawnPlace {
         val picked = getValue("place") as Picked
         val args = picked.arguments
         return when (picked.variant) {
-            TAGGED -> SpawnPlace.Tagged(args.getValue("tag") as String)
-            POSITION -> SpawnPlace.Position(args.getValue("x") as Double, args.getValue("y") as Double)
-            RANDOM -> SpawnPlace.RandomArea(args.getValue("min_x") as Long, args.getValue("max_x") as Long, args.getValue("min_y") as Long, args.getValue("max_y") as Long)
-            else -> SpawnPlace.Self
+            TAGGED -> {
+                SpawnPlace.Tagged(args.getValue("tag") as String)
+            }
+
+            POSITION -> {
+                SpawnPlace.Position(args.getValue("x") as Double, args.getValue("y") as Double)
+            }
+
+            RANDOM -> {
+                SpawnPlace.RandomArea(
+                    args.getValue("min_x") as Long,
+                    args.getValue("max_x") as Long,
+                    args.getValue("min_y") as Long,
+                    args.getValue("max_y") as Long,
+                )
+            }
+
+            else -> {
+                SpawnPlace.Self
+            }
         }
     }
 
@@ -530,7 +580,13 @@ public object RuleBlockCatalog {
         id: String,
         name: String,
         default: Long,
-    ) = Parameter(id, name, "$name of the box, in world units.", ParameterType.Value(ValueKind.WholeNumber(-MAX_COORDINATE.toLong(), MAX_COORDINATE.toLong())), default = default)
+    ) = Parameter(
+        id,
+        name,
+        "$name of the box, in world units.",
+        ParameterType.Value(ValueKind.WholeNumber(-MAX_COORDINATE.toLong(), MAX_COORDINATE.toLong())),
+        default = default,
+    )
 
     private fun tagParameter(help: String) =
         Parameter("tag", "Tag", help, ParameterType.Value(ValueKind.Text(MAX_TAG), Suggestions.TAGS), default = "", required = true)
