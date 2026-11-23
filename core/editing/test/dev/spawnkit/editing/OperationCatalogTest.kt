@@ -94,6 +94,7 @@ class OperationCatalogTest {
                 EditOperation.AddImage("i", ""),
                 EditOperation.RenameImage("i", "j"),
                 EditOperation.RemoveImage("i"),
+                EditOperation.SetAds(AdSettings()),
             )
         for (operation in samples) {
             val entry: String? =
@@ -127,6 +128,8 @@ class OperationCatalogTest {
                     is EditOperation.RenameImage -> "rename_image"
 
                     is EditOperation.RemoveImage -> "remove_image"
+
+                    is EditOperation.SetAds -> "set_ads"
 
                     // Catalogued as move_into by the standard engine's ObjectOperations, which knows 2D placement.
                     is EditOperation.ReparentObject -> null

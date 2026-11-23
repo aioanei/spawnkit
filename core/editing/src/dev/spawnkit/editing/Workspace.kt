@@ -67,6 +67,8 @@ public data class Project(
     public val nextId: Long = 1,
     /** PNG images that sprites can show (ADR-0012), in import order. */
     public val images: List<ImageAsset> = emptyList(),
+    /** Test ads shown when the game is played (C12); off by default. */
+    public val ads: AdSettings = AdSettings(),
 ) {
     /** The image with [id], or `null`. */
     public fun image(id: String): ImageAsset? = images.firstOrNull { it.id == id }
@@ -78,6 +80,25 @@ public data class Project(
     public companion object {
         /** A functional blank project with one empty scene. */
         public fun blank(name: String = "My game"): Project = Project(name, listOf(SceneDoc("scene-1", "Main scene")), nextId = 2)
+    }
+}
+
+/**
+ * Where a game shows test ads (C12). Players show a labelled test panel; no ad network is involved. [every] counts
+ * scene changes between interstitials.
+ */
+public data class AdSettings(
+    /** A banner while the start scene (the title screen) is playing. */
+    public val banner: Boolean = false,
+    /** A full-screen ad between scenes, never before the first play. */
+    public val interstitial: Boolean = false,
+    /** Scene changes between interstitials, from 1 to [MAX_EVERY]. */
+    public val every: Int = 3,
+) {
+    /** Limits. */
+    public companion object {
+        /** Most scene changes between interstitials. */
+        public const val MAX_EVERY: Int = 20
     }
 }
 
@@ -95,6 +116,7 @@ public fun Project.problems(): List<String> {
     val imageIds = images.map { it.id }
     if (imageIds.toSet().size != imageIds.size) problems += "Two images share an ID"
     if (images.any { it.id.isBlank() || it.name.isBlank() }) problems += "Every image needs a name and an identifier"
+    if (ads.every !in 1..AdSettings.MAX_EVERY) problems += "Interstitial ads need 1 to ${AdSettings.MAX_EVERY} scene changes between them"
     if (images.size > ProjectImages.MAX_IMAGES) problems += "A project can hold at most ${ProjectImages.MAX_IMAGES} images"
     if (ProjectImages.totalBytes(images) > ProjectImages.MAX_TOTAL_BYTES) {
         problems += "A project's images can take at most ${ProjectImages.MAX_TOTAL_BYTES / (1024 * 1024)} MB"

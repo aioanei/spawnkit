@@ -19,9 +19,9 @@ import kotlinx.serialization.json.longOrNull
 public object ProjectCodec {
     /**
      * Current workspace-file schema, separate from the legacy platformer document schema. Schema 2 added `images`
-     * (ADR-0012); schema 1 files are migrated when they are opened.
+     * (ADR-0012) and schema 3 `ads` (C12); older files are migrated when they are opened.
      */
-    public const val SCHEMA_VERSION: Int = 2
+    public const val SCHEMA_VERSION: Int = 3
 
     /** Maximum UTF-16 characters in a project file, also used by platform readers before decoding. */
     public const val MAX_FILE_CHARS: Int = 10 * 1024 * 1024
@@ -69,6 +69,12 @@ public object ProjectCodec {
                             )
                         },
                     ),
+                "ads" to
+                    jsonObject(
+                        "banner" to JsonPrimitive(project.ads.banner),
+                        "interstitial" to JsonPrimitive(project.ads.interstitial),
+                        "every" to JsonPrimitive(project.ads.every),
+                    ),
                 "images" to
                     JsonArray(
                         project.images.map { image ->
@@ -87,13 +93,21 @@ public object ProjectCodec {
 
     /**
      * Brings an older workspace file up to [SCHEMA_VERSION] as JSON, before it is read: schema 1 gains an empty
-     * `images` list. Newer or unknown versions are returned unchanged and refused by the reader.
+     * `images` list, and schema 2 gains `ads`, all off. Newer or unknown versions are returned unchanged and refused by
+     * the reader.
      */
     internal fun migrate(root: JsonElement): JsonElement {
-        val fields = root as? JsonObject ?: return root
-        val version = (fields["schemaVersion"] as? JsonPrimitive)?.takeUnless { it.isString }?.longOrNull
-        if (version != 1L) return root
-        return JsonObject(fields + mapOf("schemaVersion" to JsonPrimitive(2), "images" to JsonArray(emptyList())))
+        var fields = root as? JsonObject ?: return root
+        var version = (fields["schemaVersion"] as? JsonPrimitive)?.takeUnless { it.isString }?.longOrNull
+        if (version == 1L) {
+            fields = JsonObject(fields + mapOf("schemaVersion" to JsonPrimitive(2), "images" to JsonArray(emptyList())))
+            version = 2L
+        }
+        if (version == 2L) {
+            val ads = jsonObject("banner" to JsonPrimitive(false), "interstitial" to JsonPrimitive(false), "every" to JsonPrimitive(3))
+            fields = JsonObject(fields + mapOf("schemaVersion" to JsonPrimitive(3), "ads" to ads))
+        }
+        return fields
     }
 
     /** Decodes before touching the current workspace. Throws [IllegalArgumentException] with an explanation. */
@@ -135,12 +149,18 @@ public object ProjectCodec {
                             }
                         },
                     images = array("images").map { image -> readObject(image) { readImage() } },
+                    ads = readObject(get("ads")) { readAds() },
                 ).also(::requireValid)
             }
         } catch (problem: Exception) {
             val detail = if (problem is SerializationException) "The project file is incomplete or damaged" else problem.message
             throw IllegalArgumentException("This project cannot be opened: ${detail ?: "the file is incomplete"}", problem)
         }
+    }
+
+    private fun JsonFields.readAds(): AdSettings {
+        fun flag(name: String) = requireNotNull((get(name) as? JsonPrimitive)?.takeUnless { it.isString }?.booleanOrNull) { "The ad settings are damaged" }
+        return AdSettings(flag("banner"), flag("interstitial"), integer("every").toInt())
     }
 
     private fun JsonFields.readImage(): ImageAsset {

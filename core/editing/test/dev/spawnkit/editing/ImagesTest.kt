@@ -127,14 +127,18 @@ class ImagesTest {
         val project = editor.project
         val text = ProjectCodec.encode(project)
 
-        assertTrue(text.contains("\"schemaVersion\":2"))
+        assertTrue(text.contains("\"schemaVersion\":3"))
         assertEquals(project, ProjectCodec.decode(text))
     }
 
     @Test
     fun schemaOneFilesOpenWithNoImages() {
         val current = ProjectCodec.encode(editor.project)
-        val schemaOne = current.replace("\"schemaVersion\":2", "\"schemaVersion\":1").replace(",\"images\":[]", "")
+        val schemaOne =
+            current
+                .replace("\"schemaVersion\":3", "\"schemaVersion\":1")
+                .replace(",\"images\":[]", "")
+                .replace(Regex(""","ads":\{[^}]*\}"""), "")
         assertTrue(!schemaOne.contains("images"), "the old file has no images list")
 
         val opened = ProjectCodec.decode(schemaOne)
