@@ -96,6 +96,29 @@ to agents. A `Rule` is a When block, optional And-if blocks and Do blocks; it is
 - **Evidence.** Android emulator screenshots: [editing](media/android-title-edit.png),
   [playing the title](media/android-title-play.png), [after tapping Play](media/android-title-level.png).
 
+## Game-wide values, randomness, economy and spawning (C14a)
+
+Blocks for complete games ([#88](https://github.com/aioanei/spawnkit/issues/88)), all general and all in the block
+catalog, so the block dialog and the agent tools include them:
+
+- **Game-wide values.** A Number with **Keep across scenes** carries its value to the object with the same tag in the
+  next scene (`StandardEngine.carryKeptNumbers`, used by every play session). The session remembers values whose tag a
+  scene lacks, so coins survive a shop scene without a coins label. A title screen's "Game starts → set Coins to 0"
+  starts a fresh run. Existing number blocks (add, set, compare, show) work on kept numbers through their tag.
+- **Set a random number** from a range, from the seeded generator, so a game always rolls the same way.
+- **Add one number to another**, for income: "Every second, add Income to Coins".
+- **Templates and Spawn a copy.** An object with the **Template** component stays in the builder but is left out of
+  play. "Spawn a copy of ⟨tag⟩ at ⟨this object / an object with a tag / a point / a random spot⟩, moving ⟨direction⟩
+  at ⟨speed⟩" asks for a copy; after the tick, players build it from the authored object, with its own rules, just as
+  they handle "Go to scene". Copies that move get **Steady movement** (`gameplay:motion`), which the engine applies each
+  tick after rules. A world stops spawning at 2,000 objects.
+- **Leaves the play area** is true when an object is wholly outside a box (40 × 24 units by default) around the first
+  active camera, divided by its zoom. The box is the same on every screen, so play stays deterministic.
+
+Evidence: `KeptNumbersTest` 4, `NumberBlocksTest` 4, `SpawnTest` 6 and `PlayAreaTest` 3 on every core target;
+`PlaySessionScenesTest` +2; `OperationParityTest` adds each new block by hand and by the agent tool with the same
+result.
+
 ## Catalog and rule operations (C7a)
 
 [`RuleBlockCatalog`](operation-catalog.md#rule-block-catalog-coregameplay-ruleblockcatalog) describes every block:
@@ -127,6 +150,6 @@ on schedule.
 
 ## Not yet
 
-- Blocks for spawning objects, sounds, scenes and variables; rules with their own state.
-- Colors in rules, multiple tags per object, and collision response (solid objects, gravity) — R3 physics.
+- Blocks for sounds; rules with their own state. Copies start from the authored template, not its current state.
+- Colors in rules and multiple tags per object. Solid objects and gravity come with C14b.
 - A per-game random seed setting.

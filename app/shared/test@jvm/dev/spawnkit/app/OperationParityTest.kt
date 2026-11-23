@@ -289,38 +289,114 @@ class OperationParityTest {
     fun everyCatalogOperationGivesTheSameResultByHandAndByAgentTool() {
         val catalog = EditorState().engine.operations
         assertEquals(catalog.operations.map { it.id }.toSet(), cases.keys, "Every catalog operation needs a parity case")
-        for ((id, case) in cases) {
-            val byHand =
-                run {
-                    val session = session(case)
-                    val state = session.state
-                    val before = state.project
-                    var result: Outcome? = null
-                    runDesktopComposeUiTest(width = 1440, height = 900) {
-                        setContent { MaterialTheme(colorScheme = darkColorScheme()) { EditorScreen(state, projectSession = session) } }
-                        waitForIdle()
-                        case.ui(this, state)
-                        waitForIdle()
-                        result = outcome(state, before, "$id by hand")
-                    }
-                    checkNotNull(result)
+        for ((id, case) in cases) checkParity(id, id, case)
+    }
+
+    /** The C14 blocks, each added to a rule by hand in the generated block dialog and by the add_block tool. */
+    private val blockCases: Map<String, Case> =
+        mapOf(
+            "SetRandomNumber" to
+                Case(
+                    { coinRules(touching) },
+                    {
+                        tap("panel:Rules")
+                        tap("rule:0:add-do")
+                        tap("kind:SetRandomNumber")
+                        tap("target:score")
+                        tap("inc:max")
+                        tap("block-done")
+                    },
+                    { target("Coin") + mapOf("rule" to 1L, "block" to Picked("SetRandomNumber", mapOf("target" to tagged, "min" to 1L, "max" to 7L))) },
+                ),
+            "AddNumber" to
+                Case(
+                    { coinRules(touching) },
+                    {
+                        tap("panel:Rules")
+                        tap("rule:0:add-do")
+                        tap("kind:AddNumber")
+                        tap("target:score")
+                        tap("from:coin")
+                        tap("block-done")
+                    },
+                    {
+                        target("Coin") +
+                            mapOf("rule" to 1L, "block" to Picked("AddNumber", mapOf("target" to tagged, "from" to Picked("tagged", mapOf("tag" to "coin")))))
+                    },
+                ),
+            "Spawn" to
+                Case(
+                    { coinRules(touching) },
+                    {
+                        tap("panel:Rules")
+                        tap("rule:0:add-do")
+                        tap("kind:Spawn")
+                        tap("tag:coin")
+                        tap("direction:Down")
+                        repeat(3) { tap("inc:speed") }
+                        tap("block-done")
+                    },
+                    {
+                        target("Coin") +
+                            mapOf(
+                                "rule" to 1L,
+                                "block" to Picked("Spawn", mapOf("tag" to "coin", "place" to Picked("self"), "direction" to "Down", "speed" to 3.0)),
+                            )
+                    },
+                ),
+            "LeftArea" to
+                Case(
+                    { coinRules(tapped) },
+                    {
+                        tap("panel:Rules")
+                        tap("rule:0:add-if")
+                        tap("kind:LeftArea")
+                        tap("block-done")
+                    },
+                    { target("Coin") + mapOf("rule" to 1L, "block" to Picked("LeftArea", mapOf("width" to 40.0, "height" to 24.0))) },
+                ),
+        )
+
+    @Test
+    fun theGameBlocksGiveTheSameResultByHandAndByAgentTool() {
+        for ((block, case) in blockCases) checkParity("add_block", block, case)
+    }
+
+    private fun checkParity(
+        id: String,
+        label: String,
+        case: Case,
+    ) {
+        val byHand =
+            run {
+                val session = session(case)
+                val state = session.state
+                val before = state.project
+                var result: Outcome? = null
+                runDesktopComposeUiTest(width = 1440, height = 900) {
+                    setContent { MaterialTheme(colorScheme = darkColorScheme()) { EditorScreen(state, projectSession = session) } }
+                    waitForIdle()
+                    case.ui(this, state)
+                    waitForIdle()
+                    result = outcome(state, before, "$label by hand")
                 }
-            val byAgent =
-                run {
-                    val state = session(case).state
-                    val before = state.project
-                    val spec = checkNotNull(state.engine.operations[id])
-                    val input = encodeArguments(spec.parameters, case.tool(state))
-                    val applied = state.apply(state.engine.operations.buildFromJson(id, input, state.editor.catalogContext()))
-                    assertIs<OperationResult.Applied>(applied, "$id by agent: $applied")
-                    outcome(state, before, "$id by agent")
-                }
-            assertEquals(byHand.project, byAgent.project, "$id: same workspace")
-            assertEquals(byHand.ruleProblems, byAgent.ruleProblems, "$id: same validation")
-            assertEquals(byHand.capabilityProblems, byAgent.capabilityProblems, "$id: same capability check")
-            assertEquals(byHand.undoLabel, byAgent.undoLabel, "$id: same undo step")
-            assertEquals(byHand.afterUndo, byAgent.afterUndo, "$id: same project after undo")
-            check(byHand.project != byHand.afterUndo) { "$id: the case must change the game" }
-        }
+                checkNotNull(result)
+            }
+        val byAgent =
+            run {
+                val state = session(case).state
+                val before = state.project
+                val spec = checkNotNull(state.engine.operations[id])
+                val input = encodeArguments(spec.parameters, case.tool(state))
+                val applied = state.apply(state.engine.operations.buildFromJson(id, input, state.editor.catalogContext()))
+                assertIs<OperationResult.Applied>(applied, "$label by agent: $applied")
+                outcome(state, before, "$label by agent")
+            }
+        assertEquals(byHand.project, byAgent.project, "$label: same workspace")
+        assertEquals(byHand.ruleProblems, byAgent.ruleProblems, "$label: same validation")
+        assertEquals(byHand.capabilityProblems, byAgent.capabilityProblems, "$label: same capability check")
+        assertEquals(byHand.undoLabel, byAgent.undoLabel, "$label: same undo step")
+        assertEquals(byHand.afterUndo, byAgent.afterUndo, "$label: same project after undo")
+        check(byHand.project != byHand.afterUndo) { "$label: the case must change the game" }
     }
 }
