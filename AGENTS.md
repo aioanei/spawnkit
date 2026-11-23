@@ -32,8 +32,9 @@ authorized implementation of the R0–R9 plan, then clarified the product vision
   it works guidance in every preset.
 - **Done:** C11a accounts server and hosted AI proxy (PR #94), and C11b sign-in, hosted AI access and My games in the
   builder (PR #95). Hosted AI still needs a configured server key; Google sign-in, sync and deployment are C11c.
-- **Now:** C14 game blocks: C14a kept numbers, spawning, randomness and income, then C14b platform physics and camera
-  follow. Then C15 home screen kit, C12 test ads and purchases, C17 complete templates, C16 Character Forge, C13
+- **Done:** C14a kept numbers, spawning, randomness and income, with catalog parity, phone/desktop builder tests and
+  Android emulator evidence. C14 is not complete: physics and camera follow remain C14b.
+- **Now:** C14b platform physics and camera follow. Then C15 home screen kit, C12 test ads and purchases, C17 complete templates, C16 Character Forge, C13
   AI-first building, C11c and C8 (owner decisions 2026-11-22 and 23, [design](docs/design/2026-11-22-title-screens-presets-accounts-ads.md),
   [ADR-0010](docs/adr/0010-accounts-on-ktor.md), [ADR-0011](docs/adr/0011-hosted-ai-model-proxy.md)), in the
   [contest delivery track](docs/plans/2026-11-20-engine-foundation-revision.md#contest-delivery-track). Track K

@@ -9,9 +9,17 @@
   headless rule traces handle copies. The 2,000-object cap checks a whole subtree before creating it.
 - **Builder.** Generated controls and agent tools share the catalog. Parity cases cover the four blocks, kept numbers,
   templates and steady movement. `SpawningUiTest` builds and plays a spawner with taps in phone and desktop layouts.
-- **Validation in progress.** Formatting, final combined-version tests and Android emulator evidence are being
-  completed. A full Gradle run exposed shared JVM output following the daemon's JDK 25 while Compose tests use JDK 21;
-  the convention now explicitly targets Java 11, matching the Kotlin Toolchain's release setting.
+- **Evidence.** Gradle `spotlessApply`, then `spotlessCheck allJvmAndWebTests localNativeTests`, pass. Kotlin Toolchain
+  `check ktlint`, `test -p jvm -p android` and `test -p mingwX64` pass on the same source in an isolated checkout.
+  JVM reports: gameplay 43, builder 77, AI 22, player 8 and server 58, all without failures. Both parented spawning and
+  moving before spawning have regression tests demonstrated failing before their fixes and passing afterwards.
+- **Android.** On the API 36 emulator, `tools/android-spawn-smoke.py` built a template, cleanup rule and moving-copy
+  rule with real taps, then checked that the copy moved down. [Rules](docs/media/android-spawn-rules.png),
+  [playing](docs/media/android-spawn-play.png), [after moving](docs/media/android-spawn-moving.png).
+- **Build fix.** Shared JVM output explicitly targets Java 11, matching the Kotlin Toolchain's release setting, so
+  Gradle's daemon JDK cannot produce Java 25 classes that fail in Java 21 test hosts.
+- **Known limit.** Invalid template programs remain visible in the editor but are not yet surfaced in spawned-copy
+  play diagnostics; copies use the authored template state.
 - **Remaining.** C14b platform physics and camera follow still belong to #88. Then follow the contest track's order:
   C15, C12, C17, C16, C13, C11c and C8. No hosted model was called during this work.
 
