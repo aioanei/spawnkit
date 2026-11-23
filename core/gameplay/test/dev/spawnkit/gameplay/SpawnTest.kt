@@ -84,6 +84,17 @@ class SpawnTest {
     }
 
     @Test
+    fun spawnArgumentsAreWrittenTheSameOnEveryPlatform() {
+        // Rules saved on one platform must compile to the same text on another (Kotlin/JS writes 14.0 as 14).
+        val header = SpawnRequest.header(Action.Spawn("shot", SpawnPlace.Position(2.0, -0.0), Direction.Up, 14.0))
+        assertEquals("""{"tag":"shot","place":"position","x":2.0,"y":-0.0,"direction":"Up","speed":14.0}""", header)
+        assertEquals(
+            """{"tag":"rock","place":"self","speed":2.5}""",
+            SpawnRequest.header(Action.Spawn("rock", SpawnPlace.Self, null, 2.5)),
+        )
+    }
+
+    @Test
     fun templatesAreLeftOutOfPlay() {
         add("Enemy", "enemy", template = true)
         add("Hero", "hero")
