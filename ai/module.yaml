@@ -13,6 +13,8 @@ apply:
 dependencies:
   - //core/editing: exported
   - //core/gameplay: exported
+  # The preset games are the Game Architect's worked examples (C13a).
+  - //core/presets
   - $libs.kotlinx.coroutines.core: exported
   # Koog 1.3.0 (Apache-2.0, JetBrains): the live-model adapter. Each platform adds its Ktor engine below.
   - $libs.koog.anthropic: exported

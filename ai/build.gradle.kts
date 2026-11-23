@@ -8,6 +8,8 @@ kotlin {
         commonMain.dependencies {
             api(project(":core:editing"))
             api(project(":core:gameplay"))
+            // The preset games are the Game Architect's worked examples (C13a).
+            implementation(project(":core:presets"))
             api(libs.kotlinx.coroutines.core)
             api(libs.koog.anthropic)
             api(libs.koog.executor)
