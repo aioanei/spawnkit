@@ -160,6 +160,9 @@ public object EditingOperations {
                 addComponent,
                 removeComponent,
                 setProperty,
+                addImage,
+                renameImage,
+                removeImage,
             ),
         )
     }
@@ -327,6 +330,48 @@ public object EditingOperations {
                 "Change ${property.authoring.name} of ${obj().name}",
             )
         }
+
+    private val addImage =
+        OperationSpec(
+            "add_image",
+            AuthoringInfo(
+                "Import an image",
+                "Adds a PNG picture to the game, for example a logo or a character, so sprites can show it. At most " +
+                    "${ProjectImages.MAX_SIDE} × ${ProjectImages.MAX_SIDE} pixels and ${ProjectImages.MAX_IMAGE_BYTES / 1024} KB.",
+                IMAGES,
+            ),
+            listOf(
+                nameParameter("Name of the image"),
+                Parameter(
+                    "data",
+                    "PNG data",
+                    "The PNG file in Base64.",
+                    ParameterType.Value(ValueKind.Text((ProjectImages.MAX_IMAGE_BYTES + 2) / 3 * 4)),
+                ),
+            ),
+            listOf("Import the logo", "Add this picture as Hero"),
+        ) { EditOperation.AddImage(text("name"), text("data"), "Import image ${text("name").trim()}") }
+
+    private val renameImage =
+        OperationSpec(
+            "rename_image",
+            AuthoringInfo("Rename an image", "Changes an image's name in the image list.", IMAGES),
+            listOf(imageParameter(), nameParameter("New name of the image")),
+            listOf("Call the picture Logo"),
+        ) { EditOperation.RenameImage(image().id, text("name"), "Rename image ${image().name}") }
+
+    private val removeImage =
+        OperationSpec(
+            "remove_image",
+            AuthoringInfo("Remove an image", "Removes an image no object shows any more.", IMAGES),
+            listOf(imageParameter()),
+            listOf("Remove the old logo"),
+        ) { EditOperation.RemoveImage(image().id, "Remove image ${image().name}") }
+
+    private fun OperationRequest.image(): ImageAsset = project.image(text("image")) ?: reject("There is no image '${text("image")}'")
+
+    private fun imageParameter() =
+        Parameter("image", "Image", "ID of the image, for example img-4.", ParameterType.Value(ValueKind.Text(40), Suggestions.IMAGES))
 }
 
 /** The `scene` argument shared by operations on scene content. */
@@ -347,4 +392,5 @@ private const val SCENES = "Scenes"
 private const val MAX_SCENES = 100L
 private const val OBJECTS = "Objects"
 private const val COMPONENTS = "Components"
+private const val IMAGES = "Images"
 private val OPERATION_ID = Regex("[a-z][a-z0-9_]*")

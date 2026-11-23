@@ -68,6 +68,8 @@ public data class Sprite2D(
     public val layer: Long = 0,
     /** Whether it is drawn. */
     public val visible: Boolean = true,
+    /** Whether the image is drawn without smoothing, so pixel art stays crisp. */
+    public val pixelated: Boolean = false,
 )
 
 /** A line of text centred on the object's origin, such as a score or a label. */
@@ -189,7 +191,7 @@ public class Graphics2D(
     public val spriteDescriptor: ComponentDescriptor<Sprite2D> =
         builder.describe(sprite) {
             create { Sprite2D() }
-            property("asset", ValueKind.Text(maxLength = 200), AuthoringInfo("Image", "Image asset from the project"), "", {
+            property("asset", ValueKind.Text(maxLength = 200, asset = "image"), AuthoringInfo("Image", "One of the project's images"), "", {
                 it.asset
             }, { s, v -> s.copy(asset = v) })
             property("width", SIZE, AuthoringInfo("Width"), 1.0, { it.width }, { s, v -> s.copy(width = v) })
@@ -212,6 +214,14 @@ public class Graphics2D(
                 { s, v -> s.copy(layer = v) },
             )
             property("visible", ValueKind.YesNo, AuthoringInfo("Visible"), true, { it.visible }, { s, v -> s.copy(visible = v) })
+            property(
+                "pixelated",
+                ValueKind.YesNo,
+                AuthoringInfo("Pixelated", "Keeps pixel art crisp instead of smoothing it when it is enlarged."),
+                false,
+                { it.pixelated },
+                { s, v -> s.copy(pixelated = v) },
+            )
         }
 
     /** Descriptor of [text]. */
@@ -322,7 +332,8 @@ private object SpriteCodec : StateCodec<Sprite2D> {
                 "tint" to StateValue.Integer(value.tint),
                 "layer" to StateValue.Integer(value.layer),
                 "visible" to StateValue.Flag(value.visible),
-            ),
+                // Written only when on, so checkpoints and hashes of existing sprites are unchanged.
+            ) + if (value.pixelated) mapOf("pixelated" to StateValue.Flag(true)) else emptyMap(),
         )
 
     override fun restore(
@@ -337,6 +348,7 @@ private object SpriteCodec : StateCodec<Sprite2D> {
             integer(f, "tint"),
             integer(f, "layer"),
             flag(f, "visible"),
+            f["pixelated"] != null && flag(f, "pixelated"),
         )
     }
 }

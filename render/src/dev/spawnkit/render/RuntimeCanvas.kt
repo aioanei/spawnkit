@@ -8,6 +8,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -160,6 +161,7 @@ private fun DrawScope.drawSprite(
             IntOffset.Zero,
             IntSize(image.width, image.height),
             colorFilter = filter,
+            filterQuality = if (item.pixelated) FilterQuality.None else FilterQuality.Low,
         )
     }
 }

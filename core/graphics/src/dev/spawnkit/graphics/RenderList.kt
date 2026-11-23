@@ -116,6 +116,8 @@ public sealed interface DrawItem {
         public val asset: String,
         /** Tint, ARGB. */
         public val tint: Long,
+        /** Whether to draw without smoothing (pixel art). */
+        public val pixelated: Boolean = false,
     ) : DrawItem
 
     /** A line of text; [width] is estimated from its length (see [Text2D.ESTIMATED_ADVANCE]) and [height] is its size. */
@@ -236,7 +238,7 @@ public fun Graphics2D.renderList(world: World): RenderList {
             items += DrawItem.Shape(entity, placed, it.layer, it.width, it.height, it.form, it.color)
         }
         world.get(entity, sprite)?.takeIf { it.visible }?.let {
-            items += DrawItem.Sprite(entity, placed, it.layer, it.width, it.height, it.asset, it.tint)
+            items += DrawItem.Sprite(entity, placed, it.layer, it.width, it.height, it.asset, it.tint, it.pixelated)
         }
         world.get(entity, text)?.takeIf { it.visible && it.text.isNotEmpty() }?.let {
             val width = it.size * Text2D.ESTIMATED_ADVANCE * it.text.length

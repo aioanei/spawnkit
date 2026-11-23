@@ -12,6 +12,7 @@ import dev.spawnkit.editing.EditOperation
 import dev.spawnkit.editing.Editor
 import dev.spawnkit.editing.OperationResult
 import dev.spawnkit.editing.Project
+import dev.spawnkit.editing.ProjectImages
 import dev.spawnkit.editing.SceneWorld
 import dev.spawnkit.editing.capabilityProblems
 import dev.spawnkit.gameplay.Action
@@ -261,6 +262,52 @@ class EditorState(
         for ((child, parts) in preset.children) batch.obj(sceneId, child, parts, parent = id)
         if (rules.isNotEmpty()) batch.rules(sceneId, id, rules)
         if (apply(EditOperation.Batch(batch.operations, "Add $name")) is OperationResult.Applied) selection = id
+    }
+
+    /**
+     * Imports a PNG picture as a project image (the `add_image` operation, ADR-0012) and returns its ID, or `null` with
+     * the reason in [message]. With [place], an object showing it is added at the centre of the view and selected, in
+     * the same undo step: the Image palette piece.
+     */
+    fun importImage(
+        name: String,
+        png: ByteArray,
+        place: Boolean = false,
+    ): String? {
+        val add = EditOperation.AddImage(name, ProjectImages.encode(png), "Import image ${name.trim()}")
+        if (!place) return (apply(add) as? OperationResult.Applied)?.createdIds?.single()
+        val info =
+            try {
+                ProjectImages.check(png)
+            } catch (problem: IllegalArgumentException) {
+                message = problem.message
+                return null
+            }
+        val next = editor.saveSnapshot().nextId
+        val imageId = "img-$next"
+        val placed = EditOperation.AddObject(sceneId, name.trim(), components = imageComponents(imageId, info.width, info.height))
+        if (apply(EditOperation.Batch(listOf(add, placed), "Add image ${name.trim()}")) !is OperationResult.Applied) return null
+        selection = "obj-${next + 1}"
+        return imageId
+    }
+
+    /** Adds an object that shows image [imageId] at the centre of the view and selects it. */
+    fun addImageObject(imageId: String) {
+        val image = project.image(imageId) ?: return
+        val info = ProjectImages.check(image.data)
+        val result = apply(EditOperation.AddObject(sceneId, image.name, components = imageComponents(image.id, info.width, info.height)))
+        if (result is OperationResult.Applied) selection = result.createdIds.single()
+    }
+
+    /** A sprite of [imageId] at the centre of the view whose longest side is 3 units, keeping the picture's shape. */
+    private fun imageComponents(
+        imageId: String,
+        width: Int,
+        height: Int,
+    ): List<ComponentDoc> {
+        val longest = maxOf(width, height).toDouble()
+        val size = mapOf("asset" to imageId, "width" to 3.0 * width / longest, "height" to 3.0 * height / longest)
+        return placed(round(camera.centerX), round(camera.centerY)) + ComponentDoc("graphics:sprite", size)
     }
 
     /**

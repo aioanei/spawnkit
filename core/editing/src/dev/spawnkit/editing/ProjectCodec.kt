@@ -17,11 +17,14 @@ import kotlinx.serialization.json.longOrNull
  * versions, fields or instructions fail explicitly instead of silently discarding data.
  */
 public object ProjectCodec {
-    /** Current workspace-file schema, separate from the legacy platformer document schema. */
-    public const val SCHEMA_VERSION: Int = 1
+    /**
+     * Current workspace-file schema, separate from the legacy platformer document schema. Schema 2 added `images`
+     * (ADR-0012); schema 1 files are migrated when they are opened.
+     */
+    public const val SCHEMA_VERSION: Int = 2
 
     /** Maximum UTF-16 characters in a project file, also used by platform readers before decoding. */
-    public const val MAX_FILE_CHARS: Int = 4 * 1024 * 1024
+    public const val MAX_FILE_CHARS: Int = 10 * 1024 * 1024
 
     /** Encodes a structurally valid project, preserving typed values and rule source locations. */
     public fun encode(project: Project): String {
@@ -66,16 +69,38 @@ public object ProjectCodec {
                             )
                         },
                     ),
+                "images" to
+                    JsonArray(
+                        project.images.map { image ->
+                            jsonObject(
+                                "id" to JsonPrimitive(image.id),
+                                "name" to JsonPrimitive(image.name),
+                                "hash" to JsonPrimitive(image.hash),
+                                "data" to JsonPrimitive(image.data),
+                            )
+                        },
+                    ),
             ).toString()
         checkSizeAndDepth(result)
         return result
+    }
+
+    /**
+     * Brings an older workspace file up to [SCHEMA_VERSION] as JSON, before it is read: schema 1 gains an empty
+     * `images` list. Newer or unknown versions are returned unchanged and refused by the reader.
+     */
+    internal fun migrate(root: JsonElement): JsonElement {
+        val fields = root as? JsonObject ?: return root
+        val version = (fields["schemaVersion"] as? JsonPrimitive)?.takeUnless { it.isString }?.longOrNull
+        if (version != 1L) return root
+        return JsonObject(fields + mapOf("schemaVersion" to JsonPrimitive(2), "images" to JsonArray(emptyList())))
     }
 
     /** Decodes before touching the current workspace. Throws [IllegalArgumentException] with an explanation. */
     public fun decode(text: String): Project {
         checkSizeAndDepth(text)
         return try {
-            readObject(Json.parseToJsonElement(text)) {
+            readObject(migrate(Json.parseToJsonElement(text))) {
                 require(string("format") == "spawnkit-project") { "Choose a SpawnKit project file" }
                 val version = integer("schemaVersion")
                 require(version == SCHEMA_VERSION.toLong()) { "Project version $version is not supported by this builder" }
@@ -109,12 +134,25 @@ public object ProjectCodec {
                                 )
                             }
                         },
+                    images = array("images").map { image -> readObject(image) { readImage() } },
                 ).also(::requireValid)
             }
         } catch (problem: Exception) {
             val detail = if (problem is SerializationException) "The project file is incomplete or damaged" else problem.message
             throw IllegalArgumentException("This project cannot be opened: ${detail ?: "the file is incomplete"}", problem)
         }
+    }
+
+    private fun JsonFields.readImage(): ImageAsset {
+        val image = ImageAsset(string("id"), string("name"), string("hash"), string("data"))
+        val info =
+            try {
+                ProjectImages.check(image.data)
+            } catch (problem: IllegalArgumentException) {
+                throw IllegalArgumentException("The image ${image.name} cannot be used: ${problem.message}", problem)
+            }
+        require(info.hash == image.hash) { "The image ${image.name} is damaged" }
+        return image
     }
 
     private fun requireValid(project: Project) {

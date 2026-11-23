@@ -2,6 +2,7 @@ package dev.spawnkit.app
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithTag
@@ -13,15 +14,20 @@ import androidx.compose.ui.test.runDesktopComposeUiTest
 import dev.spawnkit.app.editor.DefaultPresets
 import dev.spawnkit.app.editor.EditorScreen
 import dev.spawnkit.app.editor.EditorState
+import dev.spawnkit.app.images.ImagePicker
+import dev.spawnkit.app.images.LocalImagePicker
+import dev.spawnkit.app.images.PickedImage
 import dev.spawnkit.app.persistence.DesktopDraftStore
 import dev.spawnkit.app.persistence.ProjectFile
 import dev.spawnkit.app.persistence.ProjectFilePicker
 import dev.spawnkit.app.persistence.ProjectFiles
 import dev.spawnkit.app.persistence.ProjectSession
+import dev.spawnkit.editing.ComponentDoc
 import dev.spawnkit.editing.EditOperation
 import dev.spawnkit.editing.OperationResult
 import dev.spawnkit.editing.Picked
 import dev.spawnkit.editing.Project
+import dev.spawnkit.editing.ProjectImages
 import dev.spawnkit.editing.buildFromJson
 import dev.spawnkit.editing.capabilityProblems
 import dev.spawnkit.editing.encodeArguments
@@ -87,6 +93,16 @@ class OperationParityTest {
         waitForIdle()
     }
 
+    /** A 3 × 2 PNG the fake picker returns. */
+    private val logo: ByteArray =
+        java.io
+            .ByteArrayOutputStream()
+            .also { out ->
+                val image = java.awt.image.BufferedImage(3, 2, java.awt.image.BufferedImage.TYPE_INT_ARGB)
+                image.setRGB(0, 0, 0xFFE91E63.toInt())
+                javax.imageio.ImageIO.write(image, "png", out)
+            }.toByteArray()
+
     private val touching = Rule(Condition.Touching("player"))
     private val scoring = Rule(Condition.Touching("player"), actions = listOf(Action.ChangeNumber(Target.Tagged("score"), 1)))
     private val tapped = Rule(Condition.Tapped, actions = listOf(Action.RemoveSelf))
@@ -136,6 +152,27 @@ class OperationParityTest {
                 ),
             "remove_object" to Case({ select("Coin") }, { tap("delete") }, { target("Coin") }),
             "duplicate_object" to Case({ select("Coin") }, { tap("duplicate") }, { target("Coin") }),
+            "add_image" to
+                Case(
+                    ui = { tap("image-import") },
+                    tool = { mapOf("name" to "Logo", "data" to ProjectImages.encode(logo)) },
+                ),
+            "rename_image" to
+                Case(
+                    { importImage("Logo", logo) },
+                    {
+                        tap("image-rename:Logo")
+                        onNodeWithTag("image-name").performTextReplacement("Banner")
+                        tap("image-name-done")
+                    },
+                    { mapOf("image" to project.images.single().id, "name" to "Banner") },
+                ),
+            "remove_image" to
+                Case(
+                    { importImage("Logo", logo) },
+                    { tap("image-remove:Logo") },
+                    { mapOf("image" to project.images.single().id) },
+                ),
             "move_into" to
                 Case(
                     { select("Coin") },
@@ -455,6 +492,36 @@ class OperationParityTest {
     }
 
     @Test
+    fun choosingASpritesImageGivesTheSameResultByHandAndByAgentTool() {
+        val picture =
+            Case(
+                {
+                    importImage("Logo", logo)
+                    apply(EditOperation.AddObject(sceneId, "Picture", components = listOf(ComponentDoc("graphics:sprite"))))
+                    select("Picture")
+                },
+                { tap("image:${it.id("Picture")}/graphics:sprite/asset:Logo") },
+                {
+                    target("Picture") +
+                        mapOf("component" to "graphics:sprite", "property" to "asset", "value" to project.images.single().id)
+                },
+            )
+        checkParity("set_property", "Sprite image", picture)
+        checkParity(
+            "set_property",
+            "Pixelated",
+            Case(
+                {
+                    apply(EditOperation.AddObject(sceneId, "Picture", components = listOf(ComponentDoc("graphics:sprite"))))
+                    select("Picture")
+                },
+                { tap("field:${it.id("Picture")}/graphics:sprite/pixelated") },
+                { target("Picture") + mapOf("component" to "graphics:sprite", "property" to "pixelated", "value" to true) },
+            ),
+        )
+    }
+
+    @Test
     fun thePhysicsComponentsGiveTheSameResultByHandAndByAgentTool() {
         checkParity(
             "add_component",
@@ -515,7 +582,11 @@ class OperationParityTest {
                 val before = state.project
                 var result: Outcome? = null
                 runDesktopComposeUiTest(width = 1440, height = 900) {
-                    setContent { MaterialTheme(colorScheme = darkColorScheme()) { EditorScreen(state, projectSession = session) } }
+                    setContent {
+                        CompositionLocalProvider(LocalImagePicker provides ImagePicker { it(Result.success(PickedImage("Logo", logo))) }) {
+                            MaterialTheme(colorScheme = darkColorScheme()) { EditorScreen(state, projectSession = session) }
+                        }
+                    }
                     waitForIdle()
                     case.ui(this, state)
                     waitForIdle()
