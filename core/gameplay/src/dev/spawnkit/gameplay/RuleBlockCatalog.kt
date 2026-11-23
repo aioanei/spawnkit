@@ -218,6 +218,44 @@ public object RuleBlockCatalog {
                 { Action.SetNumber(it.target(), it.whole("value")) },
                 { mapOf(TARGET to picked(it.target), "value" to it.to) },
             ),
+            actionSpec<Action.SetRandomNumber>(
+                "SetRandomNumber",
+                AuthoringInfo(
+                    "Set a random number",
+                    "Sets an object's number to a random whole number in a range, like rolling a dice. The same game always rolls the same way.",
+                    NUMBERS,
+                ),
+                listOf(
+                    targetParameter(),
+                    valueParameter("Smallest possible number.", 1L, -MAX_VALUE, id = "min", name = "From"),
+                    valueParameter("Largest possible number.", 6L, -MAX_VALUE, id = "max", name = "To"),
+                ),
+                listOf("Roll a dice from 1 to 6", "Pick a random lane from 1 to 3"),
+                { Action.SetRandomNumber(it.target(), it.whole("min"), it.whole("max")) },
+                { mapOf(TARGET to picked(it.target), "min" to it.min, "max" to it.max) },
+            ),
+            actionSpec<Action.AddNumber>(
+                "AddNumber",
+                AuthoringInfo(
+                    "Add one number to another",
+                    "Adds another object's number to this number, such as adding Income to Coins every second.",
+                    NUMBERS,
+                ),
+                listOf(
+                    targetParameter(),
+                    Parameter(
+                        "from",
+                        "Number to add",
+                        "The object whose number is added.",
+                        targetType,
+                        default = Picked(TAGGED, mapOf("tag" to "income")),
+                        required = true,
+                    ),
+                ),
+                listOf("Every second, add Income to Coins"),
+                { Action.AddNumber(it.target(), it.target("from")) },
+                { mapOf(TARGET to picked(it.target), "from" to picked(it.from)) },
+            ),
             actionSpec<Action.SetText>(
                 "SetText",
                 AuthoringInfo("Set text", "Changes the text an object shows.", TEXT),
@@ -348,6 +386,8 @@ public object RuleBlockCatalog {
             is Action.Move -> "Move"
             is Action.ChangeNumber -> "ChangeNumber"
             is Action.SetNumber -> "SetNumber"
+            is Action.SetRandomNumber -> "SetRandomNumber"
+            is Action.AddNumber -> "AddNumber"
             is Action.SetText -> "SetText"
             is Action.ShowNumber -> "ShowNumber"
             Action.RemoveSelf -> "RemoveSelf"
@@ -419,8 +459,8 @@ public object RuleBlockCatalog {
 
     private fun Map<String, Any?>.comparison(): Comparison = Comparison.valueOf(text(COMPARISON))
 
-    private fun Map<String, Any?>.target(): Target {
-        val picked = getValue(TARGET) as Picked
+    private fun Map<String, Any?>.target(id: String = TARGET): Target {
+        val picked = getValue(id) as Picked
         return if (picked.variant == SELF) Target.Self else Target.Tagged(picked.arguments.getValue("tag") as String)
     }
 

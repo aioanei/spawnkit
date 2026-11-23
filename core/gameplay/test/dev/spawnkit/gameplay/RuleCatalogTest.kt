@@ -48,10 +48,12 @@ class RuleCatalogTest {
             Action.ShowNumber(Target.Self, "Lives: "),
             Action.RemoveSelf,
             Action.GoToScene("scene-2"),
+            Action.SetRandomNumber(Target.Self, 1, 6),
+            Action.AddNumber(Target.Tagged("coins"), Target.Tagged("income")),
         ).onEach {
             when (it) {
                 is Action.Move, is Action.ChangeNumber, is Action.SetNumber, is Action.SetText, is Action.ShowNumber,
-                Action.RemoveSelf, is Action.GoToScene,
+                Action.RemoveSelf, is Action.GoToScene, is Action.SetRandomNumber, is Action.AddNumber,
                 -> Unit
             }
         }

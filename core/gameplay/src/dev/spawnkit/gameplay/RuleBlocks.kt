@@ -159,6 +159,28 @@ public sealed interface Action {
         public val to: Long,
     ) : Action
 
+    /** Sets the [target]'s number to a random whole number from [min] to [max], from the seeded generator. */
+    public data class SetRandomNumber(
+        /** Object holding the number. */
+        public val target: Target,
+        /** Smallest possible number. */
+        public val min: Long,
+        /** Largest possible number. */
+        public val max: Long,
+    ) : Action {
+        init {
+            require(min <= max) { "The smallest number must not be larger than the largest" }
+        }
+    }
+
+    /** Adds [from]'s number to the [target]'s number, for income such as "add Income to Coins every second". */
+    public data class AddNumber(
+        /** Object whose number grows. */
+        public val target: Target,
+        /** Object whose number is added. */
+        public val from: Target,
+    ) : Action
+
     /** Sets the [target]'s text to [text]. */
     public data class SetText(
         /** Object with text. */
@@ -314,6 +336,14 @@ public object RuleBlocks {
                 "Set ${possessive(action.target)} number to ${action.to}"
             }
 
+            is Action.SetRandomNumber -> {
+                "Set ${possessive(action.target)} number to a random number from ${action.min} to ${action.max}"
+            }
+
+            is Action.AddNumber -> {
+                "Add ${possessive(action.from)} number to ${name(action.target)}"
+            }
+
             is Action.SetText -> {
                 "Set ${possessive(action.target)} text to \"${action.text}\""
             }
@@ -423,6 +453,19 @@ public object RuleBlocks {
                 Stmt.SetProperty(target(action.target, s), NUMBER, int(action.to, s), s)
             }
 
+            is Action.SetRandomNumber -> {
+                Stmt.SetProperty(target(action.target, s), NUMBER, call("random", s, int(action.min, s), int(action.max, s)), s)
+            }
+
+            is Action.AddNumber -> {
+                Stmt.SetProperty(
+                    target(action.target, s),
+                    NUMBER,
+                    Expr.Binary(BinaryOp.Add, number(action.target, s), number(action.from, s), s),
+                    s,
+                )
+            }
+
             is Action.SetText -> {
                 Stmt.SetProperty(target(action.target, s), TEXT, text(action.text, s), s)
             }
@@ -514,9 +557,26 @@ public object RuleBlocks {
                     val target = recogniseTarget(stmt.entity) ?: return@runCatching null
                     val value = stmt.value
                     when {
-                        value is Expr.Literal -> Action.SetNumber(target, (value.value as IntegerValue).value)
-                        value is Expr.Binary -> Action.ChangeNumber(target, ((value.right as Expr.Literal).value as IntegerValue).value)
-                        else -> null
+                        value is Expr.Literal -> {
+                            Action.SetNumber(target, (value.value as IntegerValue).value)
+                        }
+
+                        value.isCall("random") -> {
+                            val (min, max) = (value as Expr.CallHost).arguments.map { ((it as Expr.Literal).value as IntegerValue).value }
+                            Action.SetRandomNumber(target, min, max)
+                        }
+
+                        value is Expr.Binary && value.right is Expr.GetProperty -> {
+                            Action.AddNumber(target, recogniseTarget((value.right as Expr.GetProperty).entity) ?: return@runCatching null)
+                        }
+
+                        value is Expr.Binary -> {
+                            Action.ChangeNumber(target, ((value.right as Expr.Literal).value as IntegerValue).value)
+                        }
+
+                        else -> {
+                            null
+                        }
                     }
                 }
 
