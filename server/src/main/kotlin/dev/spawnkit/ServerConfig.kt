@@ -28,7 +28,14 @@ internal class ServerConfig private constructor(
     /** Longest model reply, in tokens. */
     val maxOutputTokens: Int,
     private val anthropicKey: String?,
+    private val openAiKey: String? = null,
 ) {
+    /** Whether Character Forge can run: the image model key is set (ADR-0013). */
+    val charactersConfigured: Boolean get() = openAiKey != null
+
+    /** The image model key, for the image gateway only. */
+    fun openAiKey(): String? = openAiKey
+
     /** Whether hosted AI can run: the model key is set. */
     val aiConfigured: Boolean get() = anthropicKey != null
 
@@ -38,6 +45,7 @@ internal class ServerConfig private constructor(
     override fun toString(): String =
         "ServerConfig(port=$port, host=$host, local=$local, database=$databaseFile, arcade=$arcadeDirectory, " +
             "email=${mail?.let { it::class.simpleName } ?: "unavailable"}, ai=${if (aiConfigured) "configured" else "not configured"}, " +
+            "characters=${if (charactersConfigured) "configured" else "not configured"}, " +
             "limits=$aiLimits)"
 
     companion object {
@@ -62,6 +70,7 @@ internal class ServerConfig private constructor(
                     ),
                 maxOutputTokens = HostedAi.DEFAULT_MAX_OUTPUT_TOKENS,
                 anthropicKey = env["ANTHROPIC_API_KEY"]?.trim()?.ifEmpty { null },
+                openAiKey = env["OPENAI_API_KEY"]?.trim()?.ifEmpty { null },
             )
         }
 
