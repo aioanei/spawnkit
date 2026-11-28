@@ -179,6 +179,88 @@ class AssistantChatTest {
             assertFalse(assistant.running)
         }
 
+    /** A demo model that waits at its last reply (the summary) until [gate] opens, so a test can look mid-work. */
+    private class Paused(
+        private val gate: CompletableDeferred<Unit>,
+    ) : AgentModel {
+        private val demo = DemoModel()
+        private var calls = 0
+        override val info = demo.info
+
+        override suspend fun reply(request: ModelRequest): ModelReply {
+            if (++calls == 3) gate.await()
+            return demo.reply(request)
+        }
+    }
+
+    @Test
+    fun theCanvasShowsTheAssistantsWorkWhileItRuns() =
+        runTest {
+            val gate = CompletableDeferred<Unit>()
+            val assistant = assistant(Paused(gate))
+            assistant.prompt = DemoModel.PROMPTS[0]
+            assistant.ask()
+            advanceUntilIdle()
+
+            val preview = editor.assistantPreview
+            assertTrue(assistant.running)
+            assertEquals(
+                1,
+                preview
+                    ?.scenes
+                    ?.first()
+                    ?.objects
+                    ?.first { it.name == "Coin" }
+                    ?.rules
+                    ?.size,
+                "the staged rule is shown",
+            )
+            assertEquals(emptyList(), coinRules(), "the game itself is unchanged until the step is applied")
+            gate.complete(Unit)
+            advanceUntilIdle()
+
+            assertNull(editor.assistantPreview)
+            assertEquals(1, coinRules().size)
+        }
+
+    @Test
+    fun withReviewFirstThePreviewStaysUntilAcceptOrReject() =
+        runTest {
+            val assistant = assistant()
+            assistant.reviewFirst = true
+            assistant.prompt = DemoModel.PROMPTS[0]
+            assistant.ask()
+            advanceUntilIdle()
+
+            assertTrue(editor.assistantPreview != null, "the proposal is previewed on the canvas")
+            assistant.reject()
+            assertNull(editor.assistantPreview)
+
+            assistant.prompt = DemoModel.PROMPTS[0]
+            assistant.ask()
+            advanceUntilIdle()
+            assistant.accept()
+            assertNull(editor.assistantPreview)
+            assertEquals(1, coinRules().size)
+        }
+
+    @Test
+    fun cancellingClearsThePreview() =
+        runTest {
+            val gate = CompletableDeferred<Unit>()
+            val assistant = assistant(Paused(gate))
+            assistant.prompt = DemoModel.PROMPTS[0]
+            assistant.ask()
+            advanceUntilIdle()
+            assertTrue(editor.assistantPreview != null)
+
+            assistant.cancel()
+            advanceUntilIdle()
+
+            assertNull(editor.assistantPreview)
+            assertEquals(emptyList(), coinRules())
+        }
+
     @Test
     fun reviewFirstStillWaitsForAccept() =
         runTest {

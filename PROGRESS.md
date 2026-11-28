@@ -13,15 +13,16 @@
   - New game starts with **Describe your game…**: Build it starts a blank game and asks the assistant.
   - Signed out, New game offers Sign in and **Watch the AI build a game**: the reviewed Jungle Banana Run recording,
     embedded and replayed with its label, with no model called.
+  - The canvas shows the assistant's staged game as it grows, labelled as a preview, until the step is applied.
   - `Editor.load` mints IDs from the loaded project alone.
 - **Evidence.**
-  - New tests: `AssistantChatTest` 10, `AiFirstUiTest` 5 (phone and desktop), `WholeGameReplayTest` +2 and
+  - New tests: `AssistantChatTest` 13, `AiFirstUiTest` 5 (phone and desktop), `WholeGameReplayTest` +2 and
     `EditorTest` +1.
   - Existing UI tests were updated for the new tab order and for changes applied right away.
   - Android API 36: `tools/android-ai-first-smoke.py`, signed out. New game → Watch the AI build a game applied
     Jungle Banana Run, and Revert brought back the blank game ([screenshots](docs/ai-studio.md#ai-first-builder-c13b)).
   - Gradle `spotlessCheck allJvmAndWebTests localNativeTests`, and the Toolchain `check ktlint`, `test -p jvm -p android`
-    and `test -p mingwX64`, all pass. app/shared JVM: 126 tests.
+    and `test -p mingwX64`, all pass. app/shared JVM: 129 tests.
 - **Still open from C13a.** The owner decides the per-account daily allowance: a whole game costs about $1.50 against
   the $1 default.
 - **Next.** C13c: emulator evidence of a live whole-game build with SpawnKit AI. Then C11c, C19 and C8.

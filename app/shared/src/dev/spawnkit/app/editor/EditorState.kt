@@ -433,8 +433,21 @@ class EditorState(
         play = null
     }
 
-    /** The world shown in the viewport: the play world while playing, otherwise a preview of the scene. */
+    /**
+     * The assistant's staged game while it works, or while its proposal waits for review (C13b). The viewport draws it
+     * instead of the game so creators watch the game take shape; nothing in [project] changes until the step is applied.
+     */
+    var assistantPreview by mutableStateOf<Project?>(null)
+
+    /**
+     * The world shown in the viewport: a preview of the scene, from [assistantPreview] when it has this scene. Play
+     * worlds are drawn by the play session instead.
+     */
     fun previewWorld(): SceneWorld {
+        assistantPreview
+            ?.takeIf { it.scene(sceneId) != null }
+            ?.let { staged -> runCatching { Editor(engine.runtime, staged).buildPreview(sceneId) }.getOrNull() }
+            ?.let { return it }
         val built = editor.buildPreview(sceneId)
         dragging?.let { (id, offset) ->
             val entity = built.entity(id) ?: return@let

@@ -8,7 +8,11 @@ import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -16,6 +20,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -95,7 +100,8 @@ private fun ViewportContent(
     val ppu by rememberUpdatedState(pixelsPerUnit)
     val selectionPx = with(LocalDensity.current) { 2.5.dp.toPx() }
     val session = state.play
-    val images = rememberProjectImages(state.project.images)
+    val preview = state.assistantPreview
+    val images = rememberProjectImages((preview ?: state.project).images)
     if (session != null) {
         PlaySurface(session, state.engine.graphics, state.camera, pixelsPerUnit, touchControls, focus, images)
         // Previews show the game's test ads but never report them, so the creator's own plays are not counted.
@@ -111,7 +117,7 @@ private fun ViewportContent(
         return
     }
     // Rebuilt for every project revision, scene change and drag step: preview worlds are cheap and never shared.
-    val world = remember(state.revision, state.sceneId, state.dragging) { state.previewWorld() }
+    val world = remember(state.revision, state.sceneId, state.dragging, preview) { state.previewWorld() }
     val frame = remember(world) { state.frame(world) }
     val selected = state.selection?.let(world::entity)
     val current by rememberUpdatedState(state)
@@ -127,7 +133,8 @@ private fun ViewportContent(
                     focus.requestFocus()
                     val (wx, wy) = view.toWorld(down.position.x.toDouble(), down.position.y.toDouble())
                     val built = s.previewWorld()
-                    val hit = s.frame(built).hitTest(wx, wy)?.let(built::objectId)
+                    // The assistant's preview is not in the game yet: it can be panned and zoomed, not edited.
+                    val hit = if (s.assistantPreview != null) null else s.frame(built).hitTest(wx, wy)?.let(built::objectId)
                     var moved = false
                     var dragId: String? = if (hit != null && s.canMove(hit)) hit else null
                     var dragX = 0.0
@@ -203,6 +210,20 @@ private fun ViewportContent(
             selection = setOfNotNull(selected),
             style = CanvasStyle(showGrid = true, selectionWidthPx = selectionPx),
         )
+        if (preview != null) {
+            Surface(
+                Modifier.align(Alignment.TopCenter).padding(8.dp).testTag("assistant-preview"),
+                color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.9f),
+                shape = MaterialTheme.shapes.small,
+            ) {
+                Text(
+                    "Preview of the assistant's changes · applied when it finishes",
+                    Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSecondary,
+                )
+            }
+        }
     }
 }
 

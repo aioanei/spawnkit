@@ -323,6 +323,7 @@ class AssistantState(
 
     fun reject() {
         val rejected = outcome is AgentOutcome.Proposal
+        editor.assistantPreview = null
         session?.reject()
         outcome = null
         notice = null
@@ -336,6 +337,7 @@ class AssistantState(
         proposal: AgentOutcome.Proposal,
     ) {
         val label = "Assistant: " + proposal.summary.take(LABEL_LENGTH)
+        editor.assistantPreview = null
         when (val result = active.accept(label)) {
             is AcceptResult.Accepted -> {
                 outcome = null
@@ -443,6 +445,8 @@ class AssistantState(
                 } finally {
                     running = false
                     job = null
+                    // A proposal waiting for review, a question or a photo request keeps its preview; anything else ends it.
+                    if (outcome == null) editor.assistantPreview = null
                     after()
                 }
             }
@@ -450,6 +454,8 @@ class AssistantState(
 
     private fun record(event: AgentEvent) {
         if (event !is AgentEvent.UsedTool) return
+        // Show the staged game on the canvas as it grows (C13b).
+        if (event.staged != null) editor.assistantPreview = session?.changes?.project
         val line =
             when {
                 event.name == AgentToolbox.MAKE_CHARACTER && event.staged != null -> "Made characters from your photo"
@@ -511,6 +517,7 @@ class AssistantState(
         }
         job?.cancel()
         session?.reject()
+        editor.assistantPreview = null
         session = null
         sessionFor = null
         model = null

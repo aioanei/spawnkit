@@ -167,6 +167,8 @@ class AiFirstUiTest {
             capture("new-game-signed-out-phone")
             tap("new-watch-replay")
             waitForText("Replay: claude-sonnet-5-5")
+            // The canvas shows the staged game as it grows, labelled as a preview.
+            waitUntil(timeoutMillis = 30_000) { onAllNodesWithTag("assistant-preview").fetchSemanticsNodes().isNotEmpty() }
             capture("ai-first-replay-running-phone")
             waitForText("Applied to your game", timeout = 60_000)
 
@@ -178,6 +180,7 @@ class AiFirstUiTest {
             assertTrue(onAllNodesWithText("Replay of a recorded session", substring = true).fetchSemanticsNodes().isNotEmpty())
             onNodeWithTag("assistant-cost").assertTextContains("No cost (no model is called)")
             onNodeWithTag("assistant-model").assertTextContains(DemoModel.LABEL)
+            assertTrue(onAllNodesWithTag("assistant-preview").fetchSemanticsNodes().isEmpty(), "applied, so no longer a preview")
             capture("ai-first-replay-phone")
         }
 

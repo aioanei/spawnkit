@@ -238,6 +238,10 @@ now starts from the assistant. Manual tools are unchanged.
     an Undo, the card says to use Undo (↶), so Revert never removes the creator's work. Redo brings the step back, and
     it can be reverted again.
   - The model is told about a revert (`AgentSession.reverted()`).
+  - **The canvas shows the work as it grows.** While the assistant works, the viewport draws its staged game
+    (`EditorState.assistantPreview`) under a "Preview of the assistant's changes" label. Preview objects can be panned
+    and zoomed but not selected; the game itself changes only when the step is applied. With Review first, the
+    preview stays until Accept or Reject; cancelling or a failure clears it.
   - If the creator edits while the assistant works, the late changes are refused with the reason. The creator's edit
     stays.
   - **Review changes first**, in the assistant's Settings, brings back Accept and Reject. Settings also hold the
@@ -257,7 +261,7 @@ now starts from the assistant. Manual tools are unchanged.
   - The cost line reads "No cost (no model is called)". The six scenes arrive as one step with Revert.
   - `Editor.load` now mints IDs from the loaded project alone, so a new blank game has the IDs the recording expects.
 - **Tests.**
-  - `AssistantChatTest` 10: apply right away; Revert; Revert refused after a manual change; Undo and Redo; Review first;
+  - `AssistantChatTest` 13: the canvas preview while the assistant works, kept for review and cleared by cancel; apply right away; Revert; Revert refused after a manual change; Undo and Redo; Review first;
     answers in the chat; the model told of a revert; editing while the assistant works; the chat across scenes and
     projects; the replay builds six scenes and stays labelled.
   - `AiFirstUiTest` 5: Describe → Build it → applied → Revert → Redo on a phone and a desktop; signed out with the
@@ -411,7 +415,6 @@ demo.
 
 ## Not yet
 
-- A visual preview of a proposal in the viewport before accepting; the review lists the steps in words.
 - Secure key storage on iOS (Keychain) and the web.
 - Committed recordings of live sessions. The recording workflow exists, but no run has been reviewed and committed
   yet; until then, demos use the labelled scripted fixtures.
