@@ -23,6 +23,12 @@ C13a taught the assistant to build a complete game. C13b makes the builder start
   It also offers **Watch the AI build a game**: the reviewed Jungle Banana Run recording (C13a), replayed and labelled
   "Replay", with no model called.
 
+**Status (2026-11-28).** Tasks 1–3 are done. Task 4 is done except where its PR says otherwise.
+- Found on the way: `Editor.load` kept the previous project's ID floor, so a replay after earlier work minted other
+  IDs. `load` now resets it, since no history survives a load.
+- Revert after Redo: the card first stayed "Reverted". It now reads the editor, so Redo makes the step revertible
+  again.
+
 ## Tasks
 
 ### Task 1: Apply right away, Revert and the conversation (`AssistantState`)

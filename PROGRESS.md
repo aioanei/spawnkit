@@ -1,6 +1,32 @@
 # SpawnKit progress
 
-## Current checkpoint — C13a Game Architect (2026-11-24)
+## Current checkpoint — C13b AI-first builder (2026-11-28)
+
+- **Branch.** `feat/85-ai-first-builder`, stacked on C13a (`feat/85-game-architect`, PR #107).
+  [Plan](docs/plans/2026-11-28-c13b-ai-first-builder.md), part of [#85](https://github.com/aioanei/spawnkit/issues/85),
+  [AI Studio](docs/ai-studio.md#ai-first-builder-c13b). The owner was away; the plan records the choices made.
+- **Added.**
+  - The chat is the main panel: the first tab on phones and in the side panel. It is a conversation with the composer
+    at the bottom.
+  - AI changes apply right away as one undo step with **Revert**. Revert works only while that step is the latest, so
+    it never removes the creator's work. "Review changes first" is a setting.
+  - New game starts with **Describe your game…**: Build it starts a blank game and asks the assistant.
+  - Signed out, New game offers Sign in and **Watch the AI build a game**: the reviewed Jungle Banana Run recording,
+    embedded and replayed with its label, with no model called.
+  - `Editor.load` mints IDs from the loaded project alone.
+- **Evidence.**
+  - New tests: `AssistantChatTest` 10, `AiFirstUiTest` 5 (phone and desktop), `WholeGameReplayTest` +2 and
+    `EditorTest` +1.
+  - Existing UI tests were updated for the new tab order and for changes applied right away.
+  - Android API 36: `tools/android-ai-first-smoke.py`, signed out. New game → Watch the AI build a game applied
+    Jungle Banana Run, and Revert brought back the blank game ([screenshots](docs/ai-studio.md#ai-first-builder-c13b)).
+  - Gradle `spotlessCheck allJvmAndWebTests localNativeTests`, and the Toolchain `check ktlint`, `test -p jvm -p android`
+    and `test -p mingwX64`, all pass. app/shared JVM: 126 tests.
+- **Still open from C13a.** The owner decides the per-account daily allowance: a whole game costs about $1.50 against
+  the $1 default.
+- **Next.** C13c: emulator evidence of a live whole-game build with SpawnKit AI. Then C11c, C19 and C8.
+
+## Previous checkpoint — C13a Game Architect (2026-11-24)
 
 - **Branch.** `feat/85-game-architect`, stacked on `fix/koog-anyof` (PR #106). [Plan](docs/plans/2026-11-24-c13a-game-architect.md),
   part of [#85](https://github.com/aioanei/spawnkit/issues/85), [AI Studio](docs/ai-studio.md#game-architect-c13a).
