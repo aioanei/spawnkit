@@ -1,5 +1,6 @@
 package dev.spawnkit.ai
 
+import dev.spawnkit.editing.AcceptResult
 import dev.spawnkit.editing.Editor
 import dev.spawnkit.editing.Project
 import dev.spawnkit.editing.ProjectCodec
@@ -9,6 +10,7 @@ import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 /**
@@ -37,6 +39,37 @@ class WholeGameReplayTest {
                 listOf("Title", "Level 1", "Level 2", "Shop", "Jungle Champion", "Game Over"),
                 editor.project.scenes.map { it.name },
             )
+        }
+
+    @Test
+    fun theEmbeddedCopyMatchesTheReviewedFile() {
+        // Regenerate with `python tools/embed-recording.py` after the recording changes.
+        assertEquals(file("jungle-banana-run.json").readText().replace("\r\n", "\n"), JungleBananaRunJson.text)
+        assertEquals(recording, WholeGameReplay.recording)
+        assertEquals(recording.script.single().text, WholeGameReplay.prompt)
+    }
+
+    @Test
+    fun theBuilderReplayBuildsTheWholeGameOnABlankProject() =
+        runBlocking {
+            val engine = StandardEngine()
+            val editor = Editor(engine.runtime, Project.blank(), programs = engine.programs)
+            val session =
+                AgentSession(
+                    engine,
+                    editor,
+                    editor.project.scenes
+                        .first()
+                        .id,
+                    WholeGameReplay.model(pauseMillis = 1),
+                )
+
+            val outcome = session.ask(WholeGameReplay.prompt)
+
+            val proposal = assertIs<AgentOutcome.Proposal>(outcome)
+            assertTrue(session.modelInfo.label.startsWith("Replay:"), session.modelInfo.label)
+            assertIs<AcceptResult.Accepted>(session.accept("Assistant: replay"))
+            assertEquals(6, editor.project.scenes.size, proposal.summary)
         }
 
     @Test
