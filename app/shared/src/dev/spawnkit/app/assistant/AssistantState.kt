@@ -15,6 +15,7 @@ import dev.spawnkit.ai.CharacterResult
 import dev.spawnkit.ai.Cost
 import dev.spawnkit.ai.DemoModel
 import dev.spawnkit.ai.KoogModel
+import dev.spawnkit.ai.WholeGameReplay
 import dev.spawnkit.app.editor.EditorState
 import dev.spawnkit.app.images.PickedImage
 import dev.spawnkit.editing.AcceptResult
@@ -60,7 +61,8 @@ sealed class ChatEntry {
 
     /**
      * Changes the assistant made, applied as one undo step labelled [label]: [text] is its summary and [steps] the
-     * changes in plain words. [AssistantState.revert] undoes it while it is still the latest step.
+     * changes in plain words. [AssistantState.revert] undoes it while it is still the latest step. [replay] marks changes
+     * from the labelled whole-game replay, where no model was called.
      */
     class Applied(
         override val text: String,
@@ -68,8 +70,9 @@ sealed class ChatEntry {
         val label: String,
         internal val generation: Int,
         internal val after: Project,
+        val replay: Boolean = false,
     ) : ChatEntry() {
-        /** Whether the creator reverted it. */
+        /** Whether the creator used Revert on it; see [AssistantState.isReverted] for whether it is still undone. */
         var reverted by mutableStateOf(false)
             internal set
     }
@@ -156,6 +159,11 @@ class AssistantState(
     private var modelFor: String? = null
     private var job: Job? = null
 
+    /** The whole-game replay while it plays (C13b), with a key of its own so each replay starts afresh. */
+    private var replaying: AgentModel? = null
+    private var replayKey = ""
+    private var replays = 0
+
     /** The attached photo as the agent's `make_character` sees it: whether there is one, and sending it on confirmation. */
     private val maker =
         object : CharacterMaker {
@@ -225,17 +233,22 @@ class AssistantState(
      */
     fun canRevert(entry: ChatEntry.Applied): Boolean {
         editor.revision // recompose when the game changes
-        return !entry.reverted &&
-            !playing &&
+        return !playing &&
             entry.generation == editor.projectGeneration &&
             editor.editor.project === entry.after &&
             editor.editor.undoLabel == entry.label
     }
 
+    /** Whether [entry] was reverted and is still undone; Redo brings it back, and then it can be reverted again. */
+    fun isReverted(entry: ChatEntry.Applied): Boolean {
+        editor.revision // recompose when the game changes
+        return entry.reverted && editor.editor.project !== entry.after
+    }
+
     /** Undoes the assistant's step [entry] when [canRevert]; otherwise explains how to step back with Undo. */
     fun revert(entry: ChatEntry.Applied) {
         if (!canRevert(entry)) {
-            if (!entry.reverted) notice = if (playing) STOP_TO_REVERT else CANNOT_REVERT
+            if (!isReverted(entry)) notice = if (playing) STOP_TO_REVERT else CANNOT_REVERT
             return
         }
         editor.undo()
@@ -328,7 +341,15 @@ class AssistantState(
                 outcome = null
                 notice = null
                 progress.clear()
-                chat += ChatEntry.Applied(proposal.summary, proposal.steps, label, editor.projectGeneration, editor.editor.project)
+                chat +=
+                    ChatEntry.Applied(
+                        proposal.summary,
+                        proposal.steps,
+                        label,
+                        editor.projectGeneration,
+                        editor.editor.project,
+                        replay = replaying != null,
+                    )
             }
 
             is AcceptResult.Refused -> {
@@ -375,12 +396,33 @@ class AssistantState(
         job?.cancel()
     }
 
+    /**
+     * Plays the reviewed whole-game recording ([WholeGameReplay]) on the open game, for creators who are not signed in
+     * (C13b). It is labelled as a replay throughout, calls no model, and is applied like any answer, with Revert. Start it
+     * on a new blank game, where the recorded IDs exist; [pauseMillis] paces the steps so creators can follow them.
+     */
+    fun watchReplay(pauseMillis: Long = REPLAY_PAUSE_MILLIS) {
+        if (running || playing) return
+        clearChatIfNewProject()
+        replaying = WholeGameReplay.model(pauseMillis)
+        replayKey = "$REPLAY${++replays}"
+        val request = WholeGameReplay.prompt
+        chat += ChatEntry.Note(REPLAY_NOTE.replace("DATE", WholeGameReplay.recording.recordedOn))
+        chat += ChatEntry.Request(request)
+        start(after = { replaying = null }) { session, onEvent -> session.ask(request, onEvent) }
+    }
+
     private fun start(
         keepProgress: Boolean = false,
+        after: () -> Unit = {},
         work: suspend (AgentSession, (AgentEvent) -> Unit) -> AgentOutcome,
     ) {
         dropIfStale()
-        val active = sessionNow() ?: return
+        val active =
+            sessionNow() ?: run {
+                after()
+                return
+            }
         if (!keepProgress) progress.clear()
         outcome = null
         notice = null
@@ -401,6 +443,7 @@ class AssistantState(
                 } finally {
                     running = false
                     job = null
+                    after()
                 }
             }
     }
@@ -480,6 +523,7 @@ class AssistantState(
     /** Which model answers now: the creator's own key, SpawnKit AI for an account, or the demo. */
     private fun modelKey(): String =
         when {
+            replaying != null -> replayKey
             useLive && secrets.read(KEY_NAME) != null -> OWN_KEY
             else -> hosted()?.let { HOSTED + it.key } ?: DEMO
         }
@@ -487,6 +531,7 @@ class AssistantState(
     /** The model for the current choice, made once per choice; live models get the key and nothing else does. */
     private fun currentModel(): AgentModel {
         val key = modelKey()
+        replaying?.takeIf { key == replayKey }?.let { return it }
         model?.takeIf { modelFor == key }?.let { return it }
         val made =
             when {
@@ -507,6 +552,11 @@ class AssistantState(
         private const val OWN_KEY = "own-key"
         private const val HOSTED = "hosted:"
         private const val DEMO = "demo"
+        private const val REPLAY = "replay:"
+        private const val REPLAY_PAUSE_MILLIS = 350L
+        private const val REPLAY_NOTE =
+            "Replay of a recorded session: SpawnKit AI built this game from the prompt below on DATE. " +
+                "No model is called now; every step still runs in the real builder."
         private const val CANCELLED = "Cancelled. Nothing in your game changed."
         private const val REVERTED = "Reverted. Your game is back as it was before."
         private const val CANNOT_REVERT =

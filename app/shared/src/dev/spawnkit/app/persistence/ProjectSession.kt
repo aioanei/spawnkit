@@ -14,6 +14,15 @@ import dev.spawnkit.presets.GamePreset
 enum class ProjectAction { New, Open }
 
 /**
+ * What the assistant builds once a new blank game is open: the prompt-first New game (C13b). [prompt] is the creator's
+ * description; with [replay], the assistant plays the labelled whole-game replay instead of calling a model.
+ */
+class BuildRequest(
+    val prompt: String,
+    val replay: Boolean = false,
+)
+
+/**
  * Coordinates files, the editor and local recovery. File decoding finishes before any editor change. Cancellation,
  * codec failures and failed writes leave the workspace and its undo history intact.
  */
@@ -39,6 +48,13 @@ class ProjectSession(
 
     /** What [ProjectAction.New] starts from: a preset, or `null` for a blank game. */
     private var newFrom: GamePreset? = null
+
+    /** What to build on the new blank game, once it is open. */
+    private var newRequest: BuildRequest? = null
+
+    /** A build request for the game just started with [describe]; the builder takes it with [takeBuildRequest]. */
+    var buildRequest by mutableStateOf<BuildRequest?>(null)
+        private set
     var status by mutableStateOf("Changes are autosaved on this device")
         private set
     val dirty: Boolean get() = state.project != saved
@@ -99,8 +115,24 @@ class ProjectSession(
     fun startNew(preset: GamePreset?) {
         choosing = false
         newFrom = preset
+        newRequest = null
         request(ProjectAction.New)
     }
+
+    /**
+     * Prompt-first New game (C13b): starts a blank game like [startNew], asking about unsaved changes first, then hands
+     * [request] to the assistant through [buildRequest]. Cancelling leaves the current game and builds nothing.
+     */
+    fun describe(request: BuildRequest) {
+        if (request.prompt.isBlank()) return
+        choosing = false
+        newFrom = null
+        newRequest = request
+        request(ProjectAction.New)
+    }
+
+    /** Takes the pending [buildRequest], so it is handled once. */
+    fun takeBuildRequest(): BuildRequest? = buildRequest.also { buildRequest = null }
 
     fun request(action: ProjectAction) {
         if (busy || state.play != null || recovery != null) return
@@ -110,6 +142,7 @@ class ProjectSession(
     fun cancelNavigation() {
         pending = null
         newFrom = null
+        newRequest = null
     }
 
     fun discardAndContinue() {
@@ -190,6 +223,8 @@ class ProjectSession(
                 autosaved = null
                 autosave()
                 if (preset != null) status = "Started from ${preset.name} · save a file to keep your own copy"
+                buildRequest = newRequest.takeIf { preset == null }
+                newRequest = null
             }
 
             ProjectAction.Open -> {

@@ -77,6 +77,7 @@ class ImagesUiTest {
                     MaterialTheme(colorScheme = darkColorScheme()) { EditorScreen(state) }
                 }
             }
+            showPalette()
             tap("add:Image")
             val logo = state.project.images.single()
             val obj = assertNotNull(state.selection?.let(state.scene::find))

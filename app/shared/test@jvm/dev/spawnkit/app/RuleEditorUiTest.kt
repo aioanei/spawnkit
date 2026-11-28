@@ -56,6 +56,7 @@ class RuleEditorUiTest {
         runDesktopComposeUiTest(width = 412, height = 915) {
             val state = EditorState()
             setContent { MaterialTheme(colorScheme = darkColorScheme()) { EditorScreen(state) } }
+            showPalette()
             tap("add:Score")
             tap("add:Coin")
             val coin = checkNotNull(state.selection)
@@ -159,6 +160,7 @@ class RuleEditorUiTest {
         runDesktopComposeUiTest(width = 412, height = 915) {
             val state = EditorState()
             setContent { MaterialTheme(colorScheme = darkColorScheme()) { EditorScreen(state) } }
+            showPalette()
             tap("add:Score")
             val score = checkNotNull(state.selection)
             state.setRuleItems(score, listOf(RuleItem.Blocks(Rule(Condition.EverySeconds(86_400)))))

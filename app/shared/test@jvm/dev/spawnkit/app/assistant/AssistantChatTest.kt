@@ -8,6 +8,7 @@ import dev.spawnkit.ai.ModelInfo
 import dev.spawnkit.ai.ModelReply
 import dev.spawnkit.ai.ModelRequest
 import dev.spawnkit.ai.ToolCall
+import dev.spawnkit.ai.WholeGameReplay
 import dev.spawnkit.app.editor.DefaultPresets
 import dev.spawnkit.app.editor.EditorState
 import dev.spawnkit.editing.EditOperation
@@ -99,11 +100,13 @@ class AssistantChatTest {
             assistant.revert(applied)
 
             assertEquals(emptyList(), coinRules())
-            assertTrue(applied.reverted)
+            assertTrue(assistant.isReverted(applied))
             assertFalse(assistant.canRevert(applied))
             assertEquals("Reverted. Your game is back as it was before.", assistant.notice)
             editor.redo()
             assertEquals(1, coinRules().size, "Revert is an ordinary undo, so Redo brings the change back")
+            assertFalse(assistant.isReverted(applied))
+            assertTrue(assistant.canRevert(applied), "after Redo it can be reverted again")
         }
 
     @Test
@@ -122,7 +125,7 @@ class AssistantChatTest {
 
             assertEquals(objects, editor.scene.objects.size)
             assertEquals(1, coinRules().size)
-            assertFalse(applied.reverted)
+            assertFalse(assistant.isReverted(applied))
             assertEquals(
                 "You changed the game after this, so it can't be reverted on its own. Use Undo (↶) to step back.",
                 assistant.notice,
@@ -251,7 +254,11 @@ class AssistantChatTest {
             assistant.ask()
             advanceUntilIdle()
             editor.applyCatalog("add_scene", mapOf("name" to "Level 2"))
-            editor.selectScene(editor.project.scenes.last().id)
+            editor.selectScene(
+                editor.project.scenes
+                    .last()
+                    .id,
+            )
             assistant.refresh()
 
             assertEquals(2, assistant.chat.count { it !is ChatEntry.Note })
@@ -260,5 +267,34 @@ class AssistantChatTest {
             assistant.refresh()
 
             assertTrue(assistant.chat.isEmpty())
+        }
+
+    @Test
+    fun theWholeGameReplayBuildsJungleBananaRunLabelledOnABlankGame() =
+        runTest {
+            editor.loadProject(Project.blank())
+            val assistant = assistant()
+            val labels = mutableListOf<String>()
+
+            assistant.watchReplay(pauseMillis = 0)
+            labels += assistant.modelLabel
+            advanceUntilIdle()
+
+            assertTrue(labels.single().startsWith("Replay: claude-sonnet-5-5"), labels.single())
+            assertEquals(6, editor.project.scenes.size)
+            assertTrue(
+                assistant.chat
+                    .first()
+                    .text
+                    .startsWith("Replay of a recorded session"),
+            )
+            assertEquals(WholeGameReplay.prompt, assistant.chat[1].text)
+            val applied = assertIs<ChatEntry.Applied>(assistant.chat.last())
+            assertTrue(applied.replay)
+            assertEquals(DemoModel.LABEL, assistant.modelLabel, "after the replay, the usual model answers again")
+            assertEquals("No cost (no model is called)", assistant.costText)
+
+            assistant.revert(applied)
+            assertEquals(1, editor.project.scenes.size, "the whole replayed game is one undo step")
         }
 }

@@ -84,21 +84,21 @@ class AssistantUiTest {
             val state = collectGame()
             open(state)
 
-            onNodeWithTag("tab:AI").performClick()
+            // The assistant is the first tab and opens first (C13b).
             onNodeWithTag("assistant-model").assertTextContains(DemoModel.LABEL)
             onNodeWithTag("assistant-example-0").performScrollTo().performClick()
-            onNodeWithTag("assistant-ask").performScrollTo().performClick()
-            waitForText("Add a rule to Coin")
-            assertEquals(emptyList(), state.coinRules(), "Nothing changes before Accept")
+            onNodeWithTag("assistant-ask").performClick()
+            waitForText("Applied to your game")
+            assertEquals(1, state.coinRules().size, "Changes are applied right away")
             waitForIdle()
             screenshot("assistant-compact")
-            onNodeWithTag("assistant-accept").performScrollTo().performClick()
+            onNodeWithTag("chat-revert-1").performScrollTo().performClick()
             waitForIdle()
 
-            assertEquals(1, state.coinRules().size)
-            onNodeWithTag("undo").performClick()
+            assertEquals(emptyList(), state.coinRules(), "Revert undoes the assistant's step")
+            onNodeWithTag("redo").performClick()
             waitForIdle()
-            assertEquals(emptyList(), state.coinRules(), "Accepting is one undo step")
+            assertEquals(1, state.coinRules().size, "Revert is one ordinary undo step")
         }
 
     @Test
@@ -116,9 +116,13 @@ class AssistantUiTest {
             open(state, live = { slow })
 
             onNodeWithTag("panel:Assistant").performClick()
+            onNodeWithTag("assistant-settings").performClick()
+            onNodeWithTag("assistant-review-first").performScrollTo().performClick()
+            onNodeWithTag("assistant-settings").performClick()
             onNodeWithTag("assistant-example-0").performScrollTo().performClick()
-            onNodeWithTag("assistant-ask").performScrollTo().performClick()
+            onNodeWithTag("assistant-ask").performClick()
             waitForText("Add a rule to Coin")
+            assertEquals(before, state.project, "With Review first, nothing changes before Accept")
             screenshot("assistant-expanded")
             onNodeWithTag("assistant-reject").performScrollTo().performClick()
             waitForIdle()
@@ -127,8 +131,8 @@ class AssistantUiTest {
             onNodeWithTag("assistant-settings").performClick()
             onNodeWithTag("assistant-key").performScrollTo().performTextReplacement("sk-test")
             onNodeWithTag("assistant-key-save").performScrollTo().performClick()
-            onNodeWithTag("assistant-prompt").performScrollTo().performTextReplacement("Make coins worth 5")
-            onNodeWithTag("assistant-ask").performScrollTo().performClick()
+            onNodeWithTag("assistant-prompt").performTextReplacement("Make coins worth 5")
+            onNodeWithTag("assistant-ask").performClick()
             waitUntil(timeoutMillis = 10_000) { onAllNodesWithTag("assistant-cancel").fetchSemanticsNodes().isNotEmpty() }
             onNodeWithTag("assistant-cancel").performScrollTo().performClick()
             waitForText("Cancelled. Nothing in your game changed.")
@@ -148,8 +152,8 @@ class AssistantUiTest {
             open(collectGame(), secrets) { script }
 
             onNodeWithTag("panel:Assistant").performClick()
-            onNodeWithTag("assistant-prompt").performScrollTo().performTextReplacement("Change the coin")
-            onNodeWithTag("assistant-ask").performScrollTo().performClick()
+            onNodeWithTag("assistant-prompt").performTextReplacement("Change the coin")
+            onNodeWithTag("assistant-ask").performClick()
             waitForText("Which coin?")
             onNodeWithTag("assistant-option-1").performScrollTo().performClick()
 

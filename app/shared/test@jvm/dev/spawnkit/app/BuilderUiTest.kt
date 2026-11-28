@@ -48,6 +48,7 @@ class BuilderUiTest {
             val state = EditorState()
             setContent { MaterialTheme(colorScheme = darkColorScheme()) { EditorScreen(state) } }
             // Add tab is open by default on phones.
+            showPalette()
             onNodeWithTag("add:Platform").performClick()
             onNodeWithTag("add:Player").performClick()
             waitForIdle()

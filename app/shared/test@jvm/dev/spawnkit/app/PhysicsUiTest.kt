@@ -50,6 +50,7 @@ class PhysicsUiTest {
         runDesktopComposeUiTest(width = if (compact) 412 else 1440, height = if (compact) 915 else 900) {
             val state = EditorState()
             setContent { MaterialTheme(colorScheme = darkColorScheme()) { EditorScreen(state) } }
+            showPalette()
             tap("add:Platform")
             val platform = assertNotNull(state.selection)
             assertNotNull(state.scene.find(platform)?.component("gameplay:solid"), "palette platforms are solid")

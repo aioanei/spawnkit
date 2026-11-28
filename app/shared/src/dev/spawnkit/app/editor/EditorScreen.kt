@@ -71,6 +71,7 @@ import dev.spawnkit.app.assistant.AssistantState
 import dev.spawnkit.app.assistant.SecretStore
 import dev.spawnkit.app.assistant.rememberSecretStore
 import dev.spawnkit.app.images.rememberImagePicker
+import dev.spawnkit.app.persistence.NewGameAi
 import dev.spawnkit.app.persistence.ProjectDialogs
 import dev.spawnkit.app.persistence.ProjectMenu
 import dev.spawnkit.app.persistence.ProjectSession
@@ -80,8 +81,11 @@ import dev.spawnkit.app.release.rememberReleasePlatform
 import dev.spawnkit.editing.ImageAsset
 import dev.spawnkit.editing.ObjectDoc
 
-/** Tabs of the expanded layout's right panel. */
-private enum class SidePanel { Properties, Rules, Assistant }
+/** Tabs of the expanded layout's right panel; the assistant comes first (C13b). */
+private enum class SidePanel { Assistant, Properties, Rules }
+
+/** Tabs of the compact layout, the assistant first (C13b). */
+private val CompactTabs = listOf("AI", "Add", "Scene", "Object", "Rules")
 
 /** Below this width the builder uses the compact (phone) layout. */
 private val CompactWidth = 720.dp
@@ -105,16 +109,29 @@ fun EditorScreen(
     val assistant =
         remember(state, secrets) { AssistantState(state, secrets, scope, liveModel, accounts::hostedChoice, accounts::photoForge) }
     val openAccount = { accountOpen = true }
+    // Bumped to bring the assistant forward, for example when New game hands it a description (C13b).
+    var assistantFocus by remember { mutableIntStateOf(0) }
+    val buildRequest = projectSession?.buildRequest
+    LaunchedEffect(buildRequest) {
+        val request = projectSession?.takeBuildRequest() ?: return@LaunchedEffect
+        assistantFocus++
+        if (request.replay) {
+            assistant.watchReplay()
+        } else {
+            assistant.prompt = request.prompt
+            assistant.ask()
+        }
+    }
     CompositionLocalProvider(LocalAccounts provides accounts) {
         BoxWithConstraints(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).safeDrawingPadding()) {
             if (maxWidth < CompactWidth) {
-                CompactLayout(state, projectSession, assistant, openAccount) { releasing = true }
+                CompactLayout(state, projectSession, assistant, assistantFocus, openAccount) { releasing = true }
             } else {
-                ExpandedLayout(state, projectSession, assistant, openAccount) { releasing = true }
+                ExpandedLayout(state, projectSession, assistant, assistantFocus, openAccount) { releasing = true }
             }
         }
     }
-    if (projectSession != null) ProjectDialogs(projectSession)
+    if (projectSession != null) ProjectDialogs(projectSession, NewGameAi(ready = !assistant.needsSignIn, signIn = openAccount))
     if (releasing) ReleaseManager(state, releasePlatform, accounts) { releasing = false }
     if (accountOpen) AccountScreen(accounts, secrets.where) { accountOpen = false }
 }
@@ -124,6 +141,7 @@ private fun ExpandedLayout(
     state: EditorState,
     session: ProjectSession?,
     assistant: AssistantState,
+    assistantFocus: Int,
     onAccount: () -> Unit,
     onRelease: () -> Unit,
 ) {
@@ -141,8 +159,11 @@ private fun ExpandedLayout(
                 }
             }
             Viewport(state, Modifier.weight(1f).fillMaxHeight())
-            Panel(Modifier.width(340.dp).fillMaxHeight()) {
-                var panel by remember { mutableStateOf(SidePanel.Properties) }
+            Panel(Modifier.width(360.dp).fillMaxHeight()) {
+                var panel by remember { mutableStateOf(SidePanel.Assistant) }
+                // Selecting an object opens its properties, so manual editing works as before (C13b).
+                LaunchedEffect(state.selection) { if (state.selection != null) panel = SidePanel.Properties }
+                LaunchedEffect(assistantFocus) { if (assistantFocus > 0) panel = SidePanel.Assistant }
                 val askAi = { prompt: String ->
                     assistant.prompt = prompt
                     panel = SidePanel.Assistant
@@ -151,7 +172,10 @@ private fun ExpandedLayout(
                     Row(Modifier.padding(start = 4.dp, top = 4.dp)) {
                         SidePanel.entries.forEach { entry ->
                             TextButton({ panel = entry }, Modifier.testTag("panel:${entry.name}")) {
-                                Text(entry.name, fontWeight = if (panel == entry) FontWeight.Bold else FontWeight.Normal)
+                                Text(
+                                    if (entry == SidePanel.Assistant) "AI" else entry.name,
+                                    fontWeight = if (panel == entry) FontWeight.Bold else FontWeight.Normal,
+                                )
                             }
                         }
                     }
@@ -172,14 +196,20 @@ private fun CompactLayout(
     state: EditorState,
     session: ProjectSession?,
     assistant: AssistantState,
+    assistantFocus: Int,
     onAccount: () -> Unit,
     onRelease: () -> Unit,
 ) {
     var tab by remember { mutableIntStateOf(0) }
     var expanded by remember { mutableStateOf(true) }
+    LaunchedEffect(assistantFocus) {
+        if (assistantFocus == 0) return@LaunchedEffect
+        tab = 0
+        expanded = true
+    }
     val askAi = { prompt: String ->
         assistant.prompt = prompt
-        tab = 4
+        tab = 0
         expanded = true
     }
     Column(Modifier.fillMaxSize()) {
@@ -191,7 +221,7 @@ private fun CompactLayout(
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         TabRow(tab, Modifier.weight(1f)) {
-                            listOf("Add", "Scene", "Object", "Rules", "AI").forEachIndexed { index, title ->
+                            CompactTabs.forEachIndexed { index, title ->
                                 Tab(
                                     tab == index,
                                     {
@@ -211,13 +241,18 @@ private fun CompactLayout(
                         ) { Text(if (expanded) "▾" else "▴") }
                     }
                     if (expanded) {
-                        Box(Modifier.height(280.dp).fillMaxWidth()) {
+                        // The conversation needs more room than the other tabs (C13b).
+                        Box(Modifier.height(if (tab == 0) 360.dp else 280.dp).fillMaxWidth()) {
                             when (tab) {
                                 0 -> {
-                                    Palette(state)
+                                    AssistantPanel(assistant, Modifier.fillMaxSize())
                                 }
 
                                 1 -> {
+                                    Palette(state)
+                                }
+
+                                2 -> {
                                     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                                         SceneList(state)
                                         SectionTitle("In this scene")
@@ -225,16 +260,12 @@ private fun CompactLayout(
                                     }
                                 }
 
-                                2 -> {
+                                3 -> {
                                     Inspector(state, Modifier.fillMaxSize(), onAskAi = askAi)
                                 }
 
-                                3 -> {
-                                    RulesPanel(state, Modifier.fillMaxSize(), onAskAi = askAi)
-                                }
-
                                 else -> {
-                                    AssistantPanel(assistant, Modifier.fillMaxSize())
+                                    RulesPanel(state, Modifier.fillMaxSize(), onAskAi = askAi)
                                 }
                             }
                         }

@@ -150,7 +150,10 @@ private fun RenameGame(
 
 /** Debounced autosave and explicit recovery/navigation decisions. No dialog silently discards an existing draft. */
 @Composable
-fun ProjectDialogs(session: ProjectSession) {
+fun ProjectDialogs(
+    session: ProjectSession,
+    newGameAi: NewGameAi? = null,
+) {
     val state = session.state
     LaunchedEffect(state.revision, session.recovery) {
         delay(500)
@@ -201,7 +204,7 @@ fun ProjectDialogs(session: ProjectSession) {
 
         else -> {}
     }
-    NewGamePicker(session)
+    NewGamePicker(session, ai = newGameAi)
     val action = session.pending ?: return
     AlertDialog(
         onDismissRequest = session::cancelNavigation,
