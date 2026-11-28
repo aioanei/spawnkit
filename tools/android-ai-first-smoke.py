@@ -1,6 +1,6 @@
 """Drives the SpawnKit builder on a running Android emulator with real taps (C13b), signed out: opens Project → New
 game…, checks "Describe your game…" with Sign in, taps Watch the AI build a game, follows the labelled replay until
-Jungle Banana Run is applied, then reverts it and checks the game is blank again.
+Jungle Banana Run is applied (the canvas previewing it meanwhile), then reverts it and checks the game is blank again.
 Usage: install the debug APK, then `python tools/android-ai-first-smoke.py <screenshot-dir>`."""
 import os
 import re
@@ -109,6 +109,15 @@ tap("Watch the AI build a game", scroll=False)
 wait_for("Replay: claude-sonnet-5-5", seconds=20)
 time.sleep(3)
 screenshot("android-ai-first-replay-running.png")
+# The canvas draws the staged game as it grows, labelled as a preview (C13b).
+wait_for("Preview of the assistant's changes", seconds=20)
+# Keep the latest picture taken while the preview still shows, so it has as much of the game as possible.
+for _ in range(12):
+    screenshot("android-ai-first-replay-preview-next.png")
+    if not find("Preview of the assistant's changes", exact=False):
+        break
+    os.replace(os.path.join(OUT, "android-ai-first-replay-preview-next.png"), os.path.join(OUT, "android-ai-first-replay-preview.png"))
+    time.sleep(0.5)
 # The card's heading can scroll above its long summary; its steps button stays in view.
 wait_for("Show 142 changes", seconds=120)
 time.sleep(1)

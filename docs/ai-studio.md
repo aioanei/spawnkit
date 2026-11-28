@@ -272,10 +272,12 @@ now starts from the assistant. Manual tools are unchanged.
     `AssistantUiTest` and `CharacterAgentUiTest` expect changes applied right away.
 - **Android emulator (API 36, 2026-11-28).** `tools/android-ai-first-smoke.py`, with real taps and signed out:
   - New game shows the Describe box with Sign in;
-  - Watch the AI build a game streams the labelled replay and applies Jungle Banana Run (title screen, 142 changes);
+  - Watch the AI build a game streams the labelled replay, the canvas previews the game as it grows, and Jungle
+    Banana Run is applied (title screen, 142 changes);
   - Revert brings back the blank game.
 
   Screenshots: [New game](media/android-ai-first-new-game.png), [replay running](media/android-ai-first-replay-running.png),
+  [canvas preview while it builds](media/android-ai-first-replay-preview.png),
   [applied](media/android-ai-first-replay-applied.png), [reverted](media/android-ai-first-reverted.png),
   [desktop New game](media/new-game-describe-desktop.png), [desktop built](media/ai-first-built-desktop.png),
   [phone built](media/ai-first-built-phone.png).
