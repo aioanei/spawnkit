@@ -46,7 +46,10 @@ class AssistantStateTest {
     private fun TestScope.assistant(
         hosted: () -> HostedChoice? = { null },
         live: (String) -> AgentModel = { error("No live model in this test") },
-    ) = AssistantState(editor, secrets, this, live, hosted)
+    ) = AssistantState(editor, secrets, this, live, hosted).apply {
+        // These tests cover the review option; applying right away (the default, C13b) is in AssistantChatTest.
+        reviewFirst = true
+    }
 
     /** A model that answers with fixed tool calls, one reply per call to [reply]. */
     private class Scripted(
@@ -143,7 +146,8 @@ class AssistantStateTest {
             assistant.answer("All coins")
             advanceUntilIdle()
 
-            assertEquals("Nothing to change.", assertIs<AgentOutcome.Answer>(assistant.outcome).text)
+            assertNull(assistant.outcome)
+            assertEquals("Nothing to change.", assistant.chat.last().text, "Answers join the conversation (C13b)")
         }
 
     @Test

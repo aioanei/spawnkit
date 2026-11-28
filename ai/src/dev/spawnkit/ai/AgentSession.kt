@@ -200,6 +200,14 @@ public class AgentSession(
         return result
     }
 
+    /**
+     * Tells the model that the creator reverted the changes it made last (C13b), so the game is back as it was before
+     * them. The builder calls it after undoing an accepted step from the assistant's Revert button.
+     */
+    public fun reverted() {
+        messages += AgentMessage.User(REVERTED)
+    }
+
     /** Discards the open proposal; the game is unchanged. */
     public fun reject() {
         val changes = changes ?: return
@@ -307,6 +315,7 @@ public class AgentSession(
         public const val DEFAULT_MAX_STEPS: Int = 60
 
         private const val NOT_RUN = "Not run: the session paused for the creator."
+        private const val REVERTED = "(The creator reverted your last changes; the game is back as it was before them.)"
         private const val MAX_EMPTY_REPLIES = 1
         private const val CUT_OFF =
             "(Your last reply came back empty, probably cut off because it was too long. Go on from where you were, with " +
@@ -324,7 +333,8 @@ public class AgentSession(
             You help a creator build a 2D game in the SpawnKit builder. The creator may not be a programmer.
             - Start with look_at_game to learn the scene ID, object IDs, components and rules. Never invent IDs.
             - Change the game only with the editing tools; they are the builder's own operations. Every change is
-              staged: nothing reaches the game until the creator reviews and accepts it, and they can reject it.
+              staged and reaches the game as one step when you finish (or after the creator reviews it). The creator
+              can revert that step or edit anything by hand afterwards.
             - Prefer When / If / Do rule blocks. Rule and block numbers start at 1, as the builder shows them.
             - To change many objects (for example every coin), call the tool once per object.
             - If the request is ambiguous (for example which of two scores), call ask_creator instead of guessing.

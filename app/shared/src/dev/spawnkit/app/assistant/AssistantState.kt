@@ -18,6 +18,7 @@ import dev.spawnkit.ai.KoogModel
 import dev.spawnkit.app.editor.EditorState
 import dev.spawnkit.app.images.PickedImage
 import dev.spawnkit.editing.AcceptResult
+import dev.spawnkit.editing.Project
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -42,9 +43,48 @@ fun interface PhotoForge {
     ): CharacterResult
 }
 
+/** One line of the assistant's conversation (C13b), oldest first in [AssistantState.chat]. */
+sealed class ChatEntry {
+    /** The words shown. */
+    abstract val text: String
+
+    /** What the creator asked, or how they answered a question. */
+    class Request(
+        override val text: String,
+    ) : ChatEntry()
+
+    /** The assistant's answer or question, without changes to the game. */
+    class Reply(
+        override val text: String,
+    ) : ChatEntry()
+
+    /**
+     * Changes the assistant made, applied as one undo step labelled [label]: [text] is its summary and [steps] the
+     * changes in plain words. [AssistantState.revert] undoes it while it is still the latest step.
+     */
+    class Applied(
+        override val text: String,
+        val steps: List<String>,
+        val label: String,
+        internal val generation: Int,
+        internal val after: Project,
+    ) : ChatEntry() {
+        /** Whether the creator reverted it. */
+        var reverted by mutableStateOf(false)
+            internal set
+    }
+
+    /** Something that happened along the way, such as a rejected proposal. */
+    class Note(
+        override val text: String,
+    ) : ChatEntry()
+}
+
 /**
- * The builder's assistant (C7c): one [AgentSession] over the game in [editor], with the creator's review in between.
- * Nothing reaches the game until [accept]; [reject], [cancel] and failures leave it unchanged.
+ * The builder's assistant (C7c, C13b): one [AgentSession] over the game in [editor], shown as a conversation in [chat].
+ *
+ * AI-first (C13b): a proposal is applied as soon as it arrives, as one undo step the creator can [revert]. With
+ * [reviewFirst], it waits for [accept] or [reject] instead. [cancel] and failures leave the game unchanged.
  *
  * Which model answers (C11b, ADR-0011): the creator's own key when switched on in Developer settings, otherwise SpawnKit
  * AI through [hosted] when signed in to a server that offers it, otherwise the labelled [DemoModel]. The key lives only
@@ -62,8 +102,16 @@ class AssistantState(
     private val hosted: () -> HostedChoice? = { null },
     private val forge: () -> PhotoForge? = { null },
 ) {
-    /** The creator's request being typed. */
+    /** The creator's request being typed; it empties once sent. */
     var prompt by mutableStateOf("")
+
+    /** Whether proposals wait for the creator's Accept instead of being applied right away (C13b). */
+    var reviewFirst by mutableStateOf(false)
+
+    /** The conversation so far; cleared when another project is loaded, kept when the scene changes (C13b). */
+    val chat = mutableStateListOf<ChatEntry>()
+
+    private var chatFor = editor.projectGeneration
 
     var running by mutableStateOf(false)
         private set
@@ -168,6 +216,32 @@ class AssistantState(
     /** Drops a proposal made for a project or scene that is no longer open, with a notice. */
     fun refresh() {
         dropIfStale()
+        clearChatIfNewProject()
+    }
+
+    /**
+     * Whether [entry] can still be reverted on its own: it is the editor's latest step in this project, and the game is
+     * stopped. After a manual change or an Undo it cannot, so Revert never removes the creator's own work.
+     */
+    fun canRevert(entry: ChatEntry.Applied): Boolean {
+        editor.revision // recompose when the game changes
+        return !entry.reverted &&
+            !playing &&
+            entry.generation == editor.projectGeneration &&
+            editor.editor.project === entry.after &&
+            editor.editor.undoLabel == entry.label
+    }
+
+    /** Undoes the assistant's step [entry] when [canRevert]; otherwise explains how to step back with Undo. */
+    fun revert(entry: ChatEntry.Applied) {
+        if (!canRevert(entry)) {
+            if (!entry.reverted) notice = if (playing) STOP_TO_REVERT else CANNOT_REVERT
+            return
+        }
+        editor.undo()
+        entry.reverted = true
+        notice = REVERTED
+        session?.takeIf { sessionFor?.second == entry.generation }?.reverted()
     }
 
     fun saveKey(key: String) {
@@ -189,12 +263,17 @@ class AssistantState(
     fun ask() {
         if (!canAsk()) return
         val request = prompt.trim()
+        clearChatIfNewProject()
+        if (outcome is AgentOutcome.Proposal) chat += ChatEntry.Note(SUPERSEDED)
+        chat += ChatEntry.Request(request)
+        prompt = ""
         start { session, onEvent -> session.ask(request, onEvent) }
     }
 
     /** Answers the assistant's question and continues the same proposal. */
     fun answer(text: String) {
         if (dropIfStale() || running || outcome !is AgentOutcome.Question || text.isBlank()) return
+        chat += ChatEntry.Request(text.trim())
         start(keepProgress = true) { session, onEvent -> session.answer(text.trim(), onEvent) }
     }
 
@@ -210,38 +289,86 @@ class AssistantState(
     /** The creator agreed to send the photo; [consent] must be ticked ("This is me, or this person agreed"). */
     fun confirm(consent: Boolean) {
         if (!consent || dropIfStale() || running || outcome !is AgentOutcome.Confirmation) return
+        chat += ChatEntry.Note("You sent your photo to the image model.")
         start(keepProgress = true) { session, onEvent -> session.confirm(consent, onEvent) }
     }
 
     /** The creator chose not to send the photo; the assistant goes on without it. */
     fun decline() {
         if (dropIfStale() || running || outcome !is AgentOutcome.Confirmation) return
+        chat += ChatEntry.Note("You chose not to send your photo. Nothing was sent.")
         start(keepProgress = true) { session, onEvent -> session.decline(onEvent) }
     }
 
-    /** Applies the proposal as one undoable step. */
+    /** Applies the proposal waiting for review as one undoable step. */
     fun accept() {
         if (dropIfStale()) return
         val proposal = outcome as? AgentOutcome.Proposal ?: return
         val active = session ?: return
-        when (val result = active.accept("Assistant: " + proposal.summary.take(LABEL_LENGTH))) {
+        apply(active, proposal)
+    }
+
+    fun reject() {
+        val rejected = outcome is AgentOutcome.Proposal
+        session?.reject()
+        outcome = null
+        notice = null
+        progress.clear()
+        if (rejected) chat += ChatEntry.Note("You rejected the changes. Nothing in your game changed.")
+    }
+
+    /** Applies [proposal] as one undo step and adds it to the chat; a refusal leaves the game unchanged. */
+    private fun apply(
+        active: AgentSession,
+        proposal: AgentOutcome.Proposal,
+    ) {
+        val label = "Assistant: " + proposal.summary.take(LABEL_LENGTH)
+        when (val result = active.accept(label)) {
             is AcceptResult.Accepted -> {
                 outcome = null
                 notice = null
                 progress.clear()
+                chat += ChatEntry.Applied(proposal.summary, proposal.steps, label, editor.projectGeneration, editor.editor.project)
             }
 
             is AcceptResult.Refused -> {
+                // Applied right away, nothing waits for review: let the session go on from the current game.
+                if (outcome == null) active.reject()
                 notice = result.message
             }
         }
     }
 
-    fun reject() {
-        session?.reject()
+    /** Shows [result]: a proposal is applied unless [reviewFirst]; answers and questions join the chat. */
+    private fun settle(
+        active: AgentSession,
+        result: AgentOutcome,
+    ) {
         outcome = null
         notice = null
-        progress.clear()
+        when (result) {
+            is AgentOutcome.Proposal -> {
+                if (reviewFirst) outcome = result else apply(active, result)
+            }
+
+            is AgentOutcome.Answer -> {
+                chat += ChatEntry.Reply(result.text)
+                progress.clear()
+            }
+
+            is AgentOutcome.Question -> {
+                chat += ChatEntry.Reply(result.question)
+                outcome = result
+            }
+
+            is AgentOutcome.Confirmation -> {
+                outcome = result
+            }
+
+            is AgentOutcome.Failed -> {
+                notice = result.message
+            }
+        }
     }
 
     fun cancel() {
@@ -261,9 +388,7 @@ class AssistantState(
         job =
             scope.launch {
                 try {
-                    val result = work(active, ::record)
-                    outcome = result.takeUnless { it is AgentOutcome.Failed }
-                    notice = (result as? AgentOutcome.Failed)?.message
+                    settle(active, work(active, ::record))
                 } catch (cancelled: CancellationException) {
                     outcome = null
                     notice = CANCELLED
@@ -328,7 +453,19 @@ class AssistantState(
         return dropped != null
     }
 
+    /** Clears the conversation when another project was loaded since it started. */
+    private fun clearChatIfNewProject() {
+        if (chatFor == editor.projectGeneration) return
+        chatFor = editor.projectGeneration
+        chat.clear()
+    }
+
     private fun reset(message: String?) {
+        clearChatIfNewProject()
+        // Another scene (or model) in the same project: the conversation stays on screen, but the model starts afresh.
+        if (session != null && chat.isNotEmpty() && sessionFor?.second == editor.projectGeneration) {
+            chat += ChatEntry.Note(FRESH_START)
+        }
         job?.cancel()
         session?.reject()
         session = null
@@ -371,6 +508,12 @@ class AssistantState(
         private const val HOSTED = "hosted:"
         private const val DEMO = "demo"
         private const val CANCELLED = "Cancelled. Nothing in your game changed."
+        private const val REVERTED = "Reverted. Your game is back as it was before."
+        private const val CANNOT_REVERT =
+            "You changed the game after this, so it can't be reverted on its own. Use Undo (↶) to step back."
+        private const val STOP_TO_REVERT = "Stop the game to revert."
+        private const val SUPERSEDED = "The changes waiting for review were dropped. Nothing was applied."
+        private const val FRESH_START = "The assistant starts a fresh conversation here. It still sees every scene of your game."
         private const val DROPPED = "Your game changed, so the proposal was dropped. Nothing was applied."
         private const val DROPPED_QUESTION = "Your game changed, so the question was dropped. Nothing was applied."
         private const val DROPPED_PHOTO = "Your game changed, so the request to send your photo was dropped. Nothing was sent."
