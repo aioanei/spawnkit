@@ -98,11 +98,15 @@ public class Editor(
         return true
     }
 
-    /** Replaces the whole project (for example after opening a file) and clears history. */
+    /**
+     * Replaces the whole project (for example after opening a file) and clears history. IDs are then minted from
+     * [project] alone: with no history left, no ID retired by undo can come back.
+     */
     public fun load(project: Project) {
         requireUsable(project)
         undoStack.clear()
         redoStack.clear()
+        idFloor = 1L
         commit(project)
     }
 

@@ -74,6 +74,7 @@ class ReleaseUiTest {
                 }
             }
         }
+        showPalette()
         onNodeWithTag("add:Score").performClick()
         onNodeWithTag("project-menu").performClick()
         onNodeWithTag("project-release").performClick()

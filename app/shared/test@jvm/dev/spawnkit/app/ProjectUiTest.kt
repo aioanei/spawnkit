@@ -12,6 +12,7 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import androidx.compose.ui.unit.Density
@@ -81,6 +82,7 @@ class ProjectUiTest {
                     MaterialTheme(colorScheme = darkColorScheme()) { EditorScreen(session.state, projectSession = session) }
                 }
             }
+            showPalette()
             tap("add:Player")
             val bounds = onNodeWithTag("play").fetchSemanticsNode().boundsInRoot
             assertTrue(bounds.height <= 60f, "Play must stay on one line")
@@ -122,6 +124,7 @@ class ProjectUiTest {
         val session = ProjectSession(files)
         val state = session.state
         setContent { MaterialTheme(colorScheme = darkColorScheme()) { EditorScreen(state, projectSession = session) } }
+        showPalette()
         tap("add:Score")
         val score = checkNotNull(state.selection)
         state.setRuleItems(
@@ -146,7 +149,8 @@ class ProjectUiTest {
         assertEquals(expected, ProjectCodec.decode(files.file.read()))
         assertFalse(session.dirty)
         menu("project-new")
-        tap("new-blank")
+        onNodeWithTag("new-blank").performScrollTo().performClick()
+        waitForIdle()
         assertTrue(state.scene.objects.isEmpty())
         menu("project-open")
         assertEquals(expected, state.project)
@@ -174,11 +178,13 @@ class ProjectUiTest {
             val session = ProjectSession(files)
             val state = session.state
             setContent { MaterialTheme(colorScheme = darkColorScheme()) { EditorScreen(state, projectSession = session) } }
+            showPalette()
             tap("add:Player")
             val expected = state.project
             val undo = state.editor.undoLabel
             menu("project-new")
-            tap("new-blank")
+            onNodeWithTag("new-blank").performScrollTo().performClick()
+            waitForIdle()
             tap("changes-cancel")
             assertEquals(expected, state.project)
             files.choice = null
@@ -225,6 +231,7 @@ class ProjectUiTest {
             tap("recovery-restore")
             assertEquals(expected, session.state.project)
             assertTrue(session.dirty)
+            showPalette()
             tap("add:Coin")
             mainClock.advanceTimeBy(600)
             waitForIdle()

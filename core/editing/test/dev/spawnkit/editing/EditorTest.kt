@@ -249,6 +249,19 @@ class EditorTest {
     }
 
     @Test
+    fun loadingAProjectMintsIdsFromThatProjectAlone() {
+        // A fresh blank project gets the same IDs in any editor, so a recorded session replays the same (C13b).
+        val used = Fixture()
+        repeat(5) { used.add("Box") }
+        used.editor.undo()
+        used.editor.load(Project.blank())
+        val fresh = Fixture()
+
+        assertNull(used.editor.undoLabel)
+        assertEquals(fresh.add("Box"), used.add("Box"))
+    }
+
+    @Test
     fun brokenProjectsAreRejectedOnLoadAndPositionsAreValidated() {
         val fixture = Fixture()
         val broken =

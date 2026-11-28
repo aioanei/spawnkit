@@ -68,6 +68,7 @@ class HomeScreenKitUiTest {
 
             fun named(name: String) = assertNotNull(state.scene.objects.firstOrNull { it.name == name }, name)
 
+            showPalette()
             tap("add:Button")
             tap("add:Text")
             assertEquals(listOf("Button", "Button label", "Text"), state.scene.objects.map { it.name })

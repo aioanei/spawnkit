@@ -41,6 +41,7 @@ class SpawningUiTest {
         runDesktopComposeUiTest(width = if (compact) 412 else 1440, height = if (compact) 915 else 900) {
             val state = EditorState()
             setContent { MaterialTheme(colorScheme = darkColorScheme()) { EditorScreen(state) } }
+            showPalette()
             tap("add:Score")
             val score = assertNotNull(state.selection)
             if (compact) tap("tab:Object")

@@ -88,6 +88,7 @@ class CharacterForgeUiTest {
                 }
             }
             waitForIdle()
+            showPalette()
             tap("add:Character")
             tap("forge-photo")
             onNodeWithTag("forge-make").assertIsNotEnabled()

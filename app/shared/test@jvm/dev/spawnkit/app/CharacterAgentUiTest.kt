@@ -132,15 +132,14 @@ class CharacterAgentUiTest {
             tap("assistant-consent")
             screenshot(if (compact) "character-agent-confirm-compact" else "character-agent-confirm-expanded")
             tap("assistant-send-photo")
-            waitForTag("assistant-accept")
+            // Request, the note that the photo was sent, then the changes, applied right away (C13b).
+            waitForTag("chat-applied-2")
 
             val sent = ProjectImages.decode(assertNotNull(server.lastPhoto))
             assertTrue(!sent.decodeToString().contains("Ada Lovelace"), "metadata never leaves the device")
             assertTrue(onAllNodesWithTag("assistant-photo").fetchSemanticsNodes().isEmpty(), "the photo is let go once sent")
-            assertEquals(emptyList(), state.project.images, "nothing changes until the creator accepts")
             onNodeWithTag("assistant-cost").assertTextContains("2 character images from your SpawnKit AI allowance", substring = true)
-            screenshot(if (compact) "character-agent-review-compact" else "character-agent-review-expanded")
-            tap("assistant-accept")
+            screenshot(if (compact) "character-agent-applied-compact" else "character-agent-applied-expanded")
 
             assertEquals(listOf("Pixel art character", "Cartoon character"), state.project.images.map { it.name })
             val character = assertNotNull(state.scene.objects.singleOrNull { it.name == "Character" })
@@ -167,9 +166,9 @@ class CharacterAgentUiTest {
             tap("assistant-ask")
             waitForTag("assistant-confirm")
             tap("assistant-dont-send")
-            waitForTag("assistant-answer")
+            waitForTag("chat-reply-2")
 
-            onNodeWithTag("assistant-answer").assertTextContains("nothing was sent", substring = true)
+            onNodeWithTag("chat-reply-2").assertTextContains("nothing was sent", substring = true)
             assertNull(server.lastPhoto)
             assertEquals(emptyList(), session.state.project.images)
         }

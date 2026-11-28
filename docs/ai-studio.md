@@ -121,8 +121,9 @@ Live sessions are recorded on GitHub, so the key never has to be on a developer 
 
 ## Assistant UI (C7c)
 
-The builder shows the assistant as an **Assistant** tab in the expanded right panel and an **AI** tab on phones.
-`AssistantState` (`app/shared`) drives one `AgentSession` per model, scene and project:
+The builder shows the assistant as an **AI** tab, first in the expanded right panel and on phones.
+`AssistantState` (`app/shared`) drives one `AgentSession` per model, scene and project. Since C13b, changes are applied
+right away with Revert and Review is an option; see [AI-first builder](#ai-first-builder-c13b).
 
 - **Asking.** The panel has a prompt field, and example prompts while the scripted demo answers. Ask is disabled
   while the game plays or the prompt is blank.
@@ -218,6 +219,68 @@ plan and build a **complete** game from one prompt with the builder's own operat
     - the shop's Extra life is a test purchase that adds a life.
   - **Cost against the limits.** A whole game costs more than the default per-account allowance of $1 a day, so with
     SpawnKit AI it would stop partway. The owner decides the limit (`SPAWNKIT_AI_ACCOUNT_DAILY_DOLLARS` on the server, default $1).
+
+## AI-first builder (C13b)
+
+[Plan](plans/2026-11-28-c13b-ai-first-builder.md), [#85](https://github.com/aioanei/spawnkit/issues/85). The builder
+now starts from the assistant. Manual tools are unchanged.
+
+- **The chat is the main panel.**
+  - It is the first tab on phones (**AI**, opening first and taller than the other tabs).
+  - On wide screens it is the first tab of the side panel beside the canvas. Selecting an object opens Properties.
+  - The conversation (`AssistantState.chat`) keeps the creator's requests and answers, the assistant's answers and
+    questions, and notes. It scrolls above a composer with the prompt, **Send** and **Attach photo**.
+  - Another scene keeps the conversation and starts the model afresh, with a note saying so. Another project clears it.
+- **Apply right away, with Revert.**
+  - A proposal is applied as one undo step as soon as it arrives. It shows as an **Applied** card with the summary,
+    "Show N changes" and **Revert**.
+  - Revert is the editor's own undo. It works while the assistant's step is the latest one. After a manual change, or
+    an Undo, the card says to use Undo (↶), so Revert never removes the creator's work. Redo brings the step back, and
+    it can be reverted again.
+  - The model is told about a revert (`AgentSession.reverted()`).
+  - **The canvas shows the work as it grows.** While the assistant works, the viewport draws its staged game
+    (`EditorState.assistantPreview`) under a "Preview of the assistant's changes" label. Preview objects can be panned
+    and zoomed but not selected; the game itself changes only when the step is applied. With Review first, the
+    preview stays until Accept or Reject; cancelling or a failure clears it.
+  - If the creator edits while the assistant works, the late changes are refused with the reason. The creator's edit
+    stays.
+  - **Review changes first**, in the assistant's Settings, brings back Accept and Reject. Settings also hold the
+    developer key, which stays out of the normal flow.
+- **Prompt-first New game.**
+  - Project → New game starts with **Describe your game…** above the presets.
+  - **Build it** starts a new blank game like New (unsaved changes are asked about first), opens the assistant and
+    sends the description (`ProjectSession.describe`, `BuildRequest`).
+  - Signed out, the box explains that building with AI needs a free account, with **Sign in** and **Watch the AI build
+    a game**.
+- **The labelled replay.**
+  - `WholeGameReplay` (`ai`) embeds the reviewed Jungle Banana Run recording (C13a). `tools/embed-recording.py`
+    regenerates `JungleBananaRunJson` after the recording changes, and `WholeGameReplayTest` fails while the two differ.
+  - `AssistantState.watchReplay` plays it on the new blank game, paced so the steps can be followed. While it runs, the
+    model label reads "Replay: claude-sonnet-5-5, recorded 2026-11-23 (no model is called)".
+  - The chat starts with a note that it is a replay, and the Applied card says "from the replay (no model was called)".
+  - The cost line reads "No cost (no model is called)". The six scenes arrive as one step with Revert.
+  - `Editor.load` now mints IDs from the loaded project alone, so a new blank game has the IDs the recording expects.
+- **Tests.**
+  - `AssistantChatTest` 13: the canvas preview while the assistant works, kept for review and cleared by cancel; apply right away; Revert; Revert refused after a manual change; Undo and Redo; Review first;
+    answers in the chat; the model told of a revert; editing while the assistant works; the chat across scenes and
+    projects; the replay builds six scenes and stays labelled.
+  - `AiFirstUiTest` 5: Describe → Build it → applied → Revert → Redo on a phone and a desktop; signed out with the
+    labelled replay on a phone; unsaved changes and cancel; the replay request.
+  - `WholeGameReplayTest` +2: the embedded copy equals the file; the builder's replay builds the whole game.
+  - `EditorTest` +1: IDs after `load`.
+  - Changed: `AssistantStateTest` covers the Review first option. The UI tests open the Add tab on phones, and
+    `AssistantUiTest` and `CharacterAgentUiTest` expect changes applied right away.
+- **Android emulator (API 36, 2026-11-28).** `tools/android-ai-first-smoke.py`, with real taps and signed out:
+  - New game shows the Describe box with Sign in;
+  - Watch the AI build a game streams the labelled replay, the canvas previews the game as it grows, and Jungle
+    Banana Run is applied (title screen, 142 changes);
+  - Revert brings back the blank game.
+
+  Screenshots: [New game](media/android-ai-first-new-game.png), [replay running](media/android-ai-first-replay-running.png),
+  [canvas preview while it builds](media/android-ai-first-replay-preview.png),
+  [applied](media/android-ai-first-replay-applied.png), [reverted](media/android-ai-first-reverted.png),
+  [desktop New game](media/new-game-describe-desktop.png), [desktop built](media/ai-first-built-desktop.png),
+  [phone built](media/ai-first-built-phone.png).
 
 ## Character Forge (C16a)
 
@@ -354,7 +417,6 @@ demo.
 
 ## Not yet
 
-- A visual preview of a proposal in the viewport before accepting; the review lists the steps in words.
 - Secure key storage on iOS (Keychain) and the web.
 - Committed recordings of live sessions. The recording workflow exists, but no run has been reviewed and committed
   yet; until then, demos use the labelled scripted fixtures.
